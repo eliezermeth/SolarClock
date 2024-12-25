@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="kosherjava.zmanim" type="repository">
+    <properties maven-id="com.kosherjava:zmanim:2.5.0" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/kosherjava/zmanim/2.5.0/zmanim-2.5.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
