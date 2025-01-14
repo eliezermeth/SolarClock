@@ -4,9 +4,9 @@ import com.kosherjava.zmanim.util.GeoLocation;
 import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
+import java.awt.geom.Arc2D;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
 
@@ -31,12 +31,8 @@ import java.util.List;
 public class ZmanClockGUI extends JPanel
 {
     private ComplexZmanimCalendar czc;
-    private String region = "America/New_York"; // TODO have it passed in
+    public String region = "America/New_York"; // TODO have it passed in
 
-    private LocalTime sunrise;
-    private LocalTime sunset;
-    private LocalTime nextSunrise;
-    private LocalTime nextSunset;
     private LocalTime currentTime;
 
     private TerminatorTimes terminatorTimes = new TerminatorTimes(); // to hold (assuming in middle of tekufah): before, after, next
@@ -80,14 +76,25 @@ public class ZmanClockGUI extends JPanel
 
         calculateEqualDayNightView(); // calculate proper angles for sunrise and sunset
 
+        // Draw colored sections of circle
+        Color dayColor = new Color(255, 255, 200); // light yellow
+        Color nightColor = new Color(100, 100, 255); // light deep blue
 
-        // TODO alter when can switch between horizon and percent view
         // Draw the top half of the circle
-        g2d.setColor(new Color(255, 255, 200)); // Light yellow
-        g2d.fillArc(centerX - radius, centerY - radius, diameter, diameter, 0, 180);
+        Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
+                Math.toDegrees(offsetSunset),
+                Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
+                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
+        g2d.setColor(dayColor); // Light yellow
+        g2d.fill(dayArc);
+
         // Draw the bottom half of the circle
-        g2d.setColor(new Color(100, 100, 255)); // Light deep blue
-        g2d.fillArc(centerX - radius, centerY - radius, diameter, diameter, 180, 180);
+        Arc2D.Double nightArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
+                Math.toDegrees(offsetSunrise),
+                360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
+                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
+        g2d.setColor(nightColor); // Light deep blue
+        g2d.fill(nightArc);
 
         // Draw static lines with optional labels
         for (StaticLine line : staticLines)
@@ -106,7 +113,7 @@ public class ZmanClockGUI extends JPanel
         if (currentTime != null)
         {
             g2d.setColor(Color.RED);
-            g2d.setStroke(new BasicStroke(2));
+            g2d.setStroke(new BasicStroke(1));
             drawLineForTime(g2d, centerX, centerY, radius, currentTime);
         }
 
@@ -125,6 +132,7 @@ public class ZmanClockGUI extends JPanel
         g2d.drawLine(centerX, centerY, endX, endY);
     }
 
+    // TODO make so label does not overlap other elements
     private void drawLabel(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time, String label)
     {
         double angle = calculateAngle(time);
@@ -135,61 +143,60 @@ public class ZmanClockGUI extends JPanel
         g2d.drawString(label, labelX - 10, labelY + 5); // Adjust for label alignment
     }
 
-    private double calculateAngle(LocalTime time)
+    private double calculateAngle(LocalTime time) // TODO FIX ----------------------------------
     {
-        double angle;
+        // calculate the distance clockwise from sunrise angle to sunset angle (e.g. day)
+        double angularSpanDay = (offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
+        double angularSpanNight = (2 * Math.PI) - angularSpanDay;
+        // this may still provide some problems, if night is below the 3 o'clock point
 
-        // test if equal to sunrise or sunset; both would return the same result when run through the equation
-        if (time.equals(sunrise))
-            return offsetSunrise;
-        else if (time.equals(sunset))
-            return offsetSunset;
-        // flip over y axis, but keep on correct side of x axis
-        else if (time.isAfter(sunrise) && time.isBefore(sunset))
+        double angularSpan; // the span used for the tekufah in the calculation
+        int targetedTekufah; // what tekufah the targeted time is during
+        boolean daytime;
+
+        if (time.equals(terminatorTimes.getTerminator(0)) || // during first span
+                time.isAfter(terminatorTimes.getTerminator(0)) && time.isBefore(terminatorTimes.getTerminator(1)))
         {
-            long totalSeconds = calculateMillisBetween(sunrise, sunset);
-            long currentSeconds = calculateMillisBetween(sunrise, time);
-            //return offsetSunrise - (Math.PI * (double) currentSeconds / totalSeconds); // transpose over Y axis
-
-            angle = offsetSunrise + (Math.PI * (double) currentSeconds / totalSeconds);
+            targetedTekufah = 0; // use first and second terminators
+            if (terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE))
+            {
+                angularSpan = angularSpanDay; // use day span for percent; use day calculations
+                daytime = true;
+            }
+            else
+            {
+                angularSpan = angularSpanNight; // use night span for percent; use night calculations
+                daytime = false;
+            }
         }
+        else // during second span
+        {
+            targetedTekufah = 1; // use second and third terminators
+            if (terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE))
+            {
+                angularSpan = angularSpanNight;
+                daytime = false;
+            }
+            else
+            {
+                angularSpan = angularSpanDay;
+                daytime = true;
+            }
+        }
+
+        System.out.println(time + " during day: " + daytime);
+
+        long totalSeconds = TimeUtil.calculateMillisBetween(terminatorTimes.getTerminator(targetedTekufah),
+                terminatorTimes.getTerminator(targetedTekufah + 1));
+        long currentSeconds = TimeUtil.calculateMillisBetween(terminatorTimes.getTerminator(targetedTekufah),
+                time);
+
+        // get percent of angular span
+        double spanToAdd = angularSpan * ((double) currentSeconds / totalSeconds);
+        if (daytime)
+            return offsetSunrise - spanToAdd;
         else
-        {
-            // Night cycle: Map to the bottom half of the circle (π to 2π)
-            long totalSeconds = calculateMillisBetween(sunset, nextSunrise);
-            long currentSeconds = calculateMillisBetween(sunset, time);
-            //double angle = Math.PI + (Math.PI * ((double) currentSeconds / totalSeconds));
-            //return ((2 * Math.PI) - angle) + Math.PI; // flip over y axis; assumes below midpoint of circle
-            // should do it by calculating an addition from sunset
-
-            angle = offsetSunset + (Math.PI * (double) currentSeconds / totalSeconds);
-        }
-
-        return (2 * Math.PI - angle) % (2 * Math.PI); // reflect angle over Y-axis
-    }
-
-    public void setSunrise(LocalTime sunrise)
-    {
-        this.sunrise = sunrise;
-        repaint();
-    }
-
-    public void setSunset(LocalTime sunset)
-    {
-        this.sunset = sunset;
-        repaint();
-    }
-
-    public void setNextSunrise(LocalTime nextSunrise)
-    {
-        this.nextSunrise = nextSunrise;
-        repaint();
-    }
-
-    public void setNextSunset(LocalTime nextSunset)
-    {
-        this.nextSunset = nextSunset;
-        repaint();
+            return offsetSunset - spanToAdd;
     }
 
     public void setCurrentTime(LocalTime currentTime)
@@ -201,7 +208,7 @@ public class ZmanClockGUI extends JPanel
     /**
      * Display sunrise and sunset lines.
      */
-    public void displayTerminatorLines()
+    public void addTerminatorLines()
     {
         this.addStaticLine(terminatorTimes.getTerminator(0), terminatorTimes.startingTerminator.toString(), 3, Color.GREEN);
         Terminator other = terminatorTimes.startingTerminator.equals(Terminator.SUNRISE) ? Terminator.SUNSET : Terminator.SUNRISE;
@@ -211,25 +218,25 @@ public class ZmanClockGUI extends JPanel
     /**
      * Display hour tick marks between sunrise and sunset: 1 - 11 in day; 13 - 23 in night
      */
-    public void displayHourTickMarks()
+    public void addHourTickMarks()
     {
         // calculate shaah for the time period
-        // start of tekufah; end of tekufah; offset of time due to day or night
+        // start of tekufah; offset of time due to day or night
         int[][] tekufahSettings = new int[][] {
-                new int[] { 0, 1, terminatorTimes.startingTerminator.equals(Terminator.SUNRISE) ? 0 : 12},
-                new int[] { 1, 2, terminatorTimes.startingTerminator.equals(Terminator.SUNSET) ? 0 : 12}
+                new int[] { 0, terminatorTimes.startingTerminator.equals(Terminator.SUNRISE) ? 0 : 12},
+                new int[] { 1, terminatorTimes.startingTerminator.equals(Terminator.SUNSET) ? 0 : 12}
         };
 
         for (int[] tekufah : tekufahSettings)
         {
-            long tekufahShaah = calculateMillisBetween(terminatorTimes.getTerminator(tekufah[0]),
-                    terminatorTimes.getTerminator(tekufah[1])) / 12;  // split into 12 hours
+            LocalTime tekufahStart = terminatorTimes.getTerminator(tekufah[0]);
+            long tekufahShaah = terminatorTimes.getTekufahShaah(tekufah[0]);
 
             for (int i = 1; i < 12; i++)
             {
-                this.addStaticLine(terminatorTimes.getTerminator(tekufah[0]).plusSeconds(
+                this.addStaticLine(tekufahStart.plusSeconds(
                         (tekufahShaah / 1000) * i), // millis to seconds, then multiply by hours
-                        String.valueOf(i + tekufah[2]),
+                        String.valueOf(i + tekufah[1]),
                         1,
                         Color.LIGHT_GRAY);
             }
@@ -246,12 +253,6 @@ public class ZmanClockGUI extends JPanel
     {
         staticLines.clear();
         repaint();
-    }
-
-    public void setEqualDayNightView(boolean equal)
-    {
-        this.equalDayNightView = equal;
-        calculateEqualDayNightView();
     }
 
     // /\ Drawing /\
@@ -308,22 +309,7 @@ public class ZmanClockGUI extends JPanel
             terminatorTimes.setTerminator(1, dateToLocalTime(tomorrow.getSunrise()));
             terminatorTimes.setTerminator(2, dateToLocalTime(tomorrow.getSunset()));
         }
-
-        // temp for setting sunrise and sunset
-        if (terminatorTimes.startingTerminator.equals(Terminator.SUNRISE))
-        {
-            sunrise = terminatorTimes.getTerminator(0);
-            sunset = terminatorTimes.getTerminator(1);
-            nextSunrise = terminatorTimes.getTerminator(2);
-        }
-        else
-        {
-            sunset = terminatorTimes.getTerminator(0);
-            sunrise = terminatorTimes.getTerminator(1);
-        }
     }
-
-    // TODO updateTerminatorTimes()
 
     /**
      * Called at a terminator change, this method advances the terminators to the future times and swaps starting status.
@@ -355,6 +341,18 @@ public class ZmanClockGUI extends JPanel
         terminatorTimes.increment(nextTime);
     }
 
+    public void setEqualDayNightView(boolean equal)
+    {
+        this.equalDayNightView = equal;
+        calculateEqualDayNightView();
+        repaint();
+    }
+
+    public boolean getEqualDayNightView()
+    {
+        return this.equalDayNightView;
+    }
+
     /**
      * Sets proper values for offsets of sunrise and sunset.
      */
@@ -368,20 +366,15 @@ public class ZmanClockGUI extends JPanel
         else
         {
             /*
-            TODO when to get next day's zmanim
             By setting to this, the day and night arcs must now be modified. They can no longer be 50/50, but must
             calculate the percentage of the 24-hour period is contained by each.  Day should be centered with chatzos
-            at the top, and night corresponding.  It will need to recalculate and repaint at sun change.  All
+            at the top, and night corresponding.  It will need to recalculate and repaint at terminator change.  All
             calculations must happen as an offset of these times.
-
-            Until this is implemented, it will produce the same values as if equalDayNightView is set to true
              */
-            offsetSunrise = Circle.LEFT.radians;
-            offsetSunset = Circle.RIGHT.radians;
 
             // The current tekufah will have its percentage rendered correctly (the other may be slightly too
             // large/small); however, the day portion will be centered to the top of the 24-hour circle.
-            long periodTime = calculateMillisBetween(terminatorTimes.getTerminator(0), terminatorTimes.getTerminator(1));
+            long periodTime = terminatorTimes.getTekufahSpan(0);
 
             double topPeriodTime = periodTime; // initilize to daytime
             if (terminatorTimes.getStartingTerminator().equals(Terminator.SUNSET))
@@ -397,6 +390,9 @@ public class ZmanClockGUI extends JPanel
             offsetSunrise = sunriseAngle;
             offsetSunset = sunsetAngle;
         }
+
+        System.out.println(offsetSunrise % Circle.RIGHT.radians);
+        System.out.println(offsetSunset % Circle.RIGHT.radians);
     }
 
     /**
@@ -416,29 +412,6 @@ public class ZmanClockGUI extends JPanel
         modified.setCalendar(instance);
 
         return modified;
-    }
-
-    /**
-     * Calculate the milliseconds between a start time and an end time.  If the period between spans midnight, <code>end
-     * </code> will be moved to the next day and return the proper time between them.
-     * <br>
-     * Milliseconds deemed a small enough duration for accuracy.  Seconds provide a period too large, and the additional
-     * accuracy afforded by microseconds is not considered significant.
-     * @param start LocalTime for beginning of time period.
-     * @param end LocalTime for end of time period.
-     * @return <code>long</code> milliseconds between time periods.
-     */
-    private long calculateMillisBetween(LocalTime start, LocalTime end)
-    {
-        long timeAccumulated = 0L;
-
-        if (end.isBefore(start)) // overlaps midnight
-        {
-            timeAccumulated += ChronoUnit.MILLIS.between(start, LocalTime.MAX) + 1000; // add millis between MAX and midnight
-            start = LocalTime.MIDNIGHT;
-        }
-
-        return timeAccumulated + ChronoUnit.MILLIS.between(start, end);
     }
 
     /**
@@ -466,37 +439,20 @@ public class ZmanClockGUI extends JPanel
     public static void main(String[] args)
     {
         JFrame frame = new JFrame("Zman Clock GUI");
-        String region = "America/New_York";
+
+        // set up clocks
+        GeoData location = Regions.getLocation("sydney");
+        if (location == null) System.out.println("ERROR");
         ZmanClockGUI clock = new ZmanClockGUI(new ComplexZmanimCalendar(
                 new GeoLocation(
-                        "Pikesville, MD",
-                        39.37427,-76.72247,
-                        TimeZone.getTimeZone(region))));
+                        location.name, location.latitude, location.longitude, TimeZone.getTimeZone(location.region))));
+        clock.region = location.region;
 
-        clock.setEqualDayNightView(true);
+        clock.setEqualDayNightView(false);
+        System.out.println("Equal day/night view: " + clock.getEqualDayNightView());
 
-        // display hour tick marks
-        clock.displayHourTickMarks();
-        // display terminator lines
-        clock.displayTerminatorLines();
-
-        // equalDayNightView?
-
-        /*
-        clock.addStaticLine(LocalTime.of(6, 0), "Sunrise", 3, Color.GREEN);
-        clock.addStaticLine(LocalTime.of(18, 0), "Sunset", 3, Color.BLUE);
-
-        // hour tick marks may change depending if  isUseAstronomicalChatzos() is set to true
-        for (int i = 1; i < 12; i++)
-        {
-            clock.addStaticLine(LocalTime.of(6, 0).plusHours(i), Integer.toString(i), 1, Color.LIGHT_GRAY);
-        }
-
-        for (int i = 13; i < 24; i++)
-        {
-            clock.addStaticLine(LocalTime.of(6, 0).plusHours(i), Integer.toString(i), 1, Color.LIGHT_GRAY);
-        }
-         */
+        clock.addHourTickMarks();
+        clock.addTerminatorLines();
 
         clock.simulateTimeProgression(10);
 
@@ -661,6 +617,35 @@ public class ZmanClockGUI extends JPanel
         {
             Arrays.fill(terminatorTimes, null); // reset in place to avoid creating new array
             startingTerminator = null;
+        }
+
+        /**
+         * Get the time span (milliseconds) of a tekufah between the terminators.
+         * @param i 0 for first tekufah, 1 for second tekufah
+         * @return milliseconds of specified tekufah; -1 if invalid selection
+         */
+        public long getTekufahSpan(int i)
+        {
+            try
+            {
+                return TimeUtil.calculateMillisBetween(terminatorTimes[i], terminatorTimes[i + 1]);
+            }
+            catch (IndexOutOfBoundsException e)
+            {
+                return -1;
+            }
+        }
+
+        /**
+         * Get the time span (milliseconds) of a shaah (halachic hour) between the terminators.  Fractional loss of
+         * remaining as <code>long</code> deemed insignificant.
+         * @param i 0 for first tekufah, 1 for second tekufah
+         * @return milliseconds of specified tekufah shaah; -1 if invalid selection
+         */
+        public long getTekufahShaah(int i)
+        {
+            long res = getTekufahSpan(i);
+            return (res != -1) ? res / 12 : -1; // divide into hours if not invalid
         }
     }
 }
