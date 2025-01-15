@@ -1,7 +1,12 @@
+import com.kosherjava.zmanim.ZmanimCalendar;
+
+import java.sql.Time;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class TimeUtil
 {
@@ -28,4 +33,49 @@ public class TimeUtil
         return timeAccumulated + ChronoUnit.MILLIS.between(start, end);
     }
 
+    /**
+     * Transform a <code>Date</code> to a <code>LocalTime</code>.
+     * @param d Date
+     * @param c Calendar
+     * @return LocalTime of Date at Calendar location
+     */
+    public static LocalTime dateToLocalTime(Date d, Calendar c)
+    {
+        return d.toInstant().atZone(c.getTimeZone().toZoneId()).toLocalTime();
+    }
+
+    /**
+     * Transform a <code>Date</code> to a <code>LocalTime</code>.
+     * @param d Date
+     * @param c ZmanimCalendar
+     * @return LocalTime of Date at ZmanimCalendar's Calendar location
+     */
+    public static LocalTime dateToLocalTime(Date d, ZmanimCalendar c)
+    {
+        return dateToLocalTime(d, c.getCalendar());
+    }
+
+    /**
+     * Transform a <code>Date</code> to a <code>LocalTime</code>.
+     * <br>
+     * <strong>WARNING:</strong> Returns based on a conversion using the operating system's default <code>TimeZone</code>
+     * (<code>user.timezone</code>) if not set; if it is, that value will be as the default time zone.
+     * @param d Date
+     * @return LocalTime
+     */
+    public static LocalTime dateToLocalTime(Date d)
+    {
+        return dateToLocalTime(d, TimeZone.getDefault().toZoneId());
+    }
+
+    /**
+     * Transform a <code>Date</code> to a <code>LocalTime</code> based on a TimeZone ID.
+     * @param d Date
+     * @param z ZoneID
+     * @return LocalTime of Date within Zone
+     */
+    public static LocalTime dateToLocalTime(Date d, ZoneId z)
+    {
+        return d.toInstant().atZone(z).toLocalTime();
+    }
 }

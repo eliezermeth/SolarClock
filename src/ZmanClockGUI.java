@@ -41,6 +41,9 @@ public class ZmanClockGUI extends JPanel
     // for use to set lines at proper position in circle
     private double offsetSunrise;
     private double offsetSunset;
+    // range of day and night of circle
+    private double angularSpanDay;
+    private double angularSpanNight;
 
     private final long MILLIS_PER_DAY = 86400000L;
 
@@ -143,13 +146,8 @@ public class ZmanClockGUI extends JPanel
         g2d.drawString(label, labelX - 10, labelY + 5); // Adjust for label alignment
     }
 
-    private double calculateAngle(LocalTime time) // TODO FIX ----------------------------------
+    private double calculateAngle(LocalTime time)
     {
-        // calculate the distance clockwise from sunrise angle to sunset angle (e.g. day)
-        double angularSpanDay = (offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
-        double angularSpanNight = (2 * Math.PI) - angularSpanDay;
-        // this may still provide some problems, if night is below the 3 o'clock point
-
         double angularSpan; // the span used for the tekufah in the calculation
         int targetedTekufah; // what tekufah the targeted time is during
         boolean daytime;
@@ -275,14 +273,14 @@ public class ZmanClockGUI extends JPanel
         // TODO clarify guidelines on when to swap over day / tekufos
         // currently uses getSunrise() for delineations; switch to higher-order based on options for delineations?
 
-        LocalTime tempSunrise = dateToLocalTime(czc.getSunrise());
-        LocalTime tempSunset = dateToLocalTime(czc.getSunset());
+        LocalTime tempSunrise = TimeUtil.dateToLocalTime(czc.getSunrise(), czc);
+        LocalTime tempSunset = TimeUtil.dateToLocalTime(czc.getSunset(), czc);
 
         if (LocalTime.now().isBefore(tempSunrise)) // before sunrise; during previous night
         {
             // start from previous sunset
             ComplexZmanimCalendar yesterday = changeDay(this.czc, -1);
-            terminatorTimes.setTerminator(0, dateToLocalTime(yesterday.getSunset()));
+            terminatorTimes.setTerminator(0, TimeUtil.dateToLocalTime(yesterday.getSunset(), yesterday));
             terminatorTimes.setStartingTerminator(Terminator.SUNSET);
 
             terminatorTimes.setTerminator(1, tempSunrise);
@@ -297,7 +295,7 @@ public class ZmanClockGUI extends JPanel
 
             // third terminator is next sunrise
             ComplexZmanimCalendar tomorrow = changeDay(this.czc, 1);
-            terminatorTimes.setTerminator(2, dateToLocalTime(tomorrow.getSunrise()));
+            terminatorTimes.setTerminator(2, TimeUtil.dateToLocalTime(tomorrow.getSunrise(), tomorrow));
         }
         else // LocalTime.now().equals(tempSunset) || LocalTime.now().isAfter(tempSunset); sunset or after
         {
@@ -306,9 +304,11 @@ public class ZmanClockGUI extends JPanel
 
             // second and third terminator times are tomorrow
             ComplexZmanimCalendar tomorrow = changeDay(this.czc, 1);
-            terminatorTimes.setTerminator(1, dateToLocalTime(tomorrow.getSunrise()));
-            terminatorTimes.setTerminator(2, dateToLocalTime(tomorrow.getSunset()));
+            terminatorTimes.setTerminator(1, TimeUtil.dateToLocalTime(tomorrow.getSunrise(), tomorrow));
+            terminatorTimes.setTerminator(2, TimeUtil.dateToLocalTime(tomorrow.getSunset(), tomorrow));
         }
+
+        calculateEqualDayNightView();
     }
 
     /**
@@ -330,15 +330,16 @@ public class ZmanClockGUI extends JPanel
         if (terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE)) // need tomorrow's sunset
         {
             ComplexZmanimCalendar future = changeDay(this.czc, 1);
-            nextTime = dateToLocalTime(future.getSunset());
+            nextTime = TimeUtil.dateToLocalTime(future.getSunset(), future);
         }
         else // starting terminator is SUNSET; need aftermorrow's sunrise
         {
             ComplexZmanimCalendar future = changeDay(this.czc, 2);
-            nextTime = dateToLocalTime(future.getSunrise());
+            nextTime = TimeUtil.dateToLocalTime(future.getSunrise(), future);
         }
 
         terminatorTimes.increment(nextTime);
+        calculateEqualDayNightView();
     }
 
     public void setEqualDayNightView(boolean equal)
@@ -391,8 +392,9 @@ public class ZmanClockGUI extends JPanel
             offsetSunset = sunsetAngle;
         }
 
-        System.out.println(offsetSunrise % Circle.RIGHT.radians);
-        System.out.println(offsetSunset % Circle.RIGHT.radians);
+        // calculate the distance clockwise from sunrise angle to sunset angle (e.g. day)
+        angularSpanDay = (offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
+        angularSpanNight = (2 * Math.PI) - angularSpanDay;
     }
 
     /**
@@ -412,16 +414,6 @@ public class ZmanClockGUI extends JPanel
         modified.setCalendar(instance);
 
         return modified;
-    }
-
-    /**
-     * Convert a Date to a LocalTime.
-     * @param d Date
-     * @return Localtime of given date.
-     */
-    public LocalTime dateToLocalTime(Date d)
-    {
-        return d.toInstant().atZone(ZoneId.of(region)).toLocalTime();
     }
 
     public void simulateTimeProgression(int delay)
@@ -446,7 +438,6 @@ public class ZmanClockGUI extends JPanel
         ZmanClockGUI clock = new ZmanClockGUI(new ComplexZmanimCalendar(
                 new GeoLocation(
                         location.name, location.latitude, location.longitude, TimeZone.getTimeZone(location.region))));
-        clock.region = location.region;
 
         clock.setEqualDayNightView(false);
         System.out.println("Equal day/night view: " + clock.getEqualDayNightView());
