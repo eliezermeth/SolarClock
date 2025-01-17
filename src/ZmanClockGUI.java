@@ -6,7 +6,6 @@ import javax.swing.Timer;
 import java.awt.*;
 import java.awt.geom.Arc2D;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.List;
 
@@ -139,7 +138,6 @@ public class ZmanClockGUI extends JPanel
     private void drawLabel(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time, String label)
     {
         double angle = calculateAngle(time);
-        System.out.println(label + ": " + Math.toDegrees(angle));
         int labelX = (int) (centerX + (radius + 20) * Math.cos(angle));
         int labelY = (int) (centerY - (radius + 20) * Math.sin(angle));
         g2d.setColor(Color.BLACK);
@@ -181,8 +179,6 @@ public class ZmanClockGUI extends JPanel
                 daytime = true;
             }
         }
-
-        System.out.println(time + " during day: " + daytime);
 
         long totalSeconds = TimeUtil.calculateMillisBetween(terminatorTimes.getTerminator(targetedTekufah),
                 terminatorTimes.getTerminator(targetedTekufah + 1));
@@ -433,14 +429,13 @@ public class ZmanClockGUI extends JPanel
         JFrame frame = new JFrame("Zman Clock GUI");
 
         // set up clocks
-        GeoData location = Regions.getLocation("sydney");
-        if (location == null) System.out.println("ERROR");
+        GeoData location = Regions.getLocation("Southfield");
         ZmanClockGUI clock = new ZmanClockGUI(new ComplexZmanimCalendar(
                 new GeoLocation(
                         location.name, location.latitude, location.longitude, TimeZone.getTimeZone(location.region))));
 
-        clock.setEqualDayNightView(false);
-        System.out.println("Equal day/night view: " + clock.getEqualDayNightView());
+        clock.setCurrentTime(LocalTime.now());
+        clock.setEqualDayNightView(true);
 
         clock.addHourTickMarks();
         clock.addTerminatorLines();
