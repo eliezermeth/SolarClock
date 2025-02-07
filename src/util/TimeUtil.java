@@ -1,6 +1,7 @@
+package util;
+
 import com.kosherjava.zmanim.ZmanimCalendar;
 
-import java.sql.Time;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;

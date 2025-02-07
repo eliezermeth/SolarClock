@@ -1,3 +1,5 @@
+package util;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,20 +72,4 @@ public class Regions
     }
 
 
-}
-
-class GeoData
-{
-    final String name;
-    final double latitude;
-    final double longitude;
-    final String region;
-
-    public GeoData(String name, double latitude, double longitude, String region)
-    {
-        this.name = name;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.region = region;
-    }
 }
