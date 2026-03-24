@@ -1,0 +1,77 @@
+package gui;
+
+import interfaces.UpdatablePanel;
+import main.Main;
+
+import javax.swing.*;
+import java.awt.*;
+import java.time.LocalTime;
+
+public class StandardClockPanel implements UpdatablePanel
+{
+    private Main clock;
+    private DigitalClockPanel parent;
+    private JPanel panel;
+
+    // Moving parts
+    private JLabel[] components = new JLabel[3]; // HH MM SS
+
+    public StandardClockPanel(Main clock, DigitalClockPanel parent, JPanel child)
+    {
+        this.clock = clock;
+        this.parent = parent;
+        this.panel = child;
+
+        createStandardClock();
+    }
+
+    private void createStandardClock()
+    {
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5); // padding
+
+        // Label
+        gbc.gridx = 0; gbc.gridy = 0;
+        JLabel text = new JLabel("Standard Time:");
+        panel.add(text, gbc);
+
+        // Initialize changing components
+        for (int i = 0; i < 3; i++)
+        {
+            components[i] = new JLabel("--");
+        }
+
+        updateStandardClock();
+
+        // Lay out clock
+        JPanel clockPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 1, 0));
+        clockPanel.add(components[0]); // hours
+        clockPanel.add(new JLabel(":"));
+        clockPanel.add(components[1]); // minutes
+        clockPanel.add(new JLabel(":"));
+        clockPanel.add(components[2]); // seconds
+
+        // add to panel
+        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridwidth = 5;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        panel.add(clockPanel, gbc);
+    }
+
+    public void updateStandardClock()
+    {
+        LocalTime ct = clock.getCurrentTime();
+
+        components[0].setText(String.format("%02d", ct.getHour()));
+        components[1].setText(String.format("%02d", ct.getMinute()));
+        components[2].setText(String.format("%02d", ct.getSecond()));
+    }
+
+    @Override
+    public void update()
+    {
+        updateStandardClock();
+    }
+}

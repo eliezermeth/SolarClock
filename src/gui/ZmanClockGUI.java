@@ -9,6 +9,7 @@ import javax.swing.Timer;
 import java.awt.*;
 import java.awt.geom.Arc2D;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 
@@ -49,6 +50,8 @@ public class ZmanClockGUI extends JPanel
     private final long MILLIS_PER_DAY = 86400000L;
 
     private final List<StaticLine> staticLines = new ArrayList<>();
+
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     /**
      * Initialize a graphic interface for a Zmanim Clock.
@@ -143,7 +146,12 @@ public class ZmanClockGUI extends JPanel
         int labelX = (int) (centerX + (radius + 20) * Math.cos(angle));
         int labelY = (int) (centerY - (radius + 20) * Math.sin(angle));
         g2d.setColor(Color.BLACK);
-        g2d.drawString(label, labelX - 10, labelY + 5); // Adjust for label alignment
+
+        // split text into different lines
+        String[] lines = label.split("\n");
+        for (int i = 0; i < lines.length; i++)
+            g2d.drawString(lines[i], labelX - 10, (labelY - 8) + (i * 15));
+        //g2d.drawString(label, labelX - 10, labelY + 5); // Adjust for label alignment
     }
 
     private double calculateAngle(LocalTime time)
@@ -206,9 +214,11 @@ public class ZmanClockGUI extends JPanel
      */
     public void addTerminatorLines()
     {
-        this.addStaticLine(terminatorTimes.getTerminator(0), terminatorTimes.getStartingTerminator().toString(), 3, Color.GREEN);
+        this.addStaticLine(terminatorTimes.getTerminator(0), terminatorTimes.getStartingTerminator().toString() + "\n" +
+                terminatorTimes.getTerminator(0).format(formatter), 3, Color.GREEN);
         Terminator other = terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE) ? Terminator.SUNSET : Terminator.SUNRISE;
-        this.addStaticLine(terminatorTimes.getTerminator(1), other.toString(), 3, Color.GREEN);
+        this.addStaticLine(terminatorTimes.getTerminator(1), other.toString() + "\n" +
+                terminatorTimes.getTerminator(1).format(formatter), 3, Color.GREEN);
     }
 
     /**
@@ -230,9 +240,10 @@ public class ZmanClockGUI extends JPanel
 
             for (int i = 1; i < 12; i++)
             {
-                this.addStaticLine(tekufahStart.plusSeconds(
-                        (tekufahShaah / 1000) * i), // millis to seconds, then multiply by hours
-                        String.valueOf(i + tekufah[1]),
+                LocalTime tickMark = tekufahStart.plusSeconds(
+                        (tekufahShaah / 1000) * i); // millis to seconds, then multiply by hours
+                this.addStaticLine(tickMark,
+                        String.valueOf(i + tekufah[1]) + "\n" + tickMark.format(formatter),
                         1,
                         Color.LIGHT_GRAY);
             }
@@ -336,17 +347,17 @@ public class ZmanClockGUI extends JPanel
         }
 
         terminatorTimes.increment(nextTime);
-        calculateEqualDayNightView();
+        calculateEqualDayNightView();  // ---------------------- For clock only
     }
 
-    public void setEqualDayNightView(boolean equal)
+    public void setEqualDayNightView(boolean equal)  // ---------------------- For clock only
     {
         this.equalDayNightView = equal;
         calculateEqualDayNightView();
         repaint();
     }
 
-    public boolean getEqualDayNightView()
+    public boolean getEqualDayNightView()  // ---------------------- For clock only
     {
         return this.equalDayNightView;
     }
@@ -354,7 +365,7 @@ public class ZmanClockGUI extends JPanel
     /**
      * Sets proper values for offsets of sunrise and sunset.
      */
-    private void calculateEqualDayNightView()
+    private void calculateEqualDayNightView()  // ---------------------- For clock only
     {
         if (equalDayNightView)
         {
@@ -430,19 +441,21 @@ public class ZmanClockGUI extends JPanel
         JFrame frame = new JFrame("Zman Clock GUI");
 
         // set up clocks
-        GeoData location = Regions.getLocation("Southfield");
+        GeoData location = Regions.getLocation("Pikesville");
+
         ZmanClockGUI clock = new ZmanClockGUI(new ComplexZmanimCalendar(
                 new GeoLocation(
                         location.getName(), location.getLatitude(), location.getLongitude(),
                         TimeZone.getTimeZone(location.getRegion()))));
 
-        clock.setCurrentTime(LocalTime.now());
+
+        //clock.setCurrentTime(LocalTime.now());
         clock.setEqualDayNightView(false);
 
         clock.addHourTickMarks();
         clock.addTerminatorLines();
 
-        clock.simulateTimeProgression(10);
+        //clock.simulateTimeProgression(10);
 
         frame.add(clock);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
