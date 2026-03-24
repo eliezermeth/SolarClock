@@ -1,3 +1,5 @@
+package sandbox;
+
 import javax.swing.*;
 import java.awt.*;
 

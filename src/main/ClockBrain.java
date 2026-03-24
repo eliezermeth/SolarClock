@@ -1,4 +1,4 @@
-package gui;
+package main;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
@@ -6,9 +6,6 @@ import interfaces.EqualViewOption;
 import util.*;
 
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -16,56 +13,52 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 /**
- * General window.  Holds information used by all.
- *
- * TODO move information from main.Main
+ * Singleton class for holding the logic of the clock - the ComplexZmanimCalendar, current time, and time methods that
+ * are not specialized to a single use.
  */
-public class ZmanGUI
+public final class ClockBrain
 {
-    protected ComplexZmanimCalendar czc;
+    private static ClockBrain INSTANCE;
+
+    private ComplexZmanimCalendar czc;
 
     protected ZoneId zoneId;
     protected LocalTime currentTime;
-    protected boolean equalDayNightView = false;
-    protected ViewMode viewMode; // not needed - visual clock type?
 
-    protected TerminatorTimes terminatorTimes = new TerminatorTimes(); // to hold (assuming middle of tekufah): before, after, next
+    protected TerminatorTimes terminatorTimes = new TerminatorTimes();
 
     protected final long MILLIS_PER_DAY = 86400000L;
 
-    protected ArrayList<EqualViewOption> updatable = new ArrayList<EqualViewOption>();
+    protected ArrayList<EqualViewOption> updatable = new ArrayList<>();
 
     protected boolean timeProgression = false; // if time is to move
     protected Timer timeAdvancement;
 
-    /**
-     * Initialize a graphic interface for a Zmanim Clock.
-     * @param czc <code>ComplexZmanimCalendar</code> instance; a clone will be created for use
-     */
-    public ZmanGUI(ComplexZmanimCalendar czc)
+    private ClockBrain()
     {
-        this.czc = (ComplexZmanimCalendar) czc.clone();
-        calculateSolarTerminators();
+        // set up clock
+        GeoData location = Regions.getLocation(Settings.location);
+        this.czc = new ComplexZmanimCalendar(new GeoLocation(
+                location.getName(), location.getLatitude(), location.getLongitude(),
+                TimeZone.getTimeZone(location.getRegion())
+        ));
 
-        // get and initialize time
+        // get and intitialize time
         zoneId = this.czc.getGeoLocation().getTimeZone().toZoneId();
         currentTime = LocalTime.now(zoneId);
 
-//        // TODO move - GUI?
-//        setPreferredSize(new Dimension(700, 700));
-//        setBackground(Color.WHITE);
+        calculateSolarTerminators();
     }
 
-//    @Override
-//    protected void paintComponent(Graphics g)
-//    {
-//        super.paintComponent(g);
-//        Graphics2D g2d = (Graphics2D) g;
-//
-//        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-//
-//        // TODO further code
-//    }
+    public synchronized static ClockBrain getInstance() // synchronized for thread-safe when/if implemented
+    {
+        if (INSTANCE == null)
+            INSTANCE = new ClockBrain();
+
+        return INSTANCE;
+    }
+
+    // getters, setters, logic, etc
 
     /**
      * Method to be called upon startup of the program, at solar terminator, and when parameters change.  This method
@@ -83,7 +76,7 @@ public class ZmanGUI
         LocalTime tempSunrise = TimeUtil.dateToLocalTime(czc.getSunrise(), czc);
         LocalTime tempSunset = TimeUtil.dateToLocalTime(czc.getSunset(), czc);
 
-        if (LocalTime.now().isBefore(tempSunrise)) // before sunrise; during previous night
+        if (LocalTime.now(zoneId).isBefore(tempSunrise)) // before sunrise; during previous night
         {
             // start from previous sunset
             ComplexZmanimCalendar yesterday = changeDay(this.czc, -1);
@@ -93,8 +86,8 @@ public class ZmanGUI
             terminatorTimes.setTerminator(1, tempSunrise);
             terminatorTimes.setTerminator(2, tempSunset);
         }
-        else if (LocalTime.now().equals(tempSunrise) ||     // at sunrise
-                LocalTime.now().isBefore(tempSunset))   // after sunrise, but before sunset
+        else if (LocalTime.now(zoneId).equals(tempSunrise) ||     // at sunrise
+                LocalTime.now(zoneId).isBefore(tempSunset))   // after sunrise, but before sunset
         {
             terminatorTimes.setTerminator(0, tempSunrise);
             terminatorTimes.setStartingTerminator(Terminator.SUNRISE);
@@ -104,7 +97,7 @@ public class ZmanGUI
             ComplexZmanimCalendar tomorrow = changeDay(this.czc, 1);
             terminatorTimes.setTerminator(2, TimeUtil.dateToLocalTime(tomorrow.getSunrise(), tomorrow));
         }
-        else // LocalTime.now().equals(tempSunset) || LocalTime.now().isAfter(tempSunset); sunset or after
+        else // LocalTime.now(zoneId).equals(tempSunset) || LocalTime.now(zoneId).isAfter(tempSunset); sunset or after
         {
             terminatorTimes.setTerminator(0, tempSunset);
             terminatorTimes.setStartingTerminator(Terminator.SUNSET);
@@ -115,7 +108,7 @@ public class ZmanGUI
             terminatorTimes.setTerminator(2, TimeUtil.dateToLocalTime(tomorrow.getSunset(), tomorrow));
         }
 
-        updateCalculateEqualDayNighView();
+        // updateCalculateEqualDayNighView(); TODO?
     }
 
     /**
@@ -146,30 +139,8 @@ public class ZmanGUI
         }
 
         terminatorTimes.increment(nextTime);
-        updateCalculateEqualDayNighView();
+        // updateCalculateEqualDayNighView(); TODO?
     }
-
-    // TODO make sure it must be set from the beginning
-    /**
-     * Set the view mode of the analog clock.
-     * @param vm enum ViewMode
-     */
-    public void setViewMode(ViewMode vm) // TODO examine
-    {
-        this.viewMode = vm;
-        equalDayNightView = vm.equals(ViewMode.SUNDIAL); // TODO make better
-        updateCalculateEqualDayNighView();
-//        repaint();
-    }
-
-    /**
-     * Get the current view mode of the analog clock.
-     * @return current enum ViewMode
-     */
-    public ViewMode getViewMode()
-    {
-        return this.viewMode;
-    } // TODO examine
 
     /**
      * Get a new ComplexZmanimCalendar with zmanim for a different day.
@@ -190,36 +161,60 @@ public class ZmanGUI
         return modified;
     }
 
-    // TODO is this correct, or should it use an internal timer?
+    // Time/Clock methods ---------------------------------------------------------------------
+
+    /**
+     * Set the <code>LocalTime</code> for the clock.
+     * @param time
+     */
     public void setCurrentTime(LocalTime time)
     {
         this.currentTime = time;
     }
 
+    /**
+     * Get the current time of the clock.
+     * @return
+     */
     public LocalTime getCurrentTime()
     {
         return currentTime; // since LocalTime is immutable
     }
 
+    /**
+     * Get the terminator times.  Contains the past terminator and two upcoming terminators. If the current time is in
+     * the middle of a day tekufah, the order will be (1) past sunrise, (2) upcoming sunset, (3) upcoming sunrise.
+     * Should advance upon reaching the first upcoming tekufah, with (2) becoming (1), (3) becoming (2), and the new (3)
+     * being calculated.
+     * @return
+     */
     public TerminatorTimes getTerminatorTimes()
     {
         return terminatorTimes;
     }
 
+    /**
+     * If clock time should move; if not, clock will remain on one time.
+     * @param progress
+     */
+    public void setTimeProgression(boolean progress)
+    {
+        // TODO
+    }
+
+    /**
+     * If clock time should move; if not, clock will remain on one time.
+     * @return
+     */
     public boolean getTimeProgression()
     {
         return timeProgression;
     }
 
     /**
-     * Toggle time progression of clock.
+     * Method that provides automatic time progression for the clock.
      */
-    public void toggleTimeProgression()
-    {
-
-    }
-
-    public void simulateTimeProgression()
+    private void simulateTimeProgression()
     {
         // set clock time
         setCurrentTime(LocalTime.now(zoneId)); // to current, proper time (in time zone)
@@ -259,72 +254,8 @@ public class ZmanGUI
                 }
             }
 
-            // TODO everything that needs to be done goes here
+            // TODO everything that needs to be done should happen here
 
         }).start();
-
-
-    }
-
-    // TODO delete method
-    public void updateCalculateEqualDayNighView()
-    {
-        for (EqualViewOption o : updatable)
-            o.updateEqualView();
-    }
-
-    public void addUpdatable(EqualViewOption o)
-    {
-        updatable.add(o);
-    }
-
-    public static void main(String[] args)
-    {
-        // set up clock
-        GeoData location = Regions.getLocation("Pikesville");
-        ZmanGUI clock = new ZmanGUI(new ComplexZmanimCalendar(
-                new GeoLocation(
-                        location.getName(), location.getLatitude(), location.getLongitude(),
-                        TimeZone.getTimeZone(location.getRegion()))));
-        //clock.setCurrentTime(LocalTime.now());
-        clock.setViewMode(ViewMode.FULL_DAY);
-
-        // Begin construction of GUI
-        JFrame masterFrame = new JFrame("Zmanim Clock Layered GUI");
-        masterFrame.setSize(new Dimension(800, 450));
-        masterFrame.getContentPane().setBackground(Color.CYAN);
-
-
-        // To manage layering of components
-        JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setSize(new Dimension(800, 450));
-        layeredPane.setBackground(Color.yellow);
-        masterFrame.add(layeredPane);
-
-//        JPanel back = new JPanel();
-//        back.setBackground(Color.RED);
-//        back.setSize(layeredPane.getWidth(), layeredPane.getHeight());
-//        layeredPane.add(back, 0);
-
-        // Begin basic analog GUI
-        // clock.setCurrentTime(LocalTime.now());
-
-        // Create analog clock
-        AnalogClockGUI analogClockPanel = new AnalogClockGUI(clock);
-        System.out.println(masterFrame.getHeight());
-        Dimension clockSize = new Dimension(masterFrame.getHeight() - 100, masterFrame.getHeight() - 100); // TODO change
-        analogClockPanel.setBounds(
-                (int) ((masterFrame.getWidth() / 2) - (clockSize.getWidth() / 2)),
-                (int) ((masterFrame.getHeight() / 2) - (clockSize.getHeight() / 2)),
-                (int) clockSize.getWidth(), (int) clockSize.getHeight());
-        layeredPane.add(analogClockPanel, 0);
-
-
-        masterFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        //masterFrame.pack();
-        masterFrame.setLocationRelativeTo(null);
-        masterFrame.setVisible(true);
-
-        System.out.println(masterFrame.getSize());
     }
 }
