@@ -16,6 +16,8 @@ import java.util.TimeZone;
 
 /**
  * General window.  Holds information used by all.
+ *
+ * TODO move information from main.Main
  */
 public class ZmanGUI extends JLayeredPane
 {
