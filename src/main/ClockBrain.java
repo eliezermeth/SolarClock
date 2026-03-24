@@ -32,7 +32,7 @@ public final class ClockBrain
     protected ArrayList<EqualViewOption> updatable = new ArrayList<>();
 
     protected boolean timeProgression = false; // if time is to move
-    protected Timer timeAdvancement;
+    protected Timer timer;
 
     private ClockBrain()
     {
@@ -48,6 +48,7 @@ public final class ClockBrain
         currentTime = LocalTime.now(zoneId);
 
         calculateSolarTerminators();
+        initializeTimeProgression();
     }
 
     public synchronized static ClockBrain getInstance() // synchronized for thread-safe when/if implemented
@@ -58,7 +59,26 @@ public final class ClockBrain
         return INSTANCE;
     }
 
-    // getters, setters, logic, etc
+    /**
+     * Get a new ComplexZmanimCalendar with zmanim for a different day.
+     *
+     * @param czc ComplexZmanimCalendar
+     * @param numDays number of days to change; positive = future, negative = past
+     * @return modified clone offset by the specified number of days
+     */
+    private ComplexZmanimCalendar changeDay(ComplexZmanimCalendar czc, int numDays)
+    {
+        ComplexZmanimCalendar modified = (ComplexZmanimCalendar) czc.clone(); // create clone to avoid messing up current day
+
+        // change day
+        Calendar instance = modified.getCalendar();
+        instance.add(Calendar.DAY_OF_YEAR, numDays);
+        modified.setCalendar(instance);
+
+        return modified;
+    }
+
+    // Terminator methods -----------------------------------------------------------------
 
     /**
      * Method to be called upon startup of the program, at solar terminator, and when parameters change.  This method
@@ -143,25 +163,19 @@ public final class ClockBrain
     }
 
     /**
-     * Get a new ComplexZmanimCalendar with zmanim for a different day.
-     *
-     * @param czc ComplexZmanimCalendar
-     * @param numDays number of days to change; positive = future, negative = past
-     * @return modified clone offset by the specified number of days
+     * Get the terminator times.  Contains the past terminator and two upcoming terminators. If the current time is in
+     * the middle of a day tekufah, the order will be (1) past sunrise, (2) upcoming sunset, (3) upcoming sunrise.
+     * Should advance upon reaching the first upcoming tekufah, with (2) becoming (1), (3) becoming (2), and the new (3)
+     * being calculated.
+     * @return
      */
-    private ComplexZmanimCalendar changeDay(ComplexZmanimCalendar czc, int numDays)
+    public TerminatorTimes getTerminatorTimes()
     {
-        ComplexZmanimCalendar modified = (ComplexZmanimCalendar) czc.clone(); // create clone to avoid messing up current day
-
-        // change day
-        Calendar instance = modified.getCalendar();
-        instance.add(Calendar.DAY_OF_YEAR, numDays);
-        modified.setCalendar(instance);
-
-        return modified;
+        return terminatorTimes;
     }
 
-    // Time/Clock methods ---------------------------------------------------------------------
+
+    // Time methods --------------------------------------------------------------------------
 
     /**
      * Set the <code>LocalTime</code> for the clock.
@@ -181,17 +195,7 @@ public final class ClockBrain
         return currentTime; // since LocalTime is immutable
     }
 
-    /**
-     * Get the terminator times.  Contains the past terminator and two upcoming terminators. If the current time is in
-     * the middle of a day tekufah, the order will be (1) past sunrise, (2) upcoming sunset, (3) upcoming sunrise.
-     * Should advance upon reaching the first upcoming tekufah, with (2) becoming (1), (3) becoming (2), and the new (3)
-     * being calculated.
-     * @return
-     */
-    public TerminatorTimes getTerminatorTimes()
-    {
-        return terminatorTimes;
-    }
+    // Timer methods ---------------------------------------------------------------------------
 
     /**
      * If clock time should move; if not, clock will remain on one time.
@@ -199,7 +203,12 @@ public final class ClockBrain
      */
     public void setTimeProgression(boolean progress)
     {
-        // TODO
+        timeProgression = progress;
+
+        if (timeProgression)
+            timer.start();
+        else
+            timer.stop();
     }
 
     /**
@@ -212,9 +221,9 @@ public final class ClockBrain
     }
 
     /**
-     * Method that provides automatic time progression for the clock.
+     * Set starting time for clock and initialize timer.
      */
-    private void simulateTimeProgression()
+    private void initializeTimeProgression()
     {
         // set clock time
         setCurrentTime(LocalTime.now(zoneId)); // to current, proper time (in time zone)
@@ -230,9 +239,9 @@ public final class ClockBrain
         // timer
         int second = 1000; // milliseconds
         int timerIterationSpeed = (int) (.1 * second); // how often timer should activate
-        new Timer(timerIterationSpeed, e ->
+        timer = new Timer(timerIterationSpeed, e ->
         {
-            // set current time
+            // update current time
             if (!DebugTimeModifications.DEBUG) // production
                 setCurrentTime(LocalTime.now(zoneId)); // set time to now
             else // debug
@@ -256,6 +265,6 @@ public final class ClockBrain
 
             // TODO everything that needs to be done should happen here
 
-        }).start();
+        });
     }
 }
