@@ -1,6 +1,7 @@
 package gui;
 
 import interfaces.UpdatablePanel;
+import main.ClockBrain;
 import main.Main;
 import util.Constants;
 import util.Terminator;
@@ -12,7 +13,7 @@ import java.time.LocalTime;
 
 public class HalachicClockPanel implements UpdatablePanel
 {
-    private Main clock;
+    private ClockBrain clock;
     private DigitalClockPanel parent;
     private JPanel panel;
 
@@ -28,9 +29,9 @@ public class HalachicClockPanel implements UpdatablePanel
     private double cheilekFracPerMilli = -1;
     double adjustedMinuteLength = -1, adjustedSecondLength = -1; // milliseconds in halachic minute/second for tekufah
 
-    public HalachicClockPanel(Main clock, DigitalClockPanel parent, JPanel child)
+    public HalachicClockPanel(DigitalClockPanel parent, JPanel child)
     {
-        this.clock = clock;
+        this.clock = ClockBrain.getInstance();
         this.parent = parent;
         this.panel = child;
 

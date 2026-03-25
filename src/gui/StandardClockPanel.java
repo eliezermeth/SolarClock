@@ -1,6 +1,7 @@
 package gui;
 
 import interfaces.UpdatablePanel;
+import main.ClockBrain;
 import main.Main;
 
 import javax.swing.*;
@@ -9,16 +10,16 @@ import java.time.LocalTime;
 
 public class StandardClockPanel implements UpdatablePanel
 {
-    private Main clock;
+    private ClockBrain clock;
     private DigitalClockPanel parent;
     private JPanel panel;
 
     // Moving parts
     private JLabel[] components = new JLabel[3]; // HH MM SS
 
-    public StandardClockPanel(Main clock, DigitalClockPanel parent, JPanel child)
+    public StandardClockPanel(DigitalClockPanel parent, JPanel child)
     {
-        this.clock = clock;
+        this.clock = ClockBrain.getInstance();
         this.parent = parent;
         this.panel = child;
 

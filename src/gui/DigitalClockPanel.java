@@ -3,6 +3,7 @@ package gui;
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
 import interfaces.UpdatablePanel;
+import main.ClockBrain;
 import main.Main;
 import util.GeoData;
 import util.Regions;
@@ -19,7 +20,6 @@ import java.util.TimeZone;
  */
 public class DigitalClockPanel extends JPanel implements UpdatablePanel
 {
-    private Main clock;
     private boolean
             standardClockEnabled = false,
             halachicClockEnabled = false,
@@ -35,11 +35,10 @@ public class DigitalClockPanel extends JPanel implements UpdatablePanel
 
     /**
      *
-     * @param clock
      */
-    public DigitalClockPanel(Main clock)
+    public DigitalClockPanel()
     {
-        this.clock = clock;
+        this.clock = ClockBrain.getInstance();
 
         this.setLayout(new GridBagLayout());
         //gridPanel.setPreferredSize(new Dimension(frame.getWidth(), frame.getHeight()));
@@ -89,13 +88,13 @@ public class DigitalClockPanel extends JPanel implements UpdatablePanel
 
     private void createStandardClock()
     {
-        StandardClockPanel scp = new StandardClockPanel(clock, this, standardClockPanel);
+        StandardClockPanel scp = new StandardClockPanel(this, standardClockPanel);
         addUpdatablePanel(scp);
     }
 
     private void createHalachicClock()
     {
-        HalachicClockPanel hcp = new HalachicClockPanel(clock, this, halachicClockPanel);
+        HalachicClockPanel hcp = new HalachicClockPanel( this, halachicClockPanel);
         addUpdatablePanel(hcp);
     }
 

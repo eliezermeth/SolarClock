@@ -49,6 +49,8 @@ public final class ClockBrain
 
         calculateSolarTerminators();
         initializeTimeProgression();
+        createTekufahScheduler();
+        setTimeProgression(true); // TODO is this proper?
     }
 
     public synchronized static ClockBrain getInstance() // synchronized for thread-safe when/if implemented
@@ -174,6 +176,19 @@ public final class ClockBrain
         return terminatorTimes;
     }
 
+    /**
+     * Method to create the thread that will update the tekufos at the proper time.
+     */
+    private void createTekufahScheduler()
+    {
+        TimeScheduler tekufahScheduler = new TimeScheduler();
+        tekufahScheduler.scheduleRepeat(
+                terminatorTimes.getTerminator(1),       // first time to occur
+                () -> updateTerminatorTimes(),            // task to run at that time
+                () -> terminatorTimes.getTerminator(1) // next time supplier for when to run task
+        );
+    }
+
 
     // Time methods --------------------------------------------------------------------------
 
@@ -266,5 +281,12 @@ public final class ClockBrain
             // TODO everything that needs to be done should happen here
 
         });
+    }
+
+    public static void main(String[] args)
+    {
+        ClockBrain clock = ClockBrain.getInstance();
+
+        System.out.println(clock.getCurrentTime());
     }
 }
