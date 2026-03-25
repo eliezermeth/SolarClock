@@ -323,7 +323,7 @@ public class Main
             long millisDifference = TimeUtil.calculateMillisBetween(clock.terminatorTimes.getTerminator(0), clock.getCurrentTime());
             long hHour = millisDifference / millisShaahSpan;
             long hRemainder = millisDifference % millisShaahSpan;
-            double scaleFactor = (double) 1800 / millisShaahSpan; // chalakim in hour; TODO reference to a final
+            double scaleFactor = (double) Constants.CHALAKIM_PER_SHAAH / millisShaahSpan;
             sb = String.format("%02d", hHour) + " hours " + (int) (hRemainder * scaleFactor) + "/1800 chalakim";
             digitalClock.setHalachicTime(sb);
 
@@ -385,7 +385,7 @@ class DigitalClock
         gbc.gridy = 1;
         frame.add(new JLabel("Halachic Time:"), gbc);
         gbc.gridx = 1;
-        halachicTime = new JLabel("-- hours --/1800 chalakim");
+        halachicTime = new JLabel("-- hours --/1080 chalakim");
         frame.add(halachicTime, gbc);
         // Label 3 and text field
         gbc.gridx = 0;

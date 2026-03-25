@@ -2,6 +2,7 @@ package gui;
 
 import interfaces.UpdatablePanel;
 import main.Main;
+import util.Constants;
 import util.Terminator;
 import util.TimeUtil;
 
@@ -62,7 +63,7 @@ public class HalachicClockPanel implements UpdatablePanel
         fracPanel.add(new JLabel("hours"));
         fracPanel.add(fracClockComponents[1]); // chalakim elapsed
         fracPanel.add(new JLabel("/"));
-        fracPanel.add(new JLabel("1800"));
+        fracPanel.add(new JLabel(String.valueOf(Constants.CHALAKIM_PER_SHAAH)));
         fracPanel.add(new JLabel("chalakim"));
         // add to clock
         gbc.gridx = 0; gbc.gridy = 1;
@@ -97,7 +98,7 @@ public class HalachicClockPanel implements UpdatablePanel
 
             // recalculate shaah-hour length
             shaahMillis = clock.getTerminatorTimes().getTekufahShaah(0);
-            cheilekFracPerMilli = (double) 1800 / shaahMillis; // 1800 chalakim in sha'ah; TODO reference to final
+            cheilekFracPerMilli = (double) Constants.CHALAKIM_PER_SHAAH / shaahMillis;
 
             // Standard-to-Halachic conversion ratio:
             // (number of millis in a standard hour) divided by (number of millis in halachic hour) and then flipped
