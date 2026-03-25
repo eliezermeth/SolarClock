@@ -190,7 +190,7 @@ public class DigitalClockPanel extends JPanel implements UpdatablePanel
         frame.setLayout(new BorderLayout());
 
         // Create DigitalClockPanel
-        DigitalClockPanel dcp = new DigitalClockPanel(clock);
+        DigitalClockPanel dcp = new DigitalClockPanel();
         //dcp.setPreferredSize(new Dimension(frame.getWidth(), frame.getHeight()));
         frame.add(dcp, BorderLayout.CENTER);
 
