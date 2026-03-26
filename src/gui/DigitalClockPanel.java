@@ -38,8 +38,6 @@ public class DigitalClockPanel extends JPanel implements UpdatablePanel
      */
     public DigitalClockPanel()
     {
-        this.clock = ClockBrain.getInstance();
-
         this.setLayout(new GridBagLayout());
         //gridPanel.setPreferredSize(new Dimension(frame.getWidth(), frame.getHeight()));
         //frame.add(gridPanel, BorderLayout.CENTER);
