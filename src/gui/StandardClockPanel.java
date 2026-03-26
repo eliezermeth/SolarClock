@@ -1,14 +1,13 @@
 package gui;
 
-import interfaces.UpdatablePanel;
+import interfaces.ClockObserver;
 import main.ClockBrain;
-import main.Main;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalTime;
 
-public class StandardClockPanel implements UpdatablePanel
+public class StandardClockPanel implements ClockObserver
 {
     private ClockBrain clock;
     private DigitalClockPanel parent;
@@ -24,6 +23,9 @@ public class StandardClockPanel implements UpdatablePanel
         this.panel = child;
 
         createStandardClock();
+
+        // register with ClockBrain as an observer
+        clock.registerObserver(this);
     }
 
     private void createStandardClock()
@@ -63,16 +65,19 @@ public class StandardClockPanel implements UpdatablePanel
 
     public void updateStandardClock()
     {
-        LocalTime ct = clock.getCurrentTime();
+        updateStandardClock(clock.getCurrentTime());
+    }
 
-        components[0].setText(String.format("%02d", ct.getHour()));
-        components[1].setText(String.format("%02d", ct.getMinute()));
-        components[2].setText(String.format("%02d", ct.getSecond()));
+    public void updateStandardClock(LocalTime time)
+    {
+        components[0].setText(String.format("%02d", time.getHour()));
+        components[1].setText(String.format("%02d", time.getMinute()));
+        components[2].setText(String.format("%02d", time.getSecond()));
     }
 
     @Override
-    public void update()
+    public void updateTime(LocalTime time)
     {
-        updateStandardClock();
+        updateStandardClock(time);
     }
 }

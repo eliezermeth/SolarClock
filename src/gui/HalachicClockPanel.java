@@ -1,8 +1,7 @@
 package gui;
 
-import interfaces.UpdatablePanel;
+import interfaces.ClockObserver;
 import main.ClockBrain;
-import main.Main;
 import util.Constants;
 import util.Terminator;
 import util.TimeUtil;
@@ -11,7 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.LocalTime;
 
-public class HalachicClockPanel implements UpdatablePanel
+public class HalachicClockPanel implements ClockObserver
 {
     private ClockBrain clock;
     private DigitalClockPanel parent;
@@ -36,6 +35,9 @@ public class HalachicClockPanel implements UpdatablePanel
         this.panel = child;
 
         createHalachicClock();
+
+        // register with ClockBrain as an observer
+        clock.registerObserver(this);
     }
 
     private void createHalachicClock()
@@ -89,7 +91,19 @@ public class HalachicClockPanel implements UpdatablePanel
         panel.add(standPanel, gbc);
     }
 
+    /**
+     * Update the halachic clock.
+     */
     public void updateHalachicClock()
+    {
+        updateHalachicClock(clock.getCurrentTime());
+    }
+
+    /**
+     * Update the halachic clock to the current time.
+     * @param currentTime
+     */
+    public void updateHalachicClock(LocalTime currentTime)
     {
         if (clock.getTerminatorTimes().getStartingTerminator() != currentTekufah)
         {
@@ -111,7 +125,7 @@ public class HalachicClockPanel implements UpdatablePanel
         }
 
         // get length from beginning of tekufah until now
-        long millisElapsed = TimeUtil.calculateMillisBetween(tekufahStart, clock.getCurrentTime());
+        long millisElapsed = TimeUtil.calculateMillisBetween(tekufahStart, currentTime);
         long hHours = millisElapsed / shaahMillis; // num of elapsed hours
         long hRemainder = millisElapsed % shaahMillis; // remaining time; hours deducted
 
@@ -132,8 +146,8 @@ public class HalachicClockPanel implements UpdatablePanel
     }
 
     @Override
-    public void update()
+    public void updateTime(LocalTime time)
     {
-        updateHalachicClock();
+        updateHalachicClock(time);
     }
 }

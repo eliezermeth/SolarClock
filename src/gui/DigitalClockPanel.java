@@ -2,15 +2,13 @@ package gui;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
-import interfaces.UpdatablePanel;
-import main.ClockBrain;
+import interfaces.ClockObserver;
 import main.Main;
 import util.GeoData;
 import util.Regions;
 
 import javax.swing.*;
 import java.awt.*;
-import java.time.LocalTime;
 import java.util.LinkedList;
 import java.util.TimeZone;
 
@@ -18,7 +16,7 @@ import java.util.TimeZone;
  * Panel to contain the digital clock and related information.  To be used as a layer of the greater program.
  * Individual cells will be used by other classes to create the smaller digital clock parts.
  */
-public class DigitalClockPanel extends JPanel implements UpdatablePanel
+public class DigitalClockPanel extends JPanel
 {
     private boolean
             standardClockEnabled = false,
@@ -27,11 +25,6 @@ public class DigitalClockPanel extends JPanel implements UpdatablePanel
             upcomingTimesEnabled = false;
     private JPanel[][] cells; // to hold cells that used by elements
     private JPanel standardClockPanel, halachicClockPanel, conversionTablePanel, upcomingTimesPanel;
-    private LinkedList<UpdatablePanel> updatablePanelsList = new LinkedList<>();
-
-    // Elements to be updated
-    // Standard clock:
-    private JLabel[] standardTimeComponents = new JLabel[3];
 
     /**
      *
@@ -87,13 +80,11 @@ public class DigitalClockPanel extends JPanel implements UpdatablePanel
     private void createStandardClock()
     {
         StandardClockPanel scp = new StandardClockPanel(this, standardClockPanel);
-        addUpdatablePanel(scp);
     }
 
     private void createHalachicClock()
     {
         HalachicClockPanel hcp = new HalachicClockPanel( this, halachicClockPanel);
-        addUpdatablePanel(hcp);
     }
 
     private void createConversionTable()
@@ -104,18 +95,6 @@ public class DigitalClockPanel extends JPanel implements UpdatablePanel
     private void createUpcomingTimes()
     {
 
-    }
-
-    private void addUpdatablePanel(UpdatablePanel panel)
-    {
-        updatablePanelsList.add(panel);
-    }
-
-    @Override
-    public void update()
-    {
-        for (UpdatablePanel panel : updatablePanelsList)
-            panel.update();
     }
 
     // --------------------------------------------------------------

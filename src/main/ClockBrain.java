@@ -2,6 +2,7 @@ package main;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
+import interfaces.ClockObserver;
 import interfaces.EqualViewOption;
 import util.*;
 
@@ -10,11 +11,12 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.TimeZone;
 
 /**
  * Singleton class for holding the logic of the clock - the ComplexZmanimCalendar, current time, and time methods that
- * are not specialized to a single use.
+ * are not specialized to a single use.  Allows observers using the <code>ClockObserver</code> interface.
  */
 public final class ClockBrain
 {
@@ -33,6 +35,8 @@ public final class ClockBrain
 
     protected boolean timeProgression = false; // if time is to move
     protected Timer timer;
+
+    private final List<ClockObserver> observers = new ArrayList<>();
 
     private ClockBrain()
     {
@@ -278,10 +282,43 @@ public final class ClockBrain
                 }
             }
 
-            // TODO everything that needs to be done should happen here
+            // everything that needs to be done, should happen here
+            notifyObservers();
+            // TODO how to properly repaint?
 
         });
     }
+
+    // Observer methods ----------------------------------------------------------------------
+
+    /**
+     * Add an observer to the ClockBrain.
+     * @param observer
+     */
+    public void registerObserver(ClockObserver observer)
+    {
+        observers.add(observer);
+    }
+
+    /**
+     * Remove an observer from the ClockBrain.
+     * @param observer
+     */
+    public void unregisterObserver(ClockObserver observer)
+    {
+        observers.remove(observer);
+    }
+
+    /**
+     * Notify observers.
+     */
+    private void notifyObservers()
+    {
+        for (ClockObserver observer : observers)
+            observer.updateTime(getCurrentTime());
+    }
+
+    // ---------------------------------------------------------------------------------------
 
     public static void main(String[] args)
     {
