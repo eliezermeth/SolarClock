@@ -37,6 +37,7 @@ public class StandardClockPanel implements ClockObserver
         // Label
         gbc.gridx = 0; gbc.gridy = 0;
         JLabel text = new JLabel("Standard Time:");
+        text.setMaximumSize(text.getPreferredSize());
         panel.add(text, gbc);
 
         // Initialize changing components

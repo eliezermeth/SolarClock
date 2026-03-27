@@ -9,6 +9,10 @@ import util.Regions;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.TimeZone;
 
@@ -23,68 +27,164 @@ public class DigitalClockPanel extends JPanel
             halachicClockEnabled = false,
             conversionTableEnabled = false,
             upcomingTimesEnabled = false;
-    private JPanel[][] cells; // to hold cells that used by elements
-    private JPanel standardClockPanel, halachicClockPanel, conversionTablePanel, upcomingTimesPanel;
+    private final JPanel
+            standardClockPanel = new JPanel(),
+            halachicClockPanel = new JPanel(),
+            conversionTablePanel = new JPanel(),
+            upcomingTimesPanel = new JPanel();
+
+    // Grid size; can be changed to allow different scales
+    private final int cols = 15;
+    private final int rows = 10;
+
+    private final ArrayList<GridRegion> regions = new ArrayList<>();
+    private boolean[][] occupied; // tracks which cells are already taken
 
     /**
      *
      */
     public DigitalClockPanel()
     {
-        this.setLayout(new GridBagLayout());
-        //gridPanel.setPreferredSize(new Dimension(frame.getWidth(), frame.getHeight()));
-        //frame.add(gridPanel, BorderLayout.CENTER);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-
-        cells = new JPanel[3][3]; // change code to allow for multiple?
-
-        // Create grid normally
-        for (int x = 0; x < 3; x++)
-            for (int y = 0; y < 3; y++)
-            {
-                cells[x][y] = new JPanel();
-            }
-
-        // Merge W and SW cells
-        cells[0][2] = cells[0][1]; // make SW pointer use W cell
-
-        // Set constraints for all cells
-        for (int x = 0; x < 3; x++)
-            for (int y = 0; y < 3; y++)
-            {
-                if (y > 0 && cells[x][y] == cells[x][y-1]) // if same as cell above
-                    continue;
-
-                gbc.gridx = x; gbc.gridy = y;
-                gbc.gridwidth = 1; gbc.gridheight = 1;
-                gbc.weightx = 1; gbc.weighty = 1;
-
-                if (y < 2 && cells[x][y] == cells[x][y+1]) // detect vertical span
-                    gbc.gridheight = 2;
-
-                this.add(cells[x][y], gbc);
-            }
-
-        // Name used cells
-        standardClockPanel = cells[0][0];
-        halachicClockPanel = cells[2][0];
-        conversionTablePanel = cells[0][2];
-        upcomingTimesPanel = cells[2][2];
-
-        // for testing
-        cells[0][0].setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        cells[0][1].setBorder(BorderFactory.createLineBorder(Color.RED));
+        buildLayout();
+        buildRegions(); // user-defined regions
+        validateRegions();
+        fillEmptyRegions(); // optional
+        applyRegions();
+        debugBorders(); // optional
     }
+
+    /**
+     * Layout setup.
+     */
+    private void buildLayout()
+    {
+        GridBagLayout gbl = new GridBagLayout();
+
+        gbl.rowWeights = new double[rows];
+        gbl.columnWeights = new double[cols];
+        gbl.rowHeights = new int[rows];
+        gbl.columnWidths = new int[cols];
+
+        Arrays.fill(gbl.rowWeights, 1.0);
+        Arrays.fill(gbl.columnWeights, 1.0);
+
+        this.setLayout(gbl);
+    }
+
+    /**
+     * Build needed regions of the layout, using wrapper panels.
+     */
+    private void buildRegions()
+    {
+        regions.clear();
+
+        // add clock regions
+        regions.add(new GridRegion(1, 1, 3, 2, buildZeroingWrapper(standardClockPanel)));
+        regions.add(new GridRegion(11, 1, 3, 2, buildZeroingWrapper(halachicClockPanel)));
+
+        // taller regions
+        regions.add(new GridRegion(1, 5, 3, 4, new JPanel())); // upcomingTimesPanel
+        regions.add(new GridRegion(11, 5, 3, 4, new JPanel())); // conversionTablePanel
+    }
+
+    /**
+     * Build a wrapper panel for another panel.  The wrapper will not influence <code>GridBagLayout</code>'s expanding
+     * feature to increase the size the panel takes, but will remain within its preset bounds.
+     * @param panel <code>JPanel</code> to be placed inside wrapper
+     * @return wrapper <code>JPanel</code>
+     */
+    private JPanel buildZeroingWrapper(JPanel panel)
+    {
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.add(panel, BorderLayout.CENTER);
+
+        // set minimum/preferred size to 0, 0 to prevent it from expanding the GridBagLayout
+        wrapper.setPreferredSize(new Dimension(0, 0));
+        wrapper.setMinimumSize(new Dimension(0, 0));
+
+        return wrapper;
+    }
+
+    /**
+     * Validate no regions overlap or go out of bounds, and mark occupied cells.
+     */
+    private void validateRegions()
+    {
+        occupied = new boolean[cols][rows];
+
+        for (GridRegion r : regions)
+        {
+            for (int x = r.x; x < r.x + r.width; x++)
+            {
+                for (int y = r.y; y < r.y + r.height; y++)
+                {
+                    if (x >= cols || y >= rows)
+                        throw new IllegalStateException("Region out of bounds: (" + x + "," + y + ")");
+
+                    if (occupied[x][y])
+                        throw new IllegalStateException("Overlapping region at: (" + x + "," + y + ")");
+
+                    occupied[x][y] = true;
+                }
+            }
+        }
+    }
+
+    /**
+     * For debugging; adds regions to the unused sections of the grid.
+     */
+    private void fillEmptyRegions()
+    {
+        for (int x = 0; x < cols; x++)
+            for (int y = 0; y < rows; y++)
+                if (!occupied[x][y]) // if cell is not occupied, create 1x1 region
+                {
+                    GridRegion filler = new GridRegion(x, y, 1, 1, new JPanel());
+                    regions.add(filler);
+                    occupied[x][y] = true; // mark slot as currently occupied
+                }
+    }
+
+    /**
+     * Add regions to panel.
+     */
+    private void applyRegions()
+    {
+        for (GridRegion r : regions)
+        {
+            GridBagConstraints gbc = new GridBagConstraints();
+
+            gbc.gridx = r.x; gbc.gridy = r.y;
+            gbc.gridwidth = r.width; gbc.gridheight = r.height;
+
+            gbc.weightx = 1.0; gbc.weighty = 1.0;
+            gbc.fill = GridBagConstraints.BOTH;
+
+            this.add(r.panel, gbc);
+        }
+    }
+
+    /**
+     * For debugging; adds a border around each region.
+     */
+    private void debugBorders()
+    {
+        for (GridRegion r : regions)
+            r.panel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+    }
+
+    /// --------------------------------------------------------------
+    // Component Creation
+    // --------------------------------------------------------------
 
     private void createStandardClock()
     {
-        StandardClockPanel scp = new StandardClockPanel(this, standardClockPanel);
+        new StandardClockPanel(this, standardClockPanel);
     }
 
     private void createHalachicClock()
     {
-        HalachicClockPanel hcp = new HalachicClockPanel( this, halachicClockPanel);
+        new HalachicClockPanel( this, halachicClockPanel);
     }
 
     private void createConversionTable()
@@ -101,7 +201,6 @@ public class DigitalClockPanel extends JPanel
     // Setters / Getters
     // --------------------------------------------------------------
 
-    // TODO modify so has direct reference to cells
     public void setStandardClockEnabled(boolean enabled)
     {
         this.standardClockEnabled = enabled;
@@ -150,16 +249,6 @@ public class DigitalClockPanel extends JPanel
 
     public static void main(String[] args)
     {
-        // set up clock
-        GeoData location = Regions.getLocation("Pikesville");
-        Main clock = new Main(new ComplexZmanimCalendar(
-                new GeoLocation(
-                        location.getName(), location.getLatitude(), location.getLongitude(),
-                        TimeZone.getTimeZone(location.getRegion())
-                )
-        ));
-        // TODO time progression, tekufah flips?
-
         // Create JFrame (main window of application)
         JFrame frame = new JFrame("JLayeredPane Example");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

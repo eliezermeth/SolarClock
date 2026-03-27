@@ -25,19 +25,11 @@ public class Main
 {
     protected ComplexZmanimCalendar czc;
 
-    protected ZoneId zoneId;
-    protected LocalTime currentTime;
     protected boolean equalDayNightView = false;
     protected ViewMode viewMode; // not needed - visual clock type
 
-    protected TerminatorTimes terminatorTimes = new TerminatorTimes();
 
     protected final long MILLIS_PER_DAY = 86400000L;
-
-    protected ArrayList<EqualViewOption> updatable = new ArrayList<>();
-
-    protected boolean timeProgression = false; // if time is to move
-    protected Timer timeAdvancement;
 
     /**
      * Initialize the program
@@ -121,5 +113,3 @@ class DigitalClock
     public void setHalachicTimeStandard(String s) { halachicTimeStandard.setText(s); }
     public void setHalachicHourLength(String s) { halachicHourLength.setText(s); }
 }
-
-// TODO: code to calculate halachic time
