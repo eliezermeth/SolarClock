@@ -1,9 +1,9 @@
 package gui;
 
+import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
-import util.Circle;
-import util.Terminator;
-import util.TimeUtil;
+import main.ClockBrain;
+import util.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,38 +12,52 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnalogClockGUI extends JPanel implements EqualViewOption
+public class AnalogClockGUI extends JPanel implements TimeObserver, EqualViewOption
 {
-    private final ZmanGUI parent;
+    private ClockBrain clock; // singleton; provider
 
     // for use to set lines at proper position in circle
+    /**
+     * Radians for the position of sunrise on the clock.
+     */
     private double offsetSunrise;
+    /**
+     * Radians for the position of sunset on the clock.
+     */
     private double offsetSunset;
     // range of day and night of circle
+    /**
+     * The distance clockwise from the sunrise angle to the sunset angle (e.g. day).
+     */
     private double angularSpanDay;
+    /**
+     * The distance clockwise from the sunset angle to the sunrise angle (e.g. night).
+     */
     private double angularSpanNight;
 
     private final List<StaticLine> staticLines = new ArrayList<>();
 
-    public AnalogClockGUI(ZmanGUI parent)
+    /**
+     * The <code>Graphics2D</code> object used for painting on the panel.
+     */
+    private Graphics2D g2d;
+
+    public AnalogClockGUI()
     {
-        this.parent = parent;
-        System.out.println("constructor");
+        clock = ClockBrain.getInstance();
     }
 
     @Override
     protected void paintComponent(Graphics g)
     {
         super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
+        g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        System.out.println("paintComponents");
-        drawClock(g2d);
+        drawClock();
     }
 
-    private void drawClock(Graphics2D g2d)
+    private void drawClock()
     {
-        System.out.println("drawClock");
         int width = getWidth();
         int height = getHeight();
         int diameter = Math.min(width, height) - 50;
@@ -78,39 +92,48 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
         {
             g2d.setColor(line.color);
             g2d.setStroke(new BasicStroke(line.thickness));
-            drawLineForTime(g2d, centerX, centerY, radius, line.time);
+            drawLineForTime(centerX, centerY, radius, line.time);
 
             if (line.label != null)
             {
-                drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
+                drawLabel(centerX, centerY, radius, line.time, line.label);
             }
         }
 
         // Draw the dynamic current time hand
-        if (parent.currentTime != null)
-        {
-            g2d.setColor(Color.RED);
-            g2d.setStroke(new BasicStroke(1));
-            drawLineForTime(g2d, centerX, centerY, radius, parent.currentTime);
-        }
+        if (clock.getCurrentTime() != null)
+            drawLineForTime(centerX, centerY, radius, clock.getCurrentTime());
 
-        // Draw the circle outline
-        g2d.setColor(Color.BLACK);
-        g2d.setStroke(new BasicStroke(2.0f));
-        g2d.drawOval(centerX - radius, centerY - radius, diameter, diameter);
-        g2d.setStroke(new BasicStroke(1.0f));
+        // Draw the circle outline; last to place over other elements that may overlap
+        drawBoundingCircle(centerX - radius, centerY - radius, diameter, diameter);
     }
 
-    private void drawLineForTime(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time)
+    private void drawLineForTime(int centerX, int centerY, int radius, LocalTime time)
     {
         double angle = calculateAngle(time);
         int endX = (int) (centerX + radius * Math.cos(angle));
         int endY = (int) (centerY - radius * Math.sin(angle));
+
+        g2d.setColor(Color.RED);
+        g2d.setStroke(new BasicStroke(1));
         g2d.drawLine(centerX, centerY, endX, endY);
     }
 
+    /**
+     * Draw the circle outline; drawn last to place it over other elements that may overlap.
+     *
+     * TODO change for different viewmodes?
+     */
+    private void drawBoundingCircle(int upperLeftX, int upperLeftY, int width, int height)
+    {
+        g2d.setColor(Color.BLACK);
+        g2d.setStroke(new BasicStroke(2.0f));
+        g2d.drawOval(upperLeftX, upperLeftY, width, height);
+        g2d.setStroke(new BasicStroke(1.0f)); // reset stroke
+    }
+
     // TODO make so label does not overlap other elements
-    private void drawLabel(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time, String label)
+    private void drawLabel(int centerX, int centerY, int radius, LocalTime time, String label)
     {
         double angle = calculateAngle(time);
         int labelX = (int) (centerX + (radius + 20) * Math.cos(angle));
@@ -125,11 +148,12 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
         int targetedTekufah; // what tekufah the targeted time is during
         boolean daytime;
 
-        if (time.equals(parent.terminatorTimes.getTerminator(0)) || // during first span
-                time.isAfter(parent.terminatorTimes.getTerminator(0)) && time.isBefore(parent.terminatorTimes.getTerminator(1)))
+        if (time.equals(clock.getTerminatorTimes().getTerminator(0)) || // during first span; is start time
+                time.isAfter(clock.getTerminatorTimes().getTerminator(0)) // or between start and next tekufah
+                        && time.isBefore(clock.getTerminatorTimes().getTerminator(1)))
         {
             targetedTekufah = 0; // use first and second terminators
-            if (parent.terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE))
+            if (clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE))
             {
                 angularSpan = angularSpanDay; // use day span for percent; use day calculations
                 daytime = true;
@@ -143,7 +167,7 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
         else // during second span
         {
             targetedTekufah = 1; // use second and third terminators
-            if (parent.terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE))
+            if (clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE))
             {
                 angularSpan = angularSpanNight;
                 daytime = false;
@@ -155,9 +179,9 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
             }
         }
 
-        long totalSeconds = TimeUtil.calculateMillisBetween(parent.terminatorTimes.getTerminator(targetedTekufah),
-                parent.terminatorTimes.getTerminator(targetedTekufah + 1));
-        long currentSeconds = TimeUtil.calculateMillisBetween(parent.terminatorTimes.getTerminator(targetedTekufah),
+        long totalSeconds = TimeUtil.calculateMillisBetween(clock.getTerminatorTimes().getTerminator(targetedTekufah),
+                clock.getTerminatorTimes().getTerminator(targetedTekufah + 1));
+        long currentSeconds = TimeUtil.calculateMillisBetween(clock.getTerminatorTimes().getTerminator(targetedTekufah),
                 time);
 
         // get percent of angular span
@@ -174,7 +198,9 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
      */
     public void calculateEqualDayNightView()  // ---------------------- For clock only
     {
-        if (parent.equalDayNightView)
+        // TODO should only need to be triggered once per tekufah, or whenever equalDayNight is changed
+
+        if (Settings.equalDayNightView) // TODO how best to change this
         {
             offsetSunrise = Circle.LEFT.radians; // where 9 o'clock would be on a normal clock
             offsetSunset = Circle.RIGHT.radians; // where 3 o'clock would be on a normal clock; use instead of 0 for further calculations
@@ -190,13 +216,13 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
 
             // The current tekufah will have its percentage rendered correctly (the other may be slightly too
             // large/small); however, the day portion will be centered to the top of the 24-hour circle.
-            long periodTime = parent.terminatorTimes.getTekufahSpan(0);
+            long periodTime = clock.getTerminatorTimes().getTekufahSpan(0);
 
-            double topPeriodTime = periodTime; // initilize to daytime
-            if (parent.terminatorTimes.getStartingTerminator().equals(Terminator.SUNSET))
-                topPeriodTime = parent.MILLIS_PER_DAY - periodTime; // if first period is night, get 24-hour remainder and set top
+            double topPeriodTime = periodTime; // initialize to daytime
+            if (clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNSET))
+                topPeriodTime = Constants.MILLIS_PER_DAY - periodTime; // if first period is night, get 24-hour remainder and set top
 
-            double percentOfCircle = (topPeriodTime / parent.MILLIS_PER_DAY) * 100;
+            double percentOfCircle = (topPeriodTime / Constants.MILLIS_PER_DAY) * 100;
             double halfDaySegment = percentOfCircle / 2;
             double radianOnePercent = (2 * Math.PI) / 100;
             double sunriseAngle = Circle.TOP.radians + (halfDaySegment * radianOnePercent);
@@ -217,9 +243,11 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
      */
     public void addTerminatorLines()
     {
-        this.addStaticLine(parent.terminatorTimes.getTerminator(0), parent.terminatorTimes.getStartingTerminator().toString(), 3, Color.GREEN);
-        Terminator other = parent.terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE) ? Terminator.SUNSET : Terminator.SUNRISE;
-        this.addStaticLine(parent.terminatorTimes.getTerminator(1), other.toString(), 3, Color.GREEN);
+        this.addStaticLine(clock.getTerminatorTimes().getTerminator(0),
+                clock.getTerminatorTimes().getStartingTerminator().toString(), 3, Color.GREEN);
+        Terminator other = clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE) ?
+                Terminator.SUNSET : Terminator.SUNRISE;
+        this.addStaticLine(clock.getTerminatorTimes().getTerminator(1), other.toString(), 3, Color.GREEN);
     }
 
     /**
@@ -230,14 +258,14 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
         // calculate shaah for the time period
         // start of tekufah; offset of time due to day or night
         int[][] tekufahSettings = new int[][] {
-                new int[] { 0, parent.terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE) ? 0 : 12},
-                new int[] { 1, parent.terminatorTimes.getStartingTerminator().equals(Terminator.SUNSET) ? 0 : 12}
+                new int[] { 0, clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE) ? 0 : 12},
+                new int[] { 1, clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNSET) ? 0 : 12}
         };
 
         for (int[] tekufah : tekufahSettings)
         {
-            LocalTime tekufahStart = parent.terminatorTimes.getTerminator(tekufah[0]);
-            long tekufahShaah = parent.terminatorTimes.getTekufahShaah(tekufah[0]);
+            LocalTime tekufahStart = clock.getTerminatorTimes().getTerminator(tekufah[0]);
+            long tekufahShaah = clock.getTerminatorTimes().getTekufahShaah(tekufah[0]);
 
             for (int i = 1; i < 12; i++)
             {
@@ -260,6 +288,12 @@ public class AnalogClockGUI extends JPanel implements EqualViewOption
     {
         staticLines.clear();
         repaint();
+    }
+
+    @Override
+    public void updateTime(LocalTime time)
+    {
+        // TODO find where the current time is added/calculated
     }
 
     @Override

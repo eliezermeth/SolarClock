@@ -1,6 +1,7 @@
 package gui;
 
-import interfaces.ClockObserver;
+import interfaces.TerminatorObserver;
+import interfaces.TimeObserver;
 import main.ClockBrain;
 import util.Constants;
 import util.Terminator;
@@ -10,7 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.LocalTime;
 
-public class HalachicClockPanel implements ClockObserver
+public class HalachicClockPanel implements TimeObserver, TerminatorObserver
 {
     private ClockBrain clock;
     private DigitalClockPanel parent;
@@ -37,7 +38,8 @@ public class HalachicClockPanel implements ClockObserver
         createHalachicClock();
 
         // register with ClockBrain as an observer
-        clock.registerObserver(this);
+        clock.registerTimeObserver(this);
+        clock.registerTerminatorObserver(this);
     }
 
     private void createHalachicClock()
@@ -57,6 +59,7 @@ public class HalachicClockPanel implements ClockObserver
         for (int i = 0; i < 3; i++)
             regularClockComponents[i] = new JLabel("--"); // standard clock
 
+        updateTerminatorCalculations();
         updateHalachicClock();
 
         // Lay out clocks
@@ -105,25 +108,6 @@ public class HalachicClockPanel implements ClockObserver
      */
     public void updateHalachicClock(LocalTime currentTime)
     {
-        if (clock.getTerminatorTimes().getStartingTerminator() != currentTekufah)
-        {
-            // reset current tekufah
-            currentTekufah = clock.getTerminatorTimes().getStartingTerminator();
-            tekufahStart = clock.getTerminatorTimes().getTerminator(0);
-
-            // recalculate shaah-hour length
-            shaahMillis = clock.getTerminatorTimes().getTekufahShaah(0);
-            cheilekFracPerMilli = (double) Constants.CHALAKIM_PER_SHAAH / shaahMillis;
-
-            // Standard-to-Halachic conversion ratio:
-            // (number of millis in a standard hour) divided by (number of millis in halachic hour) and then flipped
-            // over 1 to change it to a multiplication factor (1.1 -> 0.9; 0.9 -> 1.1; etc)
-            double clockStyleConversionRatio = 2.0 - ((60000 * 60) / (double) shaahMillis);
-            // results in the number of milliseconds in a halachic-style millisecond for the tekufah
-            adjustedMinuteLength = 60000 * clockStyleConversionRatio; // 60,000 milliseconds in 1 minute
-            adjustedSecondLength = 1000 * clockStyleConversionRatio; // 1,000 milliesconds in 1 second
-        }
-
         // get length from beginning of tekufah until now
         long millisElapsed = TimeUtil.calculateMillisBetween(tekufahStart, currentTime);
         long hHours = millisElapsed / shaahMillis; // num of elapsed hours
@@ -149,5 +133,25 @@ public class HalachicClockPanel implements ClockObserver
     public void updateTime(LocalTime time)
     {
         updateHalachicClock(time);
+    }
+
+    @Override
+    public void updateTerminatorCalculations()
+    {
+        // reset current tekufah
+        currentTekufah = clock.getTerminatorTimes().getStartingTerminator();
+        tekufahStart = clock.getTerminatorTimes().getTerminator(0);
+
+        // recalculate shaah-hour length
+        shaahMillis = clock.getTerminatorTimes().getTekufahShaah(0);
+        cheilekFracPerMilli = (double) Constants.CHALAKIM_PER_SHAAH / shaahMillis;
+
+        // Standard-to-Halachic conversion ratio:
+        // (number of millis in a standard hour) divided by (number of millis in halachic hour) and then flipped
+        // over 1 to change it to a multiplication factor (1.1 -> 0.9; 0.9 -> 1.1; etc)
+        double clockStyleConversionRatio = 2.0 - ((60000 * 60) / (double) shaahMillis);
+        // results in the number of milliseconds in a halachic-style millisecond for the tekufah
+        adjustedMinuteLength = 60000 * clockStyleConversionRatio; // 60,000 milliseconds in 1 minute
+        adjustedSecondLength = 1000 * clockStyleConversionRatio; // 1,000 milliesconds in 1 second
     }
 }

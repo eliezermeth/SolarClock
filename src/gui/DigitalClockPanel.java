@@ -1,20 +1,9 @@
 package gui;
 
-import com.kosherjava.zmanim.ComplexZmanimCalendar;
-import com.kosherjava.zmanim.util.GeoLocation;
-import interfaces.ClockObserver;
-import main.Main;
-import util.GeoData;
-import util.Regions;
-
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.TimeZone;
 
 /**
  * Panel to contain the digital clock and related information.  To be used as a layer of the greater program.

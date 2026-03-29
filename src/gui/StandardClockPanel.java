@@ -1,13 +1,13 @@
 package gui;
 
-import interfaces.ClockObserver;
+import interfaces.TimeObserver;
 import main.ClockBrain;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalTime;
 
-public class StandardClockPanel implements ClockObserver
+public class StandardClockPanel implements TimeObserver
 {
     private ClockBrain clock;
     private DigitalClockPanel parent;
@@ -25,7 +25,7 @@ public class StandardClockPanel implements ClockObserver
         createStandardClock();
 
         // register with ClockBrain as an observer
-        clock.registerObserver(this);
+        clock.registerTimeObserver(this);
     }
 
     private void createStandardClock()

@@ -310,7 +310,7 @@ public class ZmanGUI
         // clock.setCurrentTime(LocalTime.now());
 
         // Create analog clock
-        AnalogClockGUI analogClockPanel = new AnalogClockGUI(clock);
+        AnalogClockGUI analogClockPanel = new AnalogClockGUI();
         System.out.println(masterFrame.getHeight());
         Dimension clockSize = new Dimension(masterFrame.getHeight() - 100, masterFrame.getHeight() - 100); // TODO change
         analogClockPanel.setBounds(

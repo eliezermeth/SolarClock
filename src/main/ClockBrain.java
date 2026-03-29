@@ -2,7 +2,8 @@ package main;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
-import interfaces.ClockObserver;
+import interfaces.TerminatorObserver;
+import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
 import util.*;
 
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Singleton class for holding the logic of the clock - the ComplexZmanimCalendar, current time, and time methods that
@@ -28,15 +30,18 @@ public final class ClockBrain
     protected LocalTime currentTime;
 
     protected TerminatorTimes terminatorTimes = new TerminatorTimes();
-
-    protected final long MILLIS_PER_DAY = 86400000L;
+    /**
+     * Lock to prevent Timer from causing updates to sections while terminator times need to be updated.
+     */
+    private final ReentrantLock lock = new ReentrantLock();
 
     protected ArrayList<EqualViewOption> updatable = new ArrayList<>();
 
     protected boolean timeProgression = false; // if time is to move
     protected Timer timer;
 
-    private final List<ClockObserver> observers = new ArrayList<>();
+    private final List<TimeObserver> timeObservers = new ArrayList<>();
+    private final List<TerminatorObserver> terminatorObservers = new ArrayList<>();
 
     private ClockBrain()
     {
@@ -142,30 +147,37 @@ public final class ClockBrain
      */
     private void updateTerminatorTimes()
     {
-        // if any terminator time is null, just calculate all to be safe
-        for (int i = 0; i < 3; i++)
-            if (terminatorTimes.getTerminator(i) == null) // if any time is null
+        // prevent timer from causing time updates
+        lock.lock(); // must occur; demand the lock
+
+        try {
+            // if any terminator time is null, just calculate all to be safe
+            for (int i = 0; i < 3; i++)
+                if (terminatorTimes.getTerminator(i) == null) // if any time is null
+                {
+                    calculateSolarTerminators();
+                    return; // no point in updating since all times now set
+                }
+
+            // get next terminator time to be saved
+            // if current terminator head is SUNRISE, will need next SUNSET; and vice versa
+            LocalTime nextTime;
+            if (terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE)) // need tomorrow's sunset
             {
-                calculateSolarTerminators();
-                return; // no point in updating since all times now set
+                ComplexZmanimCalendar future = changeDay(this.czc, 1);
+                nextTime = TimeUtil.dateToLocalTime(future.getSunset(), future);
+            }
+            else // starting terminator is SUNSET; need aftermorrow's sunrise
+            {
+                ComplexZmanimCalendar future = changeDay(this.czc, 2);
+                nextTime = TimeUtil.dateToLocalTime(future.getSunrise(), future);
             }
 
-        // get next terminator time to be saved
-        // if current terminator head is SUNRISE, will need next SUNSET; and vice versa
-        LocalTime nextTime;
-        if (terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE)) // need tomorrow's sunset
-        {
-            ComplexZmanimCalendar future = changeDay(this.czc, 1);
-            nextTime = TimeUtil.dateToLocalTime(future.getSunset(), future);
+            terminatorTimes.increment(nextTime);
+            // updateCalculateEqualDayNighView(); TODO?
+        } finally {
+            lock.unlock(); // permit timer and other elements to work on clock
         }
-        else // starting terminator is SUNSET; need aftermorrow's sunrise
-        {
-            ComplexZmanimCalendar future = changeDay(this.czc, 2);
-            nextTime = TimeUtil.dateToLocalTime(future.getSunrise(), future);
-        }
-
-        terminatorTimes.increment(nextTime);
-        // updateCalculateEqualDayNighView(); TODO?
     }
 
     /**
@@ -283,7 +295,14 @@ public final class ClockBrain
             }
 
             // everything that needs to be done, should happen here
-            notifyObservers();
+            // Attempt to acquire the lock to allow updates for the observers.  Will fail if the terminatorTimes are
+            // being updated.
+            if (lock.tryLock()) // acquire the lock if possible; if not, skip this notification
+                try {
+                    notifyTimeObservers();
+                } finally {
+                    lock.unlock(); // always unlock after done
+                }
             // TODO how to properly repaint?
 
         });
@@ -292,30 +311,57 @@ public final class ClockBrain
     // Observer methods ----------------------------------------------------------------------
 
     /**
-     * Add an observer to the ClockBrain.
+     * Add a time observer to the ClockBrain.
      * @param observer
      */
-    public void registerObserver(ClockObserver observer)
+    public void registerTimeObserver(TimeObserver observer)
     {
-        observers.add(observer);
+        timeObservers.add(observer);
     }
 
     /**
-     * Remove an observer from the ClockBrain.
+     * Remove a time observer from the ClockBrain.
      * @param observer
      */
-    public void unregisterObserver(ClockObserver observer)
+    public void unregisterTimeObserver(TimeObserver observer)
     {
-        observers.remove(observer);
+        timeObservers.remove(observer);
     }
 
     /**
-     * Notify observers.
+     * Notify time observers.
      */
-    private void notifyObservers()
+    private void notifyTimeObservers()
     {
-        for (ClockObserver observer : observers)
+        for (TimeObserver observer : timeObservers)
             observer.updateTime(getCurrentTime());
+    }
+
+    /**
+     * Add a terminator observer to the ClockBrain.
+     * @param observer
+     */
+    public void registerTerminatorObserver(TerminatorObserver observer)
+    {
+        terminatorObservers.add(observer);
+    }
+
+    /**
+     * Remove a terminator observer from the ClockBrain.
+     * @param observer
+     */
+    public void unregisterTerminatorObserver(TerminatorObserver observer)
+    {
+        terminatorObservers.remove(observer);
+    }
+
+    /**
+     * Notify terminator observers.
+     */
+    private void notifyTerminatorObservers()
+    {
+        for (TerminatorObserver observer : terminatorObservers)
+            observer.updateTerminatorCalculations();
     }
 
     // ---------------------------------------------------------------------------------------

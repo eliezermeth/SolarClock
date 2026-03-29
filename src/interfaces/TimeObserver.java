@@ -5,7 +5,7 @@ import java.time.LocalTime;
 /**
  * Interface for when the time of a clock should be updated.
  */
-public interface ClockObserver
+public interface TimeObserver
 {
 
     /**
