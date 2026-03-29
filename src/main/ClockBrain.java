@@ -200,7 +200,10 @@ public final class ClockBrain
         TimeScheduler tekufahScheduler = new TimeScheduler();
         tekufahScheduler.scheduleRepeat(
                 terminatorTimes.getTerminator(1),       // first time to occur
-                () -> updateTerminatorTimes(),            // task to run at that time
+                () -> { // tasks to run at that time
+                    updateTerminatorTimes();
+                    notifyTerminatorObservers();
+                },
                 () -> terminatorTimes.getTerminator(1) // next time supplier for when to run task
         );
     }
