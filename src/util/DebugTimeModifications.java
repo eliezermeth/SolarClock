@@ -18,8 +18,8 @@ public class DebugTimeModifications
     public enum TIME_OFFSET
     {;
         public static final boolean enabled = false;
-        public static final int HOURS = 10;
-        public static final int MINS =  28;
+        public static final int HOURS = 12;
+        public static final int MINS =  0;
         public static final int SECS =  0;
     }
 

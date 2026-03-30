@@ -23,15 +23,12 @@ public class TimeUtil
      */
     public static long calculateMillisBetween(LocalTime start, LocalTime end)
     {
-        long timeAccumulated = 0L;
+        long diff = ChronoUnit.MILLIS.between(start, end);
 
-        if (end.isBefore(start)) // overlaps midnight
-        {
-            timeAccumulated += ChronoUnit.MILLIS.between(start, LocalTime.MAX) + 1000; // add millis between MAX and midnight
-            start = LocalTime.MIDNIGHT;
-        }
+        if (diff < 0) // if end is before start, wrap result around day to get true value
+            diff += Constants.MILLIS_PER_DAY;
 
-        return timeAccumulated + ChronoUnit.MILLIS.between(start, end);
+        return diff;
     }
 
     /**

@@ -7,4 +7,4 @@ tasks encounter exceptions or long execution times.  Developers typically
 obtain a `ScheduledExecutorService` instance using 
 `Executors.newScheduledThreadPool(int corePoolSize)`.  Tasks can be scheduled 
 via `scheduleAtFixedRate(task, initialDelay, period, unit)` for periodic 
-tasks at a fixed rate.
+- 
