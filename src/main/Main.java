@@ -2,6 +2,9 @@ package main;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
+import gui.AnalogClockPanel;
+import gui.DigitalClockPanel;
+import gui.GridRegionPanel;
 import interfaces.EqualViewOption;
 import util.*;
 
@@ -25,12 +28,6 @@ public class Main
 {
     protected ComplexZmanimCalendar czc;
 
-    protected boolean equalDayNightView = false;
-    protected ViewMode viewMode; // not needed - visual clock type
-
-
-    protected final long MILLIS_PER_DAY = 86400000L;
-
     /**
      * Initialize the program
      */
@@ -41,23 +38,46 @@ public class Main
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException
     {
-        // set up clock
-        GeoData location = Regions.getLocation("Pikesville");
-        Main clock = new Main(new ComplexZmanimCalendar(
-                new GeoLocation(
-                        location.getName(), location.getLatitude(), location.getLongitude(),
-                        TimeZone.getTimeZone(location.getRegion())
-                )
-        ));
+        JFrame frame = new JFrame("Zmanim Clock");
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setSize(900, 600);
+        frame.setLayout(new BorderLayout());
 
-        // TODO for GUI?
-        // have the GUI section (here, DigitalClock) be invoked via this fashion, then it can be interacted with as normal
-        // allow swing to create thread-independent clock; ref through clockRef[0]
-        final DigitalClock[] clockRef = new DigitalClock[1];
-        SwingUtilities.invokeAndWait(() -> {
-            clockRef[0] = new DigitalClock();
-        });
-        DigitalClock digitalClock = clockRef[0];
+        // Create JLayeredPane to manage layering of components
+        JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setLayout(new OverlayLayout(layeredPane));
+        frame.add(layeredPane, BorderLayout.CENTER); // add JLayeredPane to JFrame
+
+        // Layer 0 - analog clock
+        AnalogClockPanel clockPanel = new AnalogClockPanel();
+        clockPanel.addHourTickMarks();
+        GridRegionPanel analogGRP = new GridRegionPanel(10, 15);
+        analogGRP.addRegion(2, 1, 11, 8, clockPanel);
+//        analogGRP.setFillEmptyRegions(true);
+//        analogGRP.setDebugBorders(true);
+        analogGRP.construct();
+        analogGRP.setOpaque(false);
+        layeredPane.add(analogGRP, Integer.valueOf(0));
+
+        // Layer 1 - digital clock
+        DigitalClockPanel dcp = new DigitalClockPanel();
+        dcp.setOpaque(false);
+        dcp.construct();
+        layeredPane.add(dcp, Integer.valueOf(1));
+        dcp.setStandardClockEnabled(true);
+        dcp.setHalachicClockEnabled(true);
+
+
+        frame.setVisible(true);
+
+//        // TODO for GUI?
+//        // have the GUI section (here, DigitalClock) be invoked via this fashion, then it can be interacted with as normal
+//        // allow swing to create thread-independent clock; ref through clockRef[0]
+//        final DigitalClock[] clockRef = new DigitalClock[1];
+//        SwingUtilities.invokeAndWait(() -> {
+//            clockRef[0] = new DigitalClock();
+//        });
+//        DigitalClock digitalClock = clockRef[0];
     }
 }
 

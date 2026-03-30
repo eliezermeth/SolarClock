@@ -9,12 +9,13 @@ import util.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Arc2D;
+import java.awt.image.BufferedImage;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorObserver, EqualViewOption
+public class AnalogClockPanel extends JPanel implements TimeObserver, TerminatorObserver, EqualViewOption
 {
     private ClockBrain clock; // singleton; provider
 
@@ -37,40 +38,50 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
      */
     private double angularSpanNight;
 
+    // Cached layout; recalculated based on window size whenever changed
+    private int diameter, radius, centerX, centerY;
+
+    // Static elements
     private final List<StaticLine> staticLines = new ArrayList<>();
-
-    /**
-     * The <code>Graphics2D</code> object used for painting on the panel.
-     */
-    private Graphics2D g2d;
-
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    public AnalogClockGUI()
+    // Cached static image
+    private BufferedImage staticImage;
+
+    public AnalogClockPanel()
     {
         clock = ClockBrain.getInstance();
 
+        // register with ClockBrain as an observer
+        clock.registerTimeObserver(this);
+        clock.registerTerminatorObserver(this);
+
+        // Listen to resize events to recalculate layout of clock components sizes
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                calculateLayoutDimensionPositions();
+            }
+        });
+        calculateLayoutDimensionPositions();
+
         // calculate proper angles for sunrise and sunset; recalculated when terminators changed / ViewMode changed
         calculateEqualDayNightView();
+
+        createStaticImage();
     }
 
     @Override
     protected void paintComponent(Graphics g)
     {
         super.paintComponent(g);
-        g2d = (Graphics2D) g;
+        Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        drawClock();
+        drawClock(g2d);
     }
 
-    private void drawClock()
+    private void drawClock(Graphics2D g2d)
     {
-        int width = getWidth();
-        int height = getHeight();
-        int diameter = Math.min(width, height) - 50;
-        int radius = diameter / 2;
-        int centerX = width / 2;
-        int centerY = height / 2;
 
         // Draw colored sections of circle
         Color dayColor = new Color(255, 255, 200); // light yellow
@@ -97,27 +108,27 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
         {
             g2d.setColor(line.color);
             g2d.setStroke(new BasicStroke(line.thickness));
-            drawLineAtTime(centerX, centerY, radius, line.time);
+            drawLineAtTime(g2d, centerX, centerY, radius, line.time);
 
             if (line.label != null)
             {
-                drawLabel(centerX, centerY, radius, line.time, line.label);
+                drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
             }
         }
 
-//        // Draw the dynamic current time hand
-//        if (clock.getCurrentTime() != null)
-//        {
-//            g2d.setColor(Color.RED);
-//            g2d.setStroke(new BasicStroke(1));
-//            drawLineAtTime(centerX, centerY, radius, clock.getCurrentTime());
-//        }
+        // Draw the dynamic current time hand
+        if (clock.getCurrentTime() != null)
+        {
+            g2d.setColor(Color.RED);
+            g2d.setStroke(new BasicStroke(1));
+            drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentTime());
+        }
 
         // Draw the circle outline; last to place over other elements that may overlap
-        drawBoundingCircle(centerX - radius, centerY - radius, diameter, diameter);
+        drawBoundingCircle(g2d, centerX - radius, centerY - radius, diameter, diameter);
     }
 
-    private void drawLineAtTime(int centerX, int centerY, int radius, LocalTime time)
+    private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time)
     {
         double angle = calculateAngle(time);
         int endX = (int) (centerX + radius * Math.cos(angle));
@@ -130,7 +141,7 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
      *
      * TODO change for different viewmodes?
      */
-    private void drawBoundingCircle(int upperLeftX, int upperLeftY, int width, int height)
+    private void drawBoundingCircle(Graphics2D g2d, int upperLeftX, int upperLeftY, int width, int height)
     {
         g2d.setColor(Color.BLACK);
         g2d.setStroke(new BasicStroke(2.0f));
@@ -138,16 +149,37 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
         g2d.setStroke(new BasicStroke(1.0f)); // reset stroke
     }
 
-    // TODO make so label does not overlap other elements
-    private void drawLabel(int centerX, int centerY, int radius, LocalTime time, String label)
+    private void drawLabel(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time, String label)
     {
         double angle = calculateAngle(time);
-        String angleText = String.format("%.2f", angle); // DEBUG
-        label = label + " (" + angleText + ")"; // DEBUG
-        int labelX = (int) (centerX + (radius + 20) * Math.cos(angle));
-        int labelY = (int) (centerY - (radius + 20) * Math.sin(angle));
+
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(label);
+        int textHeight = fm.getAscent();
+
+        int padding = 10;
+        int labelRadius = radius + padding + textHeight;
+
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+
+        int labelX = (int) (centerX + labelRadius * cos);
+        int labelY = (int) (centerY - labelRadius * sin);
+
+        // Horizontal alignment
+        if (Math.abs(cos) < 0.2)
+            labelX -= textWidth / 2;
+        else if (cos < 0)
+            labelX -= textWidth;
+
+        // Vertical alignment
+        if (Math.abs(sin) < 0.2)
+            labelY += textHeight / 2;
+        else if (sin > 0)
+            labelY += textHeight;
+
         g2d.setColor(Color.BLACK);
-        g2d.drawString(label, labelX - 10, labelY + 5); // Adjust for label alignment
+        g2d.drawString(label, labelX, labelY);
     }
 
     private double calculateAngle(LocalTime time)
@@ -187,8 +219,7 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
             }
         }
 
-        long totalSeconds = TimeUtil.calculateMillisBetween(clock.getTerminatorTimes().getTerminator(targetedTekufah),
-                clock.getTerminatorTimes().getTerminator(targetedTekufah + 1));
+        long totalSeconds = clock.getTerminatorTimes().getTekufahSpan(targetedTekufah);
         long currentSeconds = TimeUtil.calculateMillisBetween(clock.getTerminatorTimes().getTerminator(targetedTekufah),
                 time);
 
@@ -197,7 +228,7 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
         if (daytime)
             return offsetSunrise - spanToAdd;
         else
-            return offsetSunset - spanToAdd;
+            return offsetSunset - spanToAdd; // POTENTIAL - change to +
     }
 
     // TODO update to accommodate ViewModes
@@ -247,6 +278,72 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
     }
 
     /**
+     * Calculate the window sizes for the clock; only recalculated on resize.
+     */
+    private void calculateLayoutDimensionPositions()
+    {
+        int width = getWidth();
+        int height = getHeight();
+
+        diameter = Math.min(width, height) - 50; // padding of 50 around circle
+        radius = diameter / 2;
+        centerX = width / 2;
+        centerY = height / 2;
+    }
+
+    /**
+     * Pre-render static elements of clock to BufferedImage
+     */
+    private void createStaticImage()
+    {
+        if (getWidth() <= 0 || getHeight() <= 0) return; // window does not show
+
+        staticImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = staticImage.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Day/Night arcs
+        Color dayColor = new Color(255, 255, 200);
+        Color nightColor = new Color(100, 100, 255);
+
+        // Draw the top half of the circle
+        Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
+                Math.toDegrees(offsetSunset),
+                Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
+                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
+        g2d.setColor(dayColor); // Light yellow
+        g2d.fill(dayArc);
+
+        // Draw the bottom half of the circle
+        Arc2D.Double nightArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
+                Math.toDegrees(offsetSunrise),
+                360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
+                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
+        g2d.setColor(nightColor); // Light deep blue
+        g2d.fill(nightArc);
+
+        // Draw static lines with optional labels
+        for (StaticLine line : staticLines)
+        {
+            g2d.setColor(line.color);
+            g2d.setStroke(new BasicStroke(line.thickness));
+            drawLineAtTime(g2d, centerX, centerY, radius, line.time);
+
+            if (line.label != null)
+            {
+                drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
+            }
+        }
+
+        // Draw circle outline
+        g2d.setColor(Color.BLACK);
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawOval(centerX - radius, centerY - radius, diameter, diameter);
+
+        g2d.dispose();
+    }
+
+    /**
      * Display sunrise and sunset lines.
      */
     public void addTerminatorLines()
@@ -275,7 +372,7 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
             LocalTime tekufahStart = clock.getTerminatorTimes().getTerminator(tekufah[0]);
             long tekufahShaah = clock.getTerminatorTimes().getTekufahShaah(tekufah[0]);
 
-            for (int i = 1; i < 12; i++) // 0 to include terminator, 1 to exclude
+            for (int i = 0; i < 12; i++) // 0 to include terminator, 1 to exclude
             {
                 LocalTime tickMark = tekufahStart.plusSeconds(
                         (tekufahShaah / 1000) * i); // millis to seconds, then multiply by hours
@@ -300,6 +397,7 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
     public void updateTime(LocalTime time)
     {
         // TODO find where the current time is added/calculated
+        repaint(); // will also trigger drawCurrentTime()
     }
 
     @Override
@@ -327,9 +425,16 @@ public class AnalogClockGUI extends JPanel implements TimeObserver, TerminatorOb
         frame.setSize(900, 600);
         frame.setLayout(new BorderLayout());
 
-        AnalogClockGUI clockPanel = new AnalogClockGUI();
+        AnalogClockPanel clockPanel = new AnalogClockPanel();
         clockPanel.addHourTickMarks();
-        frame.add(clockPanel, BorderLayout.CENTER);
+
+        GridRegionPanel grp = new GridRegionPanel(10, 15);
+        grp.addRegion(2, 1, 11, 8, clockPanel);
+        //frame.add(clockPanel, BorderLayout.CENTER);
+        grp.setFillEmptyRegions(true);
+        grp.setDebugBorders(true);
+        grp.construct();
+        frame.add(grp, BorderLayout.CENTER);
 
         frame.setVisible(true);
     }

@@ -7,8 +7,6 @@ import util.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -310,7 +308,7 @@ public class ZmanGUI
         // clock.setCurrentTime(LocalTime.now());
 
         // Create analog clock
-        AnalogClockGUI analogClockPanel = new AnalogClockGUI();
+        AnalogClockPanel analogClockPanel = new AnalogClockPanel();
         System.out.println(masterFrame.getHeight());
         Dimension clockSize = new Dimension(masterFrame.getHeight() - 100, masterFrame.getHeight() - 100); // TODO change
         analogClockPanel.setBounds(

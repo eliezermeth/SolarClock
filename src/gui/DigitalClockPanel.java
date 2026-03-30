@@ -34,8 +34,8 @@ public class DigitalClockPanel extends GridRegionPanel
         addRegion(11, 1, 3, 2, halachicClockPanel);
 
         // taller regions
-        addRegion(1, 5, 3, 4, new JPanel()); // upcomingTimesPanel
-        addRegion(11, 5, 3, 4, new JPanel()); // conversionTablePanel
+        //addRegion(1, 5, 3, 4, new JPanel()); // upcomingTimesPanel
+        //addRegion(11, 5, 3, 4, new JPanel()); // conversionTablePanel
     }
 
     /// --------------------------------------------------------------
@@ -122,7 +122,8 @@ public class DigitalClockPanel extends GridRegionPanel
 
         // Create DigitalClockPanel
         DigitalClockPanel dcp = new DigitalClockPanel();
-        //dcp.setDebugBorders(true);
+        dcp.setFillEmptyRegions(true);
+        dcp.setDebugBorders(true);
         dcp.construct();
         frame.add(dcp, BorderLayout.CENTER);
 

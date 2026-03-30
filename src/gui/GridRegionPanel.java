@@ -140,6 +140,8 @@ public class GridRegionPanel extends JPanel
             gbc.weightx = 1.0; gbc.weighty = 1.0;
             gbc.fill = GridBagConstraints.BOTH;
 
+            r.panel.setOpaque(false); // set unused areas to transparent
+
             this.add(r.panel, gbc);
         }
     }
@@ -185,5 +187,23 @@ public class GridRegionPanel extends JPanel
     public boolean getDebugBorders()
     {
         return debugBorders;
+    }
+
+    public static void main(String[] args)
+    {
+        // Create JFrame (main window of application)
+        JFrame frame = new JFrame("GridRegionPanel Example");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(900, 600);
+        frame.setLayout(new BorderLayout());
+
+        GridRegionPanel grp = new GridRegionPanel(10, 15);
+        grp.addRegion(1, 1, 2, 2, new JPanel());
+        grp.setFillEmptyRegions(true);
+        grp.setDebugBorders(true);
+        grp.construct();
+        frame.add(grp, BorderLayout.CENTER);
+
+        frame.setVisible(true);
     }
 }
