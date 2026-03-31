@@ -89,6 +89,15 @@ public final class ClockBrain
         return modified;
     }
 
+    /**
+     * Get a copy of the <code>ComplexZmanimCalendar</code> used by the clock.
+     * @return clone of current <code>ComplexZmanimCalendar</code>
+     */
+    public ComplexZmanimCalendar getComplexZmanimCalendar()
+    {
+        return (ComplexZmanimCalendar) czc.clone();
+    }
+
     // Terminator methods -----------------------------------------------------------------
 
     /**
