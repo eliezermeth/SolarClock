@@ -8,7 +8,10 @@ import util.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -47,6 +50,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
     // Cached static image
     private BufferedImage staticImage;
+    private int imageScale = 2;
 
     public AnalogClockPanel()
     {
@@ -61,6 +65,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
                 calculateLayoutDimensionPositions();
+                createStaticImage();
+                repaint();
             }
         });
         calculateLayoutDimensionPositions();
@@ -68,30 +74,93 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // calculate proper angles for sunrise and sunset; recalculated when terminators changed / ViewMode changed
         calculateEqualDayNightView();
 
-        createStaticImage();
+        //createStaticImage();
     }
 
-//    @Override
-//    protected void paintComponent(Graphics g)
-//    {
-//        super.paintComponent(g);
-//        Graphics2D g2d = (Graphics2D) g;
-//        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-//
-//        // Draw static image
-//        if (staticImage != null)
-//            g2d.drawImage(staticImage, 0, 0, getWidth(), getHeight(), null);
-//
-//        // Draw dynamic current time hand
-//        if (clock.getCurrentTime() != null)
-//        {
-//            g2d.setColor(Color.RED);
-//            g2d.setStroke(new BasicStroke(1));
-//            drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentTime());
-//        }
-//    }
+///*
+    @Override // BufferedImage
+    protected void paintComponent(Graphics g)
+    {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // smoother edges
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY); // prioritize quality over speed
+        g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE); // more accurate stroke rendering
 
-    @Override
+        // Draw static image
+        if (staticImage != null)
+        {
+            AffineTransform originalTransform = g2d.getTransform(); // save current g2d settings
+
+            g2d.scale(1.0d / imageScale, 1.0d / imageScale); // change for bufferedImage
+            g2d.drawImage(staticImage, 0, 0, null);
+
+            g2d.setTransform(originalTransform); // return to original settings
+        }
+
+        // Draw dynamic current time hand
+        if (clock.getCurrentTime() != null)
+        {
+            g2d.setColor(Color.RED);
+            g2d.setStroke(new BasicStroke(1));
+            drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentTime());
+        }
+    }
+
+    private void createStaticImage() // BufferedImage
+    {
+        if (getWidth() <= 0 || getHeight() <= 0) return; // window does not show
+
+        staticImage = new BufferedImage(getWidth() * imageScale, getHeight() * imageScale, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = staticImage.createGraphics();
+
+        // High-quality rendering
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // smoother edges
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY); // prioritize quality over speed
+        g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE); // more accurate stroke rendering
+        g2d.scale(imageScale, imageScale); // scale down when drawing
+
+        // Day/Night arcs
+        Color dayColor = new Color(255, 255, 200);
+        Color nightColor = new Color(100, 100, 255);
+
+        // Draw the top half of the circle
+        Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
+                Math.toDegrees(offsetSunset),
+                Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
+                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
+        g2d.setColor(dayColor); // Light yellow
+        g2d.fill(dayArc);
+
+        // Draw the bottom half of the circle
+        Arc2D.Double nightArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
+                Math.toDegrees(offsetSunrise),
+                360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
+                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
+        g2d.setColor(nightColor); // Light deep blue
+        g2d.fill(nightArc);
+
+        // Draw static lines with optional labels
+        for (StaticLine line : staticLines)
+        {
+            g2d.setColor(line.color);
+            g2d.setStroke(new BasicStroke(line.thickness));
+            drawLineAtTime(g2d, centerX, centerY, radius, line.time);
+
+            if (line.label != null)
+            {
+                drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
+            }
+        }
+
+        // Draw circle outline
+        drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
+
+        g2d.dispose();
+    }
+//*/
+
+/*    @Override // normal draw
     protected void paintComponent(Graphics g)
     {
         super.paintComponent(g);
@@ -100,7 +169,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         drawClock(g2d);
     }
 
-    private void drawClock(Graphics2D g2d)
+    private void drawClock(Graphics2D g2d) // normal draw
     {
 
         // Draw colored sections of circle
@@ -147,13 +216,14 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // Draw the circle outline; last to place over other elements that may overlap
         drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
     }
+ */
 
     private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time)
     {
         double angle = calculateAngle(time);
         int endX = (int) (centerX + radius * Math.cos(angle));
         int endY = (int) (centerY - radius * Math.sin(angle));
-        g2d.drawLine(centerX, centerY, endX, endY);
+        g2d.draw(new Line2D.Double(centerX, centerY, endX, endY));
     }
 
     /**
@@ -165,7 +235,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     {
         g2d.setColor(Color.BLACK);
         g2d.setStroke(new BasicStroke(2.0f));
-        g2d.drawOval(upperLeftX, upperLeftY, width, height);
+        g2d.draw(new Ellipse2D.Double(upperLeftX, upperLeftY, width, height));
         g2d.setStroke(new BasicStroke(1.0f)); // reset stroke
     }
 
@@ -296,7 +366,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         angularSpanDay = (offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
         angularSpanNight = (2 * Math.PI) - angularSpanDay;
 
-        createStaticImage();
+        //createStaticImage();
     }
 
     /**
@@ -311,58 +381,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         radius = diameter / 2;
         centerX = width / 2;
         centerY = height / 2;
-    }
-
-    /**
-     * Pre-render static elements of clock to BufferedImage
-     */
-    private void createStaticImage()
-    {
-        if (getWidth() <= 0 || getHeight() <= 0) return; // window does not show
-
-        int scale = 2;
-        staticImage = new BufferedImage(getWidth() * scale, getHeight() * scale, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = staticImage.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.scale(scale, scale); // scale down when drawing
-
-        // Day/Night arcs
-        Color dayColor = new Color(255, 255, 200);
-        Color nightColor = new Color(100, 100, 255);
-
-        // Draw the top half of the circle
-        Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
-                Math.toDegrees(offsetSunset),
-                Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
-                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(dayColor); // Light yellow
-        g2d.fill(dayArc);
-
-        // Draw the bottom half of the circle
-        Arc2D.Double nightArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
-                Math.toDegrees(offsetSunrise),
-                360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
-                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(nightColor); // Light deep blue
-        g2d.fill(nightArc);
-
-        // Draw static lines with optional labels
-        for (StaticLine line : staticLines)
-        {
-            g2d.setColor(line.color);
-            g2d.setStroke(new BasicStroke(line.thickness));
-            drawLineAtTime(g2d, centerX, centerY, radius, line.time);
-
-            if (line.label != null)
-            {
-                drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
-            }
-        }
-
-        // Draw circle outline
-        drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
-
-        g2d.dispose();
     }
 
     /**
@@ -406,14 +424,14 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     public void addStaticLine(LocalTime time, String label, int thickness, Color color)
     {
         staticLines.add(new StaticLine(time, label, thickness, color));
-        createStaticImage();
+        //createStaticImage();
         repaint();
     }
 
     public void clearStaticLines()
     {
         staticLines.clear();
-        createStaticImage();
+        //createStaticImage();
         repaint();
     }
 
@@ -421,7 +439,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     public void updateTime(LocalTime time)
     {
         // TODO find where the current time is added/calculated
-        // createStaticImage(); DEBUG - removed
+        //createStaticImage(); // DEBUG - removed
         repaint(); // will also trigger drawCurrentTime()
     }
 

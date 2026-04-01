@@ -68,8 +68,8 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
         fracPanel.add(fracClockComponents[0]); // hours
         fracPanel.add(new JLabel("hours"));
         fracPanel.add(fracClockComponents[1]); // chalakim elapsed
-        fracPanel.add(new JLabel("/"));
-        fracPanel.add(new JLabel(String.valueOf(Constants.CHALAKIM_PER_SHAAH)));
+        fracPanel.add(createTransparentLabel("/"));
+        fracPanel.add(createTransparentLabel(String.valueOf(Constants.CHALAKIM_PER_SHAAH)));
         fracPanel.add(new JLabel("chalakim"));
         // add to clock
         gbc.gridx = 0; gbc.gridy = 1;
@@ -92,6 +92,18 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
         panel.add(standPanel, gbc);
+    }
+
+    /**
+     * Create a transparent label.
+     * @param text Text for label.
+     * @return <code>JLabel</code>
+     */
+    private JLabel createTransparentLabel(String text)
+    {
+        JLabel temp = new JLabel(text);
+        temp.setOpaque(false);
+        return temp;
     }
 
     /**
