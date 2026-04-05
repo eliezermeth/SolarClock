@@ -101,7 +101,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // Draw dynamic current time hand
         if (clock.getCurrentTime() != null)
         {
-            g2d.setColor(Color.RED);
+            g2d.setColor(Settings.TIME_HAND_COLOR);
             g2d.setStroke(new BasicStroke(1));
             drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentTime());
         }
@@ -120,16 +120,12 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE); // more accurate stroke rendering
         g2d.scale(imageScale, imageScale); // scale down when drawing
 
-        // Day/Night arcs
-        Color dayColor = new Color(255, 255, 200);
-        Color nightColor = new Color(100, 100, 255);
-
         // Draw the top half of the circle
         Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
                 Math.toDegrees(offsetSunset),
                 Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
                 Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(dayColor); // Light yellow
+        g2d.setColor(Settings.DAY_COLOR); // Light yellow
         g2d.fill(dayArc);
 
         // Draw the bottom half of the circle
@@ -137,7 +133,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                 Math.toDegrees(offsetSunrise),
                 360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
                 Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(nightColor); // Light deep blue
+        g2d.setColor(Settings.NIGHT_COLOR); // Light deep blue
         g2d.fill(nightArc);
 
         // Draw static lines with optional labels
@@ -172,16 +168,12 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     private void drawClock(Graphics2D g2d) // normal draw
     {
 
-        // Draw colored sections of circle
-        Color dayColor = new Color(255, 255, 200); // light yellow
-        Color nightColor = new Color(100, 100, 255); // light deep blue
-
         // Draw the top half of the circle
         Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
                 Math.toDegrees(offsetSunset),
                 Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
                 Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(dayColor); // Light yellow
+        g2d.setColor(Settings.DAY_COLOR); // Light yellow
         g2d.fill(dayArc);
 
         // Draw the bottom half of the circle
@@ -189,7 +181,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                 Math.toDegrees(offsetSunrise),
                 360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
                 Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(nightColor); // Light deep blue
+        g2d.setColor(Settings.NIGHT_COLOR); // Light deep blue
         g2d.fill(nightArc);
 
         // Draw static lines with optional labels
@@ -208,7 +200,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // Draw the dynamic current time hand
         if (clock.getCurrentTime() != null)
         {
-            g2d.setColor(Color.RED);
+            g2d.setColor(Settings.TIME_HAND_COLOR);
             g2d.setStroke(new BasicStroke(1));
             drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentTime());
         }
