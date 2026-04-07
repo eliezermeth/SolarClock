@@ -217,7 +217,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // Draw the circle outline; last to place over other elements that may overlap
         drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
     }
- */
 
     private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time)
     {
