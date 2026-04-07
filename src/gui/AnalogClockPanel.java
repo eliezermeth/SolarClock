@@ -51,6 +51,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     // Cached static image
     private BufferedImage staticImage;
     private int imageScale = 2;
+    private final boolean USE_BUFFERED_IMAGE = false;
 
     public AnalogClockPanel()
     {
@@ -74,12 +75,22 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // calculate proper angles for sunrise and sunset; recalculated when terminators changed / ViewMode changed
         calculateEqualDayNightView();
 
-        //createStaticImage();
+        if (USE_BUFFERED_IMAGE)
+            createStaticImage();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) // master control; can be collapsed when buffered image fixed
+    {
+        if (USE_BUFFERED_IMAGE)
+            paintComponentBufferedImage(g);
+        else
+            paintComponentStandard(g);
     }
 
 ///*
-    @Override // BufferedImage
-    protected void paintComponent(Graphics g)
+    //@Override // BufferedImage
+    protected void paintComponentBufferedImage(Graphics g) // OPTION 1 - part a
     {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
@@ -107,7 +118,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         }
     }
 
-    private void createStaticImage() // BufferedImage
+    private void createStaticImage() // BufferedImage OPTION 1 - part 2
     {
         if (getWidth() <= 0 || getHeight() <= 0) return; // window does not show
 
@@ -154,10 +165,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         g2d.dispose();
     }
-//*/
 
-/*    @Override // normal draw
-    protected void paintComponent(Graphics g)
+    protected void paintComponentStandard(Graphics g) // normal draw OPTION 2 - part 1
     {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
@@ -165,7 +174,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         drawClock(g2d);
     }
 
-    private void drawClock(Graphics2D g2d) // normal draw
+    private void drawClock(Graphics2D g2d) // normal draw OPTION 2 - part 2
     {
 
         // Draw the top half of the circle
@@ -213,8 +222,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time)
     {
         double angle = calculateAngle(time);
-        int endX = (int) (centerX + radius * Math.cos(angle));
-        int endY = (int) (centerY - radius * Math.sin(angle));
+        double endX = centerX + radius * Math.cos(angle);
+        double endY = centerY - radius * Math.sin(angle);
         g2d.draw(new Line2D.Double(centerX, centerY, endX, endY));
     }
 
@@ -358,7 +367,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         angularSpanDay = (offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
         angularSpanNight = (2 * Math.PI) - angularSpanDay;
 
-        //createStaticImage();
+        if (USE_BUFFERED_IMAGE)
+            createStaticImage();
     }
 
     /**
@@ -416,14 +426,14 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     public void addStaticLine(LocalTime time, String label, int thickness, Color color)
     {
         staticLines.add(new StaticLine(time, label, thickness, color));
-        //createStaticImage();
+        if (USE_BUFFERED_IMAGE) createStaticImage();
         repaint();
     }
 
     public void clearStaticLines()
     {
         staticLines.clear();
-        //createStaticImage();
+        if (USE_BUFFERED_IMAGE) createStaticImage();
         repaint();
     }
 
@@ -431,7 +441,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     public void updateTime(LocalTime time)
     {
         // TODO find where the current time is added/calculated
-        //createStaticImage(); // DEBUG - removed
+        if (USE_BUFFERED_IMAGE) createStaticImage(); // DEBUG - removed
         repaint(); // will also trigger drawCurrentTime()
     }
 
