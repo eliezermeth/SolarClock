@@ -51,7 +51,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     // Cached static image
     private BufferedImage staticImage;
     private int imageScale = 2;
-    private final boolean USE_BUFFERED_IMAGE = false;
+    private final boolean USE_BUFFERED_IMAGE = false; // will need to search for all uses when completed
 
     public AnalogClockPanel()
     {
@@ -88,8 +88,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             paintComponentStandard(g);
     }
 
-///*
-    //@Override // BufferedImage
     protected void paintComponentBufferedImage(Graphics g) // OPTION 1 - part a
     {
         super.paintComponent(g);
@@ -422,6 +420,13 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         }
     }
 
+    /**
+     * Add a custom static line to the analog clock.
+     * @param time <code>LocalTime</code> for the position of the line.
+     * @param label Text for the label.
+     * @param thickness Thickness of the line.
+     * @param color Color of the line.
+     */
     public void addStaticLine(LocalTime time, String label, int thickness, Color color)
     {
         staticLines.add(new StaticLine(time, label, thickness, color));
@@ -429,6 +434,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         repaint();
     }
 
+    /**
+     * Remove all lines from static lines array.
+     */
     public void clearStaticLines()
     {
         staticLines.clear();
@@ -440,7 +448,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     public void updateTime(LocalTime time)
     {
         // TODO find where the current time is added/calculated
-        if (USE_BUFFERED_IMAGE) createStaticImage(); // DEBUG - removed
+        //if (USE_BUFFERED_IMAGE) createStaticImage(); // TODO should be removed when properly draw static image
         repaint(); // will also trigger drawCurrentTime()
     }
 
