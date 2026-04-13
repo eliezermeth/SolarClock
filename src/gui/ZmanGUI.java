@@ -4,6 +4,8 @@ import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
 import interfaces.EqualViewOption;
 import util.*;
+import util.enums.Terminator;
+import util.enums.ViewMode;
 
 import javax.swing.*;
 import java.awt.*;

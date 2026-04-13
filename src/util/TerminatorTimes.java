@@ -1,5 +1,7 @@
 package util;
 
+import util.enums.Terminator;
+
 import java.time.LocalTime;
 import java.util.Arrays;
 
@@ -68,7 +70,7 @@ public class TerminatorTimes
 
     /**
      * Get the status of the first terminator stored; all other terminators alternate from there.
-     * @return util.Terminator of SUNRISE or SUNSET; null if not set
+     * @return util.enums.Terminator of SUNRISE or SUNSET; null if not set
      */
     public Terminator getStartingTerminator()
     {
@@ -77,7 +79,7 @@ public class TerminatorTimes
 
     /**
      * Set the status of the first terminator stored.
-     * @param t util.Terminator of SUNRISE or SUNSET
+     * @param t util.enums.Terminator of SUNRISE or SUNSET
      */
     public void setStartingTerminator(Terminator t)
     {

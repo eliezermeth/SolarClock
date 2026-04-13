@@ -1,4 +1,4 @@
-package util;
+package util.enums;
 
 /**
  * Significant points on a circle, in radians.<br>

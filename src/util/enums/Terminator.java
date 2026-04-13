@@ -1,7 +1,7 @@
-package util;
+package util.enums;
 
 /**
- * Solar util.Terminator
+ * Solar util.enums.Terminator
  */
 public enum Terminator
 {

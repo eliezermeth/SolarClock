@@ -5,6 +5,9 @@ import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
 import main.ClockBrain;
 import util.*;
+import util.enums.Circle;
+import util.enums.SHAAH_TICK_MARK_STYLE;
+import util.enums.Terminator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -148,9 +151,13 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // Draw static lines with optional labels
         for (StaticLine line : staticLines)
         {
-            g2d.setColor(line.color);
-            g2d.setStroke(new BasicStroke(line.thickness));
-            drawLineAtTime(g2d, centerX, centerY, radius, line.time);
+            // draw line if thickness is greater than 0
+            if (line.thickness > 0)
+            {
+                g2d.setColor(line.color);
+                g2d.setStroke(new BasicStroke(line.thickness));
+                drawLineAtTime(g2d, centerX, centerY, radius, line.time);
+            }
 
             if (line.label != null)
             {
@@ -194,9 +201,13 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // Draw static lines with optional labels
         for (StaticLine line : staticLines)
         {
-            g2d.setColor(line.color);
-            g2d.setStroke(new BasicStroke(line.thickness));
-            drawLineAtTime(g2d, centerX, centerY, radius, line.time);
+            // draw line if thickness is greater than 0
+            if (line.thickness > 0)
+            {
+                g2d.setColor(line.color);
+                g2d.setStroke(new BasicStroke(line.thickness));
+                drawLineAtTime(g2d, centerX, centerY, radius, line.time);
+            }
 
             if (line.label != null)
             {
@@ -239,6 +250,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
     private void drawLabel(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time, String label)
     {
+        // short-circuit if no text
+        if (label.isEmpty()) return;
+
         double angle = calculateAngle(time);
 
         FontMetrics fm = g2d.getFontMetrics();
@@ -399,6 +413,42 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
      */
     public void addHourTickMarks()
     {
+        // if tick marks should not be shown, don't do calculations
+        if (!Settings.ANALOG_SHAAH_TICK_MARKS_ENABLED)
+            return;
+
+        if (Settings.ANALOG_SHAAH_TICK_MARK_STYLE == SHAAH_TICK_MARK_STYLE.ONE_TWELFTH_OF_TEKUFAH)
+        {
+            // calculate shaah for the time period
+            // start of tekufah; offset of time due to day or night
+            int[][] tekufahSettings = new int[][] {
+                    new int[] { 0, clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE) ? 0 : 12},
+                    new int[] { 1, clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNSET) ? 0 : 12}
+            };
+
+            for (int[] tekufah : tekufahSettings)
+            {
+                LocalTime tekufahStart = clock.getTerminatorTimes().getTerminator(tekufah[0]);
+                long tekufahShaah = clock.getTerminatorTimes().getTekufahShaah(tekufah[0]);
+
+                for (int i = 0; i < 12; i++) // 0 to include terminator, 1 to exclude
+                {
+                    // 1. Time
+                    LocalTime tickMark = tekufahStart.plusSeconds(
+                            (tekufahShaah / 1000) * i); // millis to seconds, then multiply by hours
+                    // 2. Text
+                    String text = (Settings.ANALOG_SHAAH_TIME_MARKINGS) ? tickMark.format(formatter) : "";
+
+                    // add to static line array
+                    this.addStaticLine(tickMark, text,
+                            Settings.ANALOG_SHAAH_TICK_MARK_WIDTH,
+                            Settings.ANALOG_SHAAH_TICK_MARKS_COLOR);
+                }
+            }
+        }
+        // TODO other methods of calculations
+
+        /*
         // calculate shaah for the time period
         // start of tekufah; offset of time due to day or night
         int[][] tekufahSettings = new int[][] {
@@ -418,13 +468,14 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                 this.addStaticLine(tickMark, tickMark.format(formatter), 1, Color.LIGHT_GRAY);
             }
         }
+        */
     }
 
     /**
      * Add a custom static line to the analog clock.
      * @param time <code>LocalTime</code> for the position of the line.
-     * @param label Text for the label.
-     * @param thickness Thickness of the line.
+     * @param label Text for the label; if text is blank, the text portion should not be displayed.
+     * @param thickness Thickness of the line; if width is <code>0</code>, the line portion should not be displayed.
      * @param color Color of the line.
      */
     public void addStaticLine(LocalTime time, String label, int thickness, Color color)
@@ -455,6 +506,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     @Override
     public void updateTerminatorCalculations()
     {
+        clearStaticLines();
+        addHourTickMarks();
+        // TODO reset static lines, etc
         calculateEqualDayNightView();
         repaint();
     }

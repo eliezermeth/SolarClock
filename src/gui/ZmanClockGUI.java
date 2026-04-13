@@ -3,6 +3,8 @@ package gui;
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
 import util.*;
+import util.enums.Circle;
+import util.enums.Terminator;
 
 import javax.swing.*;
 import javax.swing.Timer;

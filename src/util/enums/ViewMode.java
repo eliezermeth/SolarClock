@@ -1,4 +1,4 @@
-package util;
+package util.enums;
 
 /**
  * Different view modes for analog clock.<br>

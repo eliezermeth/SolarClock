@@ -4,7 +4,7 @@ import interfaces.TerminatorObserver;
 import interfaces.TimeObserver;
 import main.ClockBrain;
 import util.Constants;
-import util.Terminator;
+import util.enums.Terminator;
 import util.TimeUtil;
 
 import javax.swing.*;

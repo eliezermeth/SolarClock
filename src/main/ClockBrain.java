@@ -6,6 +6,7 @@ import interfaces.TerminatorObserver;
 import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
 import util.*;
+import util.enums.Terminator;
 
 import javax.swing.*;
 import java.time.LocalTime;
