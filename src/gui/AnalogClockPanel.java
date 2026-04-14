@@ -154,9 +154,16 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             // draw line if thickness is greater than 0
             if (line.thickness > 0)
             {
-                g2d.setColor(line.color);
-                g2d.setStroke(new BasicStroke(line.thickness));
-                drawLineAtTime(g2d, centerX, centerY, radius, line.time);
+                Graphics2D tempG2D = (Graphics2D) g2d.create(); // instance to be modified for line
+                if (line.isDotted)
+                    tempG2D.setStroke(line.stroke); // pull full stroke style from line
+                else
+                    tempG2D.setStroke(new BasicStroke(line.thickness)); // only change line thickness
+
+                tempG2D.setColor(line.color);
+                drawLineAtTime(tempG2D, centerX, centerY, radius, line.time);
+
+                tempG2D.dispose();
             }
 
             if (line.label != null)
@@ -204,9 +211,16 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             // draw line if thickness is greater than 0
             if (line.thickness > 0)
             {
-                g2d.setColor(line.color);
-                g2d.setStroke(new BasicStroke(line.thickness));
-                drawLineAtTime(g2d, centerX, centerY, radius, line.time);
+                Graphics2D tempG2D = (Graphics2D) g2d.create(); // instance to be modified for line
+                if (line.isDotted)
+                    tempG2D.setStroke(line.stroke); // pull full stroke style from line
+                else
+                    tempG2D.setStroke(new BasicStroke(line.thickness)); // only change line thickness
+
+                tempG2D.setColor(line.color);
+                drawLineAtTime(tempG2D, centerX, centerY, radius, line.time);
+
+                tempG2D.dispose();
             }
 
             if (line.label != null)
@@ -440,9 +454,10 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                     String text = (Settings.ANALOG_SHAAH_TIME_MARKINGS) ? tickMark.format(formatter) : "";
 
                     // add to static line array
-                    this.addStaticLine(tickMark, text,
+                    StaticLine sl = this.addStaticLine(tickMark, text,
                             Settings.ANALOG_SHAAH_TICK_MARK_WIDTH,
                             Settings.ANALOG_SHAAH_TICK_MARKS_COLOR);
+                    sl.setDotted(10, 10);
                 }
             }
         }
@@ -477,12 +492,16 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
      * @param label Text for the label; if text is blank, the text portion should not be displayed.
      * @param thickness Thickness of the line; if width is <code>0</code>, the line portion should not be displayed.
      * @param color Color of the line.
+     *
+     * @return The <code>StaticLine</code> that was added to the <code>ArrayList</code>.
      */
-    public void addStaticLine(LocalTime time, String label, int thickness, Color color)
+    public StaticLine addStaticLine(LocalTime time, String label, int thickness, Color color)
     {
-        staticLines.add(new StaticLine(time, label, thickness, color));
+        StaticLine sl = new StaticLine(time, label, thickness, color);
+        staticLines.add(sl);
         if (USE_BUFFERED_IMAGE) createStaticImage();
-        repaint();
+        repaint(); // TODO is this the proper place to repaint?  Line may be made dotted after, using return.
+        return sl;
     }
 
     /**

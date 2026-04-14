@@ -14,9 +14,9 @@ public class StaticLine
     /** Color of the line. */
     protected Color color;
     /** If line should be a dotted line. */
-    protected boolean dotted = false;
+    protected boolean isDotted = false;
     /** The <code>BasicStroke</code> style to be used by the dotted line. */
-    protected BasicStroke style;
+    protected BasicStroke stroke;
 
     /**
      * Information for a static line to be displayed on the analog clock.  Defaults to solid line, but can be changed
@@ -41,13 +41,13 @@ public class StaticLine
      */
     public void setDotted(float dotLength, float spaceLength)
     {
-        dotted = true;
+        isDotted = true;
 
-        style = new BasicStroke(
+        stroke = new BasicStroke(
                 thickness,                      // line width
                 BasicStroke.CAP_BUTT,
                 BasicStroke.JOIN_MITER,
-                0f,
+                1f,
                 new float[] {dotLength, spaceLength},
                 0f
         );
