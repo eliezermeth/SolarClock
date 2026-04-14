@@ -13,9 +13,14 @@ via `scheduleAtFixedRate(task, initialDelay, period, unit)` for periodic
 - Add methods to allow querying of current regions and remove regions.
 
 ## AnalogClockPanel
-- Integrate current hour-tick mark flags from Settings into program.
 - Add new text display method - `bufferedText` where it is displaced from
 its exact position to avoid collisions with the circle, and `staticText` 
 where the exact position (or centered) is given.
 - Determine what hour tick marks to use - calculated from sunrise-sunset, 
-or from the shaos zmanios.
+or from the shaos zmanios (alos-tzeis?).
+- Nightly hour marks are not properly spaced during night.
+
+
+## General
+- Does not calculate properly when the clock is changed (e.g. between 
+standard and daylight savings time).
