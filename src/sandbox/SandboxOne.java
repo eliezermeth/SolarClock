@@ -1,58 +1,56 @@
 package sandbox;
 
+import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter;
+import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar;
+import main.ClockBrain;
+
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class SandboxOne
 {
+    public void hebrewDate()
+    {
+        ClockBrain cb = ClockBrain.getInstance();
+
+        JewishCalendar jc = new JewishCalendar();
+
+        // set to specific date if needed
+        //jc.setDate(gregorianCalendar);
+
+        // to manually advance the jewish date
+        //if (currentTime.after(czc.getSunset()))
+        //    jc.forward(Calendar.Date, 1);
+
+        HebrewDateFormatter hdf = new HebrewDateFormatter();
+        hdf.setHebrewFormat(true); // output in hebrew
+
+        System.out.println("Full date:\n" + hdf.format(jc));
+        System.out.println();
+
+        System.out.println("Day and month:\n" +
+                hdf.formatHebrewNumber(jc.getJewishDayOfMonth()) + " " + hdf.formatMonth(jc));
+        System.out.println();
+
+        Date now = new Date();
+        System.out.println("Now:\n" + now);
+        System.out.println("Sunset:\n" + cb.getComplexZmanimCalendar().getSunset());
+
+
+        if (now.after(cb.getComplexZmanimCalendar().getSunset()))
+        {
+            System.out.println("ליל");
+        }
+    }
+
     public static void main(String[] args)
     {
         SandboxOne s1 = new SandboxOne();
-        s1.ownCode();
-    }
-
-    public void ownCode()
-    {
-        final int HOURS_PER_DAY = 12;
-        final int CHALAKIM_PER_HOUR = 1080;
-
-        String stringSunrise = "6:46:07";
-        String stringSunset = "4:54:31";
-
-        // Formatter to handle both "H:mm:ss" and "HH:mm:ss"
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("[H][HH]:mm:ss");
-
-        LocalTime sunrise = LocalTime.parse(stringSunrise, formatter);
-        LocalTime sunset = LocalTime.parse(stringSunset, formatter);
-        sunset = sunset.plusHours(12); // swap to PM
-        System.out.println("Sunrise time: " + sunrise);
-        System.out.println("Sunset time: " + sunset);
-
-        System.out.println();
-
-        Duration dayTime = Duration.between(sunrise, sunset);
-        System.out.println("Day time: " + durationToString(dayTime));
-
-        Duration hourTime = dayTime.dividedBy(HOURS_PER_DAY);
-        System.out.println("Hour time: " + durationToString(hourTime));
-
-        Duration cheilekTime = hourTime.dividedBy(CHALAKIM_PER_HOUR);
-        System.out.println("Cheilek time: " + durationToString(cheilekTime));
-
-        LocalTime add = sunrise;
-        for (int i = 0; i < 6; i++)
-            add = add.plus(hourTime);
-        System.out.println("Chatzos (standard): " + add);
-    }
-
-    public String durationToString(Duration d)
-    {
-        long hours = d.toHours();
-        long minutes = d.toMinutes() % 60;
-        long seconds = d.getSeconds() % 60;
-        long millis = d.toMillis() % 1000;
-
-        return String.format("%02d:%02d:%02d.%d", hours, minutes, seconds, millis);
+        s1.hebrewDate();
     }
 }
