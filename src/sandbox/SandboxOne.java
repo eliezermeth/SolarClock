@@ -46,6 +46,8 @@ public class SandboxOne
         {
             System.out.println("ליל");
         }
+        // NOTE: Does not, as of yet, know it is the next day when calling after sunset.  Will need to manually advance
+        // day to print properly.
     }
 
     public static void main(String[] args)
