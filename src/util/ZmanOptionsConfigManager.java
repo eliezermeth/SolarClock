@@ -1,13 +1,39 @@
 package util;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Breaks the <code>ZmanimOptions</code> file into the proper segments for operation.
  */
-public class ZmanimFileParser
+public class ZmanOptionsConfigManager
 {
+    private static ZmanOptionsConfigManager INSTANCE;
+
+    private ZmanOptionsConfigManager()
+    {
+        // read in file
+
+    }
+
+    public synchronized static ZmanOptionsConfigManager getInstance()
+    {
+        if (INSTANCE == null)
+            INSTANCE = new ZmanOptionsConfigManager();
+
+        return INSTANCE;
+    }
+
+    private String readFile() throws IOException
+    {
+        String fileName = "ZmanimOptions.txt";
+        String contents = Files.readString(Path.of(fileName));
+        return contents;
+    }
+
     public static List<ZmanEntry> parse(String text)
     {
         List <ZmanEntry> list = new ArrayList<>();
