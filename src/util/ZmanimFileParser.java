@@ -31,8 +31,8 @@ public class ZmanimFileParser
                 description = String.join("\n", lines.subList(1, lines.size() - 2));
 
             list.add(new ZmanEntry(title, description, methodName, isTrue));
-
-            return list;
         }
+
+        return list;
     }
 }
