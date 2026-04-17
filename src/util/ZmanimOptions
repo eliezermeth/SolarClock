@@ -1,0 +1,43 @@
+Dawn: 72 minutes at 16.1 degrees
+getAlos16Point1Degrees
+true
+***
+Earliest talis & tefillin (sun is 10.2 degrees below horizon)
+getMisheyakir10Point2Degrees
+true
+***
+Sunrise
+getSunrise
+true
+***
+SZK"Sh'ma (M"A): (72 minutes at) 16.1 degrees
+getSofZmanShmaMGA16Point1Degrees
+true
+***
+SZ"Tfila (Gra & Ball HaTanya)
+getSofZmanTfilaGRA
+true
+***
+Midday
+getChatzos
+true
+***
+Earliest mincha (lechumra)
+getMinchaGedola
+true
+***
+Plag Ha"Mincha (Gra & Baal HaTanya)
+getPlagHamincha
+true
+***
+Sunset
+getSunset
+true
+***
+Nightfall - 3 stars emerge (36 minutes as degrees)
+getTzais
+true
+***
+Nightfall - 72 minutes
+getTzais72
+true

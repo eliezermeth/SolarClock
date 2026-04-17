@@ -4,6 +4,7 @@ import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter;
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar;
 import main.ClockBrain;
 
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -50,9 +51,23 @@ public class SandboxOne
         // day to print properly.
     }
 
+    public String testReflection()
+    {
+        return "Reflected";
+    }
+
     public static void main(String[] args)
     {
-        SandboxOne s1 = new SandboxOne();
-        s1.hebrewDate();
+        try
+        {
+            SandboxOne s1 = new SandboxOne();
+            //s1.hebrewDate();
+            String methodName = "testReflection";
+            Method m = SandboxOne.class.getMethod(methodName);
+            Object result = m.invoke(s1);
+            System.out.println((String) result);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }
 }
