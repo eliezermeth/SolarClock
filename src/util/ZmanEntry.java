@@ -5,14 +5,14 @@ package util;
  *
  * @param title Name / basic description of zman.
  * @param description Detailed description of calculation / opinion of zman.
- * @param method Method in <code>ComplexZmanimCalendar</code> that is called to get the zman.
- * @param isTrue If zman should be displayed.
+ * @param methodName Method in <code>ComplexZmanimCalendar</code> that is called to get the zman.
+ * @param enabled If zman should be displayed.
  */
 public record ZmanEntry
 (
     String title,
     String description,
-    String method,
-    boolean isTrue
+    String methodName,
+    boolean enabled
 )
 {}
