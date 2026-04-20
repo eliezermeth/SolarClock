@@ -9,12 +9,11 @@ import util.*;
 import util.enums.Terminator;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.TimeZone;
+import java.time.ZonedDateTime;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -28,7 +27,7 @@ public final class ClockBrain
     private ComplexZmanimCalendar czc;
 
     protected ZoneId zoneId;
-    protected LocalTime currentTime;
+    private VirtualClock virtualClock;
 
     protected TerminatorTimes terminatorTimes = new TerminatorTimes();
     /**
@@ -38,7 +37,6 @@ public final class ClockBrain
 
     protected ArrayList<EqualViewOption> updatable = new ArrayList<>();
 
-    protected boolean timeProgression = false; // if time is to move
     protected Timer timer;
 
     private final List<TimeObserver> timeObservers = new ArrayList<>();
@@ -55,7 +53,7 @@ public final class ClockBrain
 
         // get and intitialize time
         zoneId = this.czc.getGeoLocation().getTimeZone().toZoneId();
-        currentTime = LocalTime.now(zoneId);
+        virtualClock = new VirtualClock(zoneId);
 
         calculateSolarTerminators();
         initializeTimeProgression();
@@ -117,7 +115,9 @@ public final class ClockBrain
         LocalTime tempSunrise = TimeUtil.dateToLocalTime(czc.getSunrise(), czc);
         LocalTime tempSunset = TimeUtil.dateToLocalTime(czc.getSunset(), czc);
 
-        if (LocalTime.now(zoneId).isBefore(tempSunrise)) // before sunrise; during previous night
+        LocalTime now = virtualClock.getLocalTime();
+
+        if (now.isBefore(tempSunrise)) // before sunrise; during previous night
         {
             // start from previous sunset
             ComplexZmanimCalendar yesterday = changeDay(this.czc, -1);
@@ -127,8 +127,8 @@ public final class ClockBrain
             terminatorTimes.setTerminator(1, tempSunrise);
             terminatorTimes.setTerminator(2, tempSunset);
         }
-        else if (LocalTime.now(zoneId).equals(tempSunrise) ||     // at sunrise
-                LocalTime.now(zoneId).isBefore(tempSunset))   // after sunrise, but before sunset
+        else if (now.equals(tempSunrise) ||     // at sunrise
+                now.isBefore(tempSunset))   // after sunrise, but before sunset
         {
             terminatorTimes.setTerminator(0, tempSunrise);
             terminatorTimes.setStartingTerminator(Terminator.SUNRISE);
@@ -138,7 +138,7 @@ public final class ClockBrain
             ComplexZmanimCalendar tomorrow = changeDay(this.czc, 1);
             terminatorTimes.setTerminator(2, TimeUtil.dateToLocalTime(tomorrow.getSunrise(), tomorrow));
         }
-        else // LocalTime.now(zoneId).equals(tempSunset) || LocalTime.now(zoneId).isAfter(tempSunset); sunset or after
+        else // now.equals(tempSunset) || now.isAfter(tempSunset); sunset or after
         {
             terminatorTimes.setTerminator(0, tempSunset);
             terminatorTimes.setStartingTerminator(Terminator.SUNSET);
@@ -222,21 +222,17 @@ public final class ClockBrain
     // Time methods --------------------------------------------------------------------------
 
     /**
-     * Set the <code>LocalTime</code> for the clock.
-     * @param time
-     */
-    public void setCurrentTime(LocalTime time)
-    {
-        this.currentTime = time;
-    }
-
-    /**
-     * Get the current time of the clock.
+     * Get the current <code>LocalTime</code> time of the clock.
      * @return
      */
     public LocalTime getCurrentTime()
     {
-        return currentTime; // since LocalTime is immutable
+        return virtualClock.getLocalTime(); // since LocalTime is immutable
+    }
+
+    public ZonedDateTime getCurrentDateTime()
+    {
+        return virtualClock.now();
     }
 
     // Timer methods ---------------------------------------------------------------------------
@@ -247,9 +243,9 @@ public final class ClockBrain
      */
     public void setTimeProgression(boolean progress)
     {
-        timeProgression = progress;
+        virtualClock.setPaused(!progress);
 
-        if (timeProgression)
+        if (progress)
             timer.start();
         else
             timer.stop();
@@ -261,7 +257,7 @@ public final class ClockBrain
      */
     public boolean getTimeProgression()
     {
-        return timeProgression;
+        return !virtualClock.getPaused();
     }
 
     /**
@@ -270,14 +266,11 @@ public final class ClockBrain
     private void initializeTimeProgression()
     {
         // set clock time
-        setCurrentTime(LocalTime.now(zoneId)); // to current, proper time (in time zone)
         if (DebugTimeModifications.TIME_OFFSET.enabled) // if should change for debugging?
         {
-            LocalTime now = getCurrentTime();
-            now = now.plusHours(DebugTimeModifications.TIME_OFFSET.HOURS);
-            now = now.plusMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
-            now = now.plusSeconds(DebugTimeModifications.TIME_OFFSET.SECS);
-            setCurrentTime(now);
+            virtualClock.offsetHours(DebugTimeModifications.TIME_OFFSET.HOURS);
+            virtualClock.offsetMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
+            virtualClock.offsetSeconds(DebugTimeModifications.TIME_OFFSET.SECS);
         }
 
         // timer
@@ -286,26 +279,9 @@ public final class ClockBrain
         timer = new Timer(timerIterationSpeed, e ->
         {
             // update current time
-            if (!DebugTimeModifications.DEBUG) // production
-                setCurrentTime(LocalTime.now(zoneId)); // set time to now
-            else // debug
-            {
-                if (DebugTimeModifications.TIME_ACCELERATION.enabled) // speed up clock
-                    // add the specified number of seconds
-                    setCurrentTime(getCurrentTime().plusSeconds(DebugTimeModifications.TIME_ACCELERATION.SECONDS));
-                else // regular speed
-                {
-                    // recalculate time to avoid potential problems
-                    LocalTime now = LocalTime.now(zoneId);
-                    if (DebugTimeModifications.TIME_OFFSET.enabled)
-                    {
-                        now = now.plusHours(DebugTimeModifications.TIME_OFFSET.HOURS);
-                        now = now.plusMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
-                        now = now.plusSeconds(DebugTimeModifications.TIME_OFFSET.SECS);
-                    }
-                    setCurrentTime(now);
-                }
-            }
+            virtualClock.tick(); // may need to be updated; custom tick can only happen once per second
+
+            syncCalendarDate(); // is this necessary each tick, or every so often?
 
             // everything that needs to be done, should happen here
             // Attempt to acquire the lock to allow updates for the observers.  Will fail if the terminatorTimes are
@@ -319,6 +295,12 @@ public final class ClockBrain
             // TODO how to properly repaint?
 
         });
+    }
+
+    private void syncCalendarDate()
+    {
+        Calendar cal = GregorianCalendar.from(virtualClock.now());
+        czc.setCalendar(cal);
     }
 
     // Observer methods ----------------------------------------------------------------------
@@ -346,6 +328,7 @@ public final class ClockBrain
      */
     private void notifyTimeObservers()
     {
+        System.out.println(getCurrentTime());
         for (TimeObserver observer : timeObservers)
             observer.updateTime(getCurrentTime());
     }
