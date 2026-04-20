@@ -20,6 +20,10 @@ where the exact position (or centered) is given.
 or from the shaos zmanios (alos-tzeis?).
 - Nightly hour marks are not properly spaced during night.
 
+##
+- TimeScheduler may not deal well with the debugging portion due to offset
+time
+
 
 ## General
 - Does not calculate properly when the clock is changed (e.g. between 

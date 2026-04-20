@@ -56,8 +56,7 @@ public class TimeScheduler
         // following two lines for debugging purposes
         if (DebugTimeModifications.DEBUG && DebugTimeModifications.TIME_OFFSET.enabled)
         {
-            now = now.plusHours(DebugTimeModifications.TIME_OFFSET.HOURS);
-            now = now.plusMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
+            now = now.plusSeconds(DebugTimeModifications.TIME_OFFSET.duration.toSeconds());
         }
 
         LocalDateTime target = now.with(targetTime);

@@ -18,7 +18,7 @@ import java.util.TimeZone;
 /**
  * General window.  Holds information used by all.
  *
- * TODO move information from main.Main
+ * TODO all current code all exists in main.Main
  */
 public class ZmanGUI
 {
@@ -226,9 +226,9 @@ public class ZmanGUI
         if (DebugTimeModifications.TIME_OFFSET.enabled) // if should change for debugging?
         {
             LocalTime now = getCurrentTime();
-            now = now.plusHours(DebugTimeModifications.TIME_OFFSET.HOURS);
-            now = now.plusMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
-            now = now.plusSeconds(DebugTimeModifications.TIME_OFFSET.SECS);
+//            now = now.plusHours(DebugTimeModifications.TIME_OFFSET.HOURS);
+//            now = now.plusMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
+//            now = now.plusSeconds(DebugTimeModifications.TIME_OFFSET.SECS);
             setCurrentTime(now);
         }
 
@@ -251,9 +251,9 @@ public class ZmanGUI
                     LocalTime now = LocalTime.now(zoneId);
                     if (DebugTimeModifications.TIME_OFFSET.enabled)
                     {
-                        now = now.plusHours(DebugTimeModifications.TIME_OFFSET.HOURS);
-                        now = now.plusMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
-                        now = now.plusSeconds(DebugTimeModifications.TIME_OFFSET.SECS);
+//                        now = now.plusHours(DebugTimeModifications.TIME_OFFSET.HOURS);
+//                        now = now.plusMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
+//                        now = now.plusSeconds(DebugTimeModifications.TIME_OFFSET.SECS);
                     }
                     setCurrentTime(now);
                 }

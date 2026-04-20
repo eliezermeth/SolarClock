@@ -10,75 +10,118 @@ public class VirtualClock
     private Instant baseRealTime;
 
     private double speed = 1.0; // 1.0 = real time, 0 = pause, negative = reversed
-
-    private ZonedDateTime current;
-
-    private boolean realtime = true;
-    private boolean paused = false;
-
-    private long tickSeconds = 1;
+    private double savedSpeed = 1.0;
 
     public VirtualClock(ZoneId zoneId)
     {
         this.zoneId = zoneId;
-        this.current = ZonedDateTime.now(zoneId);
+        this.baseVirtualTime = ZonedDateTime.now(zoneId);
+        this.baseRealTime = Instant.now();
     }
 
+    /**
+     * Core calculation: virtual = base + (elapsed * speed)
+     * @return current <code>ZonedDateTime</code> of <code>VirtualClock</code>
+     */
     public ZonedDateTime now()
     {
-        return current;
+       Instant nowReal = Instant.now();
+       long elapsedMillis = Duration.between(baseRealTime, nowReal).toMillis();
+
+       long adjustedMillis = (long) (elapsedMillis * speed);
+
+       return baseVirtualTime.plus(Duration.ofMillis(adjustedMillis));
     }
 
     public LocalTime getLocalTime()
     {
-        return current.toLocalTime();
+        return now().toLocalTime();
     }
 
     public LocalDate getLocalDate()
     {
-        return current.toLocalDate();
+        return now().toLocalDate();
     }
 
-    public void tick()
-    {
-        if (paused)
-            return;
+    // -----------------------------------------------------------------------------
 
-        if (realtime)
-            current = ZonedDateTime.now(zoneId);
-        else
-            current = current.plusSeconds(tickSeconds); // revise - this only ticks once per second; may need from settings
-    }
+    /**
+     * Change speed the clock runs while preserving current virtual time.
+     * @param newSpeed 1.0 = real time, 0 = pause, negative = reversed
+     */
+    public void setSpeed(double newSpeed)
+    {
+        this.baseVirtualTime = now();
+        this.baseRealTime = Instant.now();
 
-    public void setRealTime(boolean realtime)
-    {
-        this.realtime = realtime;
-    }
-    public void setPaused(boolean paused)
-    {
-        this.paused = paused;
-    }
-    public boolean getPaused()
-    {
-        return paused;
-    }
-    public void setTickSeconds(long seconds)
-    {
-        this.tickSeconds = seconds;
+        this.speed = newSpeed;
+        if (newSpeed != 0.0) // if speed not set to paused, update the saved speed
+            this.savedSpeed = speed;
     }
 
-    public void offsetHours(long hours)
+    /**
+     * Get the current speed of the clock.
+     * @return <code>double</code> where 1.0 = real time, 0 = pause, negative = reversed
+     */
+    public double getSpeed()
     {
-        current = current.plusHours(hours);
+        return speed;
     }
 
-    public void offsetMinutes(long minutes)
+    /**
+     * Gets the saved speed of the clock; useful for when clock is paused and want to see speed clock had been running
+     * at.
+     * @return <code>double</code> of speed of clock when not paused; 1.0 = real time, 0 = pause, negative = reversed
+     */
+    public double getSavedSpeed()
     {
-        current = current.plusMinutes(minutes);
+        return savedSpeed;
     }
 
-    public void offsetSeconds(long seconds)
+    /**
+     * If the clock is currently paused.
+     * @return paused status of clock.
+     */
+    public boolean isPaused()
     {
-        current = current.plusSeconds(seconds);
+        return speed == 0.0;
+    }
+
+    /**
+     * Pause the running of the clock; the previous speed is saved.
+     */
+    public void pause()
+    {
+        setSpeed(0.0);
+    }
+
+    /**
+     * Resume running the clock at the previous saved speed.
+     */
+    public void resume()
+    {
+        setSpeed(savedSpeed);
+    }
+
+    // -----------------------------------------------------------------------------
+
+    /**
+     * Jump forward/backward in virtual time.
+     * @param duration amount to offset the current time of the clock.
+     */
+    public void offset(Duration duration)
+    {
+        baseVirtualTime = now().plus(duration);
+        baseRealTime = Instant.now();
+    }
+
+    /**
+     * Set the clock to a specific <code>ZonedDateTime</code>
+     * @param dateTime targeted date and time.
+     */
+    public void setTime(ZonedDateTime dateTime)
+    {
+        this.baseVirtualTime = dateTime;
+        this.baseRealTime = Instant.now();
     }
 }

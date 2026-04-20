@@ -243,12 +243,16 @@ public final class ClockBrain
      */
     public void setTimeProgression(boolean progress)
     {
-        virtualClock.setPaused(!progress);
-
         if (progress)
+        {
+            virtualClock.resume();
             timer.start();
+        }
         else
+        {
+            virtualClock.pause();
             timer.stop();
+        }
     }
 
     /**
@@ -257,7 +261,7 @@ public final class ClockBrain
      */
     public boolean getTimeProgression()
     {
-        return !virtualClock.getPaused();
+        return !virtualClock.isPaused();
     }
 
     /**
@@ -266,11 +270,9 @@ public final class ClockBrain
     private void initializeTimeProgression()
     {
         // set clock time
-        if (DebugTimeModifications.TIME_OFFSET.enabled) // if should change for debugging?
+        if (DebugTimeModifications.TIME_OFFSET.enabled) // should this change for debugging?
         {
-            virtualClock.offsetHours(DebugTimeModifications.TIME_OFFSET.HOURS);
-            virtualClock.offsetMinutes(DebugTimeModifications.TIME_OFFSET.MINS);
-            virtualClock.offsetSeconds(DebugTimeModifications.TIME_OFFSET.SECS);
+            virtualClock.offset(DebugTimeModifications.TIME_OFFSET.duration);
         }
 
         // timer
@@ -279,7 +281,7 @@ public final class ClockBrain
         timer = new Timer(timerIterationSpeed, e ->
         {
             // update current time
-            virtualClock.tick(); // may need to be updated; custom tick can only happen once per second
+            // virtualClock automatically updates itself every time it is polled
 
             syncCalendarDate(); // is this necessary each tick, or every so often?
 
@@ -328,9 +330,9 @@ public final class ClockBrain
      */
     private void notifyTimeObservers()
     {
-        System.out.println(getCurrentTime());
+        LocalTime currentTime = getCurrentTime(); // so not requesting it multiple times
         for (TimeObserver observer : timeObservers)
-            observer.updateTime(getCurrentTime());
+            observer.updateTime(currentTime);
     }
 
     /**

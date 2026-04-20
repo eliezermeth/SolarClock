@@ -1,5 +1,7 @@
 package util;
 
+import java.time.Duration;
+
 /**
  * Debugging options to be used when testing items; no other use.
  */
@@ -13,14 +15,17 @@ public class DebugTimeModifications
     /**
      * If time should be offset from current time.
      * Check <code>enabled</code> to see if offset time is enabled.
+     * Stored in <code>Duration</code>, which contains days, hours, minutes, and seconds.
      * Allows <code>HOURS</code>, <code>MINS</code>, and <code>SECS</code>.
      */
     public enum TIME_OFFSET
     {;
         public static final boolean enabled = false;
-        public static final int HOURS = 12;
-        public static final int MINS =  0;
-        public static final int SECS =  0;
+        private static final int DAYS = 0;
+        private static final int HOURS = 12;
+        private static final int MINS =  0;
+        private static final int SECS =  0;
+        public static final Duration duration = Duration.ofDays(DAYS).plusHours(HOURS).plusMinutes(MINS).plusSeconds(SECS);
     }
 
     /**
