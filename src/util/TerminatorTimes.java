@@ -2,12 +2,14 @@ package util;
 
 import util.enums.Terminator;
 
+import java.time.Duration;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 
 public class TerminatorTimes
 {
-    private LocalTime[] terminatorTimes = new LocalTime[3];
+    private ZonedDateTime[] terminators = new ZonedDateTime[3];
     private Terminator startingTerminator;
 
     /**
@@ -21,13 +23,13 @@ public class TerminatorTimes
     /**
      * Removes the first time and shifts all current times forward, then adds new time to end.  Also flips starting
      * terminator.
-     * @param time new time to add to the end
+     * @param next new time to add to the end
      */
-    public void increment(LocalTime time)
+    public void increment(ZonedDateTime next)
     {
-        terminatorTimes[0] = terminatorTimes[1];
-        terminatorTimes[1] = terminatorTimes[2];
-        terminatorTimes[2] = time;
+        terminators[0] = terminators[1];
+        terminators[1] = terminators[2];
+        terminators[2] = next;
 
         startingTerminator = (startingTerminator.equals(Terminator.SUNRISE)) ? Terminator.SUNSET : Terminator.SUNRISE;
     }
@@ -35,37 +37,26 @@ public class TerminatorTimes
     /**
      * Get the terminator stored in a certain position.
      * @param i array index of terminator to retrieve
-     * @return LocalTime of terminator; null if not set or IndexOutOfBounds
+     * @return <code>ZonedDateTime</code> of terminator; null if not set or IndexOutOfBounds
      */
-    public LocalTime getTerminator(int i)
+    public ZonedDateTime getTerminator(int i)
     {
-        try
-        {
-            return terminatorTimes[i];
-        }
-        catch (IndexOutOfBoundsException e)
-        {
-            return null;
-        }
+        if (i < 0 || i >= 3) return null;
+        return terminators[i];
     }
 
     /**
      * Try to set a terminator at a specific index within the upcoming terminators array.
      * @param i index of terminator to set
-     * @param time LocalTime of terminator
+     * @param time <code>ZonedDateTime</code> of terminator
      * @return if terminator could be set; failure means index out of bounds
      */
-    public boolean setTerminator(int i, LocalTime time)
+    public boolean setTerminator(int i, ZonedDateTime time)
     {
-        try
-        {
-            terminatorTimes[i] = time;
-            return true;
-        }
-        catch (IndexOutOfBoundsException e)
-        {
-            return false;
-        }
+        if (i < 0 || i >= 3) return false;
+
+        terminators[i] = time;
+        return true;
     }
 
     /**
@@ -91,7 +82,11 @@ public class TerminatorTimes
      */
     public void clear()
     {
-        Arrays.fill(terminatorTimes, null); // reset in place to avoid creating new array
+        // reset in place to avoid creating new array
+        terminators[0] = null;
+        terminators[1] = null;
+        terminators[2] = null;
+
         startingTerminator = null;
     }
 
@@ -102,14 +97,12 @@ public class TerminatorTimes
      */
     public long getTekufahSpan(int i)
     {
-        try
-        {
-            return TimeUtil.calculateMillisBetween(terminatorTimes[i], terminatorTimes[i + 1]);
-        }
-        catch (IndexOutOfBoundsException e)
-        {
-            return -1;
-        }
+        if (i < 0 || i >= 2) return -1;
+
+        ZonedDateTime a = terminators[i];
+        ZonedDateTime b = terminators[i + 1];
+
+        return Duration.between(a, b).toMillis();
     }
 
     /**

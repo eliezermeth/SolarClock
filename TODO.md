@@ -28,3 +28,5 @@ time
 ## General
 - Does not calculate properly when the clock is changed (e.g. between 
 standard and daylight savings time).
+- Add section for where between alos and sunrise and same for night (new
+color?).

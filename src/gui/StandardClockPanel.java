@@ -6,6 +6,7 @@ import main.ClockBrain;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 
 public class StandardClockPanel implements TimeObserver
 {
@@ -77,8 +78,8 @@ public class StandardClockPanel implements TimeObserver
     }
 
     @Override
-    public void updateTime(LocalTime time)
+    public void updateTime(ZonedDateTime time)
     {
-        updateStandardClock(time);
+        updateStandardClock(time.toLocalTime());
     }
 }

@@ -10,6 +10,7 @@ import util.TimeUtil;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 
 public class HalachicClockPanel implements TimeObserver, TerminatorObserver
 {
@@ -142,9 +143,9 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
     }
 
     @Override
-    public void updateTime(LocalTime time)
+    public void updateTime(ZonedDateTime time)
     {
-        updateHalachicClock(time);
+        updateHalachicClock(time.toLocalTime());
     }
 
     @Override
@@ -152,7 +153,7 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
     {
         // reset current tekufah
         currentTekufah = clock.getTerminatorTimes().getStartingTerminator();
-        tekufahStart = clock.getTerminatorTimes().getTerminator(0);
+        tekufahStart = clock.getTerminatorTimes().getTerminator(0).toLocalTime();
 
         // recalculate shaah-hour length
         shaahMillis = clock.getTerminatorTimes().getTekufahShaah(0);

@@ -17,6 +17,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.List;
 public class AnalogClockPanel extends JPanel implements TimeObserver, TerminatorObserver, EqualViewOption
 {
     private ClockBrain clock; // singleton; provider
+    private LocalTime currentTime; // used for ease of calculations, rather than ZonedDateTime
 
     // for use to set lines at proper position in circle
     /**
@@ -305,8 +307,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         boolean daytime;
 
         // Test if within the first tekufah; t0 <= time < t1
-        if (!time.isBefore(clock.getTerminatorTimes().getTerminator(0)) && // time is at or after first terminator
-                time.isBefore(clock.getTerminatorTimes().getTerminator(1))) // time is strictly before second
+        if (!time.isBefore(clock.getTerminatorTimes().getTerminator(0).toLocalTime()) && // time is at or after first terminator
+                time.isBefore(clock.getTerminatorTimes().getTerminator(1).toLocalTime())) // time is strictly before second
         {
             targetedTekufah = 0; // use first and second terminators
             if (clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE))
@@ -336,7 +338,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         }
 
         long totalSeconds = clock.getTerminatorTimes().getTekufahSpan(targetedTekufah);
-        long currentSeconds = TimeUtil.calculateMillisBetween(clock.getTerminatorTimes().getTerminator(targetedTekufah),
+        long currentSeconds = TimeUtil.calculateMillisBetween(clock.getTerminatorTimes().getTerminator(targetedTekufah).toLocalTime(),
                 time);
 
         // get percent of angular span
@@ -415,11 +417,11 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
      */
     public void addTerminatorLines()
     {
-        this.addStaticLine(clock.getTerminatorTimes().getTerminator(0),
+        this.addStaticLine(clock.getTerminatorTimes().getTerminator(0).toLocalTime(),
                 clock.getTerminatorTimes().getStartingTerminator().toString(), 3, Color.GREEN);
         Terminator other = clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE) ?
                 Terminator.SUNSET : Terminator.SUNRISE;
-        this.addStaticLine(clock.getTerminatorTimes().getTerminator(1), other.toString(), 3, Color.GREEN);
+        this.addStaticLine(clock.getTerminatorTimes().getTerminator(1).toLocalTime(), other.toString(), 3, Color.GREEN);
     }
 
     /**
@@ -442,7 +444,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
             for (int[] tekufah : tekufahSettings)
             {
-                LocalTime tekufahStart = clock.getTerminatorTimes().getTerminator(tekufah[0]);
+                LocalTime tekufahStart = clock.getTerminatorTimes().getTerminator(tekufah[0]).toLocalTime();
                 long tekufahShaah = clock.getTerminatorTimes().getTekufahShaah(tekufah[0]);
 
                 for (int i = 0; i < 12; i++) // 0 to include terminator, 1 to exclude
@@ -515,8 +517,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     }
 
     @Override
-    public void updateTime(LocalTime time)
+    public void updateTime(ZonedDateTime time)
     {
+        this.currentTime = time.toLocalTime();
         // TODO find where the current time is added/calculated
         //if (USE_BUFFERED_IMAGE) createStaticImage(); // TODO should be removed when properly draw static image
         repaint(); // will also trigger drawCurrentTime()

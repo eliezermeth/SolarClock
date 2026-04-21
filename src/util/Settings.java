@@ -35,4 +35,7 @@ public class Settings
     public static byte ANALOG_SHAAH_TICK_MARK_WIDTH = 1;
     /** Whether the tick marks for the sha'os should have their standard times displayed on the analog clock. */
     public static boolean ANALOG_SHAAH_TIME_MARKINGS = true;
+
+    /** How many days zmanim events should be retained for */
+    public static int EVENT_RETENTION_DAYS = 2;
 }

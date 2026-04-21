@@ -1,5 +1,7 @@
 package util;
 
+import main.VirtualClock;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -10,10 +12,18 @@ import java.util.function.Supplier;
 
 /**
  * Schedule a task to be run at a specific time.
+ * TODO DEPRECIATED -- to be removed as soon as possible
  */
 public class TimeScheduler
 {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final VirtualClock clock;
+
+    public TimeScheduler(VirtualClock clock)
+    {
+        this.clock = clock;
+    }
+
 
     /**
      * Run a task at a specific time.
@@ -52,7 +62,7 @@ public class TimeScheduler
      */
     private long calculateDelay(LocalTime targetTime)
     {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = clock.now().toLocalDateTime();
         // following two lines for debugging purposes
         if (DebugTimeModifications.DEBUG && DebugTimeModifications.TIME_OFFSET.enabled)
         {
@@ -81,13 +91,13 @@ public class TimeScheduler
      */
     public static void main(String[] args)
     {
-        TimeScheduler scheduler = new TimeScheduler();
-        scheduler.schedule(LocalTime.now().plusSeconds(10), () -> {
-            System.out.println("Task 1");
-        });
-        scheduler.schedule(LocalTime.now().plusSeconds(15), () -> {
-            System.out.println("Task 2");
-        });
-        scheduler.shutdown();
+//        TimeScheduler scheduler = new TimeScheduler();
+//        scheduler.schedule(LocalTime.now().plusSeconds(10), () -> {
+//            System.out.println("Task 1");
+//        });
+//        scheduler.schedule(LocalTime.now().plusSeconds(15), () -> {
+//            System.out.println("Task 2");
+//        });
+//        scheduler.shutdown();
     }
 }

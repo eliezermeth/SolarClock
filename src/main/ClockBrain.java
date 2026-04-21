@@ -10,6 +10,9 @@ import util.enums.Terminator;
 
 import javax.swing.*;
 import javax.swing.Timer;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -26,7 +29,7 @@ public final class ClockBrain
 
     private ComplexZmanimCalendar czc;
 
-    protected ZoneId zoneId;
+    public final ZoneId zoneId;
     private VirtualClock virtualClock;
 
     protected TerminatorTimes terminatorTimes = new TerminatorTimes();
@@ -112,22 +115,21 @@ public final class ClockBrain
     {
         // currently uses getSunrise() for delineations; switch to higher-order based on options for delineations?
 
-        LocalTime tempSunrise = TimeUtil.dateToLocalTime(czc.getSunrise(), czc);
-        LocalTime tempSunset = TimeUtil.dateToLocalTime(czc.getSunset(), czc);
-
-        LocalTime now = virtualClock.getLocalTime();
+        ZonedDateTime now = virtualClock.now();
+        ZonedDateTime tempSunrise = czc.getSunrise().toInstant().atZone(zoneId);
+        ZonedDateTime tempSunset = czc.getSunset().toInstant().atZone(zoneId);
 
         if (now.isBefore(tempSunrise)) // before sunrise; during previous night
         {
             // start from previous sunset
             ComplexZmanimCalendar yesterday = changeDay(this.czc, -1);
-            terminatorTimes.setTerminator(0, TimeUtil.dateToLocalTime(yesterday.getSunset(), yesterday));
+            terminatorTimes.setTerminator(0, yesterday.getSunset().toInstant().atZone(zoneId));
             terminatorTimes.setStartingTerminator(Terminator.SUNSET);
 
             terminatorTimes.setTerminator(1, tempSunrise);
             terminatorTimes.setTerminator(2, tempSunset);
         }
-        else if (now.equals(tempSunrise) ||     // at sunrise
+        else if (Math.abs(Duration.between(now, tempSunrise).toMillis()) < 1000 ||     // at sunrise
                 now.isBefore(tempSunset))   // after sunrise, but before sunset
         {
             terminatorTimes.setTerminator(0, tempSunrise);
@@ -136,7 +138,7 @@ public final class ClockBrain
 
             // third terminator is next sunrise
             ComplexZmanimCalendar tomorrow = changeDay(this.czc, 1);
-            terminatorTimes.setTerminator(2, TimeUtil.dateToLocalTime(tomorrow.getSunrise(), tomorrow));
+            terminatorTimes.setTerminator(2, tomorrow.getSunrise().toInstant().atZone(zoneId));
         }
         else // now.equals(tempSunset) || now.isAfter(tempSunset); sunset or after
         {
@@ -145,8 +147,8 @@ public final class ClockBrain
 
             // second and third terminator times are tomorrow
             ComplexZmanimCalendar tomorrow = changeDay(this.czc, 1);
-            terminatorTimes.setTerminator(1, TimeUtil.dateToLocalTime(tomorrow.getSunrise(), tomorrow));
-            terminatorTimes.setTerminator(2, TimeUtil.dateToLocalTime(tomorrow.getSunset(), tomorrow));
+            terminatorTimes.setTerminator(1, tomorrow.getSunrise().toInstant().atZone(zoneId));
+            terminatorTimes.setTerminator(2, tomorrow.getSunset().toInstant().atZone(zoneId));
         }
 
         // updateCalculateEqualDayNighView(); TODO?
@@ -171,16 +173,16 @@ public final class ClockBrain
 
             // get next terminator time to be saved
             // if current terminator head is SUNRISE, will need next SUNSET; and vice versa
-            LocalTime nextTime;
+            ZonedDateTime nextTime;
             if (terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE)) // need tomorrow's sunset
             {
                 ComplexZmanimCalendar future = changeDay(this.czc, 1);
-                nextTime = TimeUtil.dateToLocalTime(future.getSunset(), future);
+                nextTime = future.getSunset().toInstant().atZone(zoneId);
             }
             else // starting terminator is SUNSET; need aftermorrow's sunrise
             {
                 ComplexZmanimCalendar future = changeDay(this.czc, 2);
-                nextTime = TimeUtil.dateToLocalTime(future.getSunrise(), future);
+                nextTime = future.getSunrise().toInstant().atZone(zoneId);
             }
 
             terminatorTimes.increment(nextTime);
@@ -207,14 +209,14 @@ public final class ClockBrain
      */
     private void createTekufahScheduler()
     {
-        TimeScheduler tekufahScheduler = new TimeScheduler();
+        TimeScheduler tekufahScheduler = new TimeScheduler(virtualClock);
         tekufahScheduler.scheduleRepeat(
-                terminatorTimes.getTerminator(1),       // first time to occur
+                LocalTime.from(terminatorTimes.getTerminator(1)),       // first time to occur
                 () -> { // tasks to run at that time
                     updateTerminatorTimes();
                     notifyTerminatorObservers();
                 },
-                () -> terminatorTimes.getTerminator(1) // next time supplier for when to run task
+                () -> LocalTime.from(terminatorTimes.getTerminator(1)) // next time supplier for when to run task
         );
     }
 
@@ -330,9 +332,8 @@ public final class ClockBrain
      */
     private void notifyTimeObservers()
     {
-        LocalTime currentTime = getCurrentTime(); // so not requesting it multiple times
         for (TimeObserver observer : timeObservers)
-            observer.updateTime(currentTime);
+            observer.updateTime(getCurrentDateTime());
     }
 
     /**
@@ -364,9 +365,14 @@ public final class ClockBrain
 
     // ---------------------------------------------------------------------------------------
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
         ClockBrain clock = ClockBrain.getInstance();
+
+        String methodName = "getSunrise";
+        Method m = clock.czc.getClass().getMethod(methodName);
+        System.out.println(m.invoke(clock.czc));
+        System.out.println(m.invoke(clock.czc).getClass());
 
         System.out.println(clock.getCurrentTime());
     }
