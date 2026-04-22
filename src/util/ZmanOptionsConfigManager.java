@@ -1,6 +1,9 @@
 package util;
 
+import com.kosherjava.zmanim.ComplexZmanimCalendar;
+
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -70,7 +73,14 @@ public class ZmanOptionsConfigManager
             if (lines.size() > 3)
                 description = String.join("\n", lines.subList(1, lines.size() - 2));
 
-            list.add(new ZmanEntry(title, description, methodName, enabled));
+            Method method;
+            try {
+                method = ComplexZmanimCalendar.class.getMethod(methodName);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("Failed attempting call of method " + methodName, e);
+            }
+
+            list.add(new ZmanEntry(title, description, methodName, method, enabled));
         }
 
         return list;
@@ -91,7 +101,8 @@ public class ZmanOptionsConfigManager
             {
                 ZmanEntry updated = new ZmanEntry(
                         old.title(), old.description(),
-                        old.methodName(), !old.enabled()
+                        old.methodName(), old.method(),
+                        !old.enabled()
                 );
                 entries.set(i, updated);
 
