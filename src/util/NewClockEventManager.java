@@ -80,9 +80,49 @@ public class NewClockEventManager implements TimeObserver
         upcoming.add(event);
     }
 
+    // method to scan list(s) for duplicate events
+    // method to order list properly?
+
+    // smaller method for going over a period to add events
+
     @Override
     public void updateTime(ZonedDateTime time)
     {
+        // upon update, query first element in upcoming
+        // if equal or greater than time, shift and send out update to all
+        // past x, search for new events
+    }
 
+    /**
+     * Remove all events that occurred before a specific time.
+     * @param cutoff <code>ZonedDateTime</code> of earliest permitted time in event lists.
+     */
+    public void pruneBefore(ZonedDateTime cutoff)
+    {
+        // change since lists will be in chronological order?
+        allEvents.removeIf(event -> event.getTime().isBefore(cutoff));
+        upcoming.removeIf(event -> event.getTime().isBefore(cutoff));
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Access methods
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Return a list of all stored events (past and future).
+     * @return <code>List</code> of <code>ClockEvent</code>s
+     */
+    public List<ClockEvent> getAllEvents()
+    {
+        return Collections.unmodifiableList(allEvents);
+    }
+
+    /**
+     * Get a list of all upcoming events (future).
+     * @return <code>NavigableSet</code> of <code>ClockEvent</code>s
+     */
+    public NavigableSet<ClockEvent> getUpcomingEvents()
+    {
+        return Collections.unmodifiableNavigableSet(upcoming);
     }
 }
