@@ -22,7 +22,7 @@ public class IndexedSet<E extends Comparable<? super E>> implements Iterable<E>
      */
     public boolean add(E e)
     {
-        int index = Collections.binarySearch(list, e); // test if exists and find proper position
+        int index = Collections.binarySearch(list, e);
         if (index >= 0) return false;  // already exists in list
         list.add(-index - 1, e); // insert at correct sorted position
         return true;
@@ -90,6 +90,15 @@ public class IndexedSet<E extends Comparable<? super E>> implements Iterable<E>
     public void clear()
     {
         list.clear();
+    }
+
+    /**
+     * Get an unmodifiable copy of the current list.
+     * @return unmodifiable copy of list
+     */
+    public List<E> asUnmodifiableList()
+    {
+        return Collections.unmodifiableList(list);
     }
 
     @Override

@@ -14,8 +14,8 @@ public class NewClockEventManager implements TimeObserver
 {
     private final ClockBrain clock = ClockBrain.getInstance();
 
-    private final List<ClockEvent> allEvents = new ArrayList<>();
-    private final NavigableSet<ClockEvent> upcoming = new TreeSet<>();
+    private final IndexedSet<ClockEvent> allEvents = new IndexedSet<>();
+    private final IndexedSet<ClockEvent> upcoming = new IndexedSet<>();
 
     public NewClockEventManager()
     {
@@ -23,6 +23,7 @@ public class NewClockEventManager implements TimeObserver
         initialize();
 
         // advance upcoming to proper event
+        pruneBefore(upcoming, clock.getCurrentDateTime());
 
         // register with ClockBrain as an observer
         clock.registerTimeObserver(this);
@@ -89,17 +90,29 @@ public class NewClockEventManager implements TimeObserver
         // upon update, query first element in upcoming
         // if equal or greater than time, shift and send out update to all
         // past x, search for new events
+        // SEE onTimeUpdate
     }
+
+    // Regeneration hook (for when need to get new events
 
     /**
      * Remove all events that occurred before a specific time.
-     * @param cutoff <code>ZonedDateTime</code> of earliest permitted time in event lists.
+     * @param list {@code IndexedSet<ClockEvent>} to operate on
+     * @param cutoff {@code ZonedDateTime} of earliest permitted time in event lists.
      */
-    public void pruneBefore(ZonedDateTime cutoff)
+    public void pruneBefore(IndexedSet<ClockEvent> list, ZonedDateTime cutoff)
     {
-        // change since lists will be in chronological order?
-        allEvents.removeIf(event -> event.getTime().isBefore(cutoff));
-        upcoming.removeIf(event -> event.getTime().isBefore(cutoff));
+        while (true) // works since IndexedSet<ClockEvent>s are in chronological order
+        {
+            try {
+                if (list.peek().getTime().isBefore(cutoff)) // if first element is before cutoff time, remove
+                    list.poll();
+                else
+                    break; // once first element is after, no further elements need be checked
+            } catch (NoSuchElementException e) {
+                break; // do nothing; list is empty
+            }
+        }
     }
 
     // ---------------------------------------------------------------------------------------
@@ -112,26 +125,26 @@ public class NewClockEventManager implements TimeObserver
      */
     public List<ClockEvent> getAllEvents()
     {
-        return Collections.unmodifiableList(allEvents);
+        return allEvents.asUnmodifiableList();
     }
 
     /**
      * Get a list of all upcoming events (future).
      * @return <code>NavigableSet</code> of <code>ClockEvent</code>s
      */
-    public NavigableSet<ClockEvent> getUpcomingEvents()
+    public List<ClockEvent> getUpcomingEvents()
     {
-        return Collections.unmodifiableNavigableSet(upcoming);
+        return upcoming.asUnmodifiableList();
     }
 
     public static void main(String[] args)
     {
         NewClockEventManager manager = new NewClockEventManager();
 
-        List<ClockEvent> allEvents = manager.getAllEvents();
+        List<ClockEvent> upcoming = manager.getUpcomingEvents();
 
         Date date;
-        for (ClockEvent event  : allEvents)
+        for (ClockEvent event  : upcoming)
         {
             date = Date.from(event.getTime().toInstant());
 
