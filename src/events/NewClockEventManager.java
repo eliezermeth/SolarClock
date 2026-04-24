@@ -1,8 +1,9 @@
-package util;
+package events;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import interfaces.TimeObserver;
 import main.ClockBrain;
+import util.ZmanOptionsConfigManager;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -80,9 +81,6 @@ public class NewClockEventManager implements TimeObserver
         upcoming.add(event);
     }
 
-    // method to scan list(s) for duplicate events
-    // method to order list properly?
-
     // smaller method for going over a period to add events
 
     @Override
@@ -124,5 +122,20 @@ public class NewClockEventManager implements TimeObserver
     public NavigableSet<ClockEvent> getUpcomingEvents()
     {
         return Collections.unmodifiableNavigableSet(upcoming);
+    }
+
+    public static void main(String[] args)
+    {
+        NewClockEventManager manager = new NewClockEventManager();
+
+        List<ClockEvent> allEvents = manager.getAllEvents();
+
+        Date date;
+        for (ClockEvent event  : allEvents)
+        {
+            date = Date.from(event.getTime().toInstant());
+
+            System.out.println(String.format("%s\n%tF %tT\n", event.getTitle(), date, date));
+        }
     }
 }

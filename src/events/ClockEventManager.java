@@ -1,7 +1,8 @@
-package util;
+package events;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import main.ClockBrain;
+import util.Settings;
 
 import java.lang.reflect.Method;
 import java.time.LocalDate;

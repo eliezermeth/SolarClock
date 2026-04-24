@@ -1,6 +1,7 @@
 package util;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
+import events.ZmanEntry;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -19,7 +20,7 @@ public class ZmanOptionsConfigManager
 
     private final List<ZmanEntry> entries = new ArrayList<>();
 
-    private static final String filename = "ZmanimOptions.txt";
+    private static final String filename = "src/util/ZmanimOptions";
 
     private ZmanOptionsConfigManager()
     {

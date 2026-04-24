@@ -1,4 +1,4 @@
-package util;
+package events;
 
 import java.time.ZonedDateTime;
 
