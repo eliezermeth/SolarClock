@@ -1,6 +1,7 @@
 package events;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -10,7 +11,7 @@ import java.util.List;
  * automatically sorted.
  * @param <E> the type of elements in this list
  */
-public class IndexedSet<E> implements Iterable<E>
+public class IndexedSet<E extends Comparable<? super E>> implements Iterable<E>
 {
     private final List<E> list = new ArrayList<>();
 
@@ -21,11 +22,9 @@ public class IndexedSet<E> implements Iterable<E>
      */
     public boolean add(E e)
     {
-        if (list.contains(e))
-            return false;
-
-        // not found in list
-        list.add(e); // TODO better add, into order
+        int index = Collections.binarySearch(list, e); // test if exists and find proper position
+        if (index >= 0) return false;  // already exists in list
+        list.add(-index - 1, e); // insert at correct sorted position
         return true;
     }
 
