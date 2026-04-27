@@ -55,8 +55,6 @@ public class NewClockEventManager implements TimeObserver
 
             for (ZmanEntry entry : entries)
             {
-                if (!entry.enabled()) continue; // skip disabled options
-
                 try {
                     Date d = (Date) entry.method().invoke(czc);
                     if (d == null) continue;// if zman does not occur (that day), skip
@@ -64,7 +62,7 @@ public class NewClockEventManager implements TimeObserver
 
                     // add event to the schedule
                     addEvent(new ClockEvent(entry.methodName(), entry.title(), entry.description(),
-                            time, entry.methodName()));
+                            time, entry.methodName(), entry.enabled()));
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to invoke method: " + entry.methodName(), e);
                 }

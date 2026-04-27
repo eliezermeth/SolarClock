@@ -16,23 +16,25 @@ public class ClockEvent implements Comparable<ClockEvent>
 
     private final ZonedDateTime time;
     private final String source;
+    private final boolean enabled;
 
     private State state = State.PENDING;
 
-    public ClockEvent(String id, String title, String description, ZonedDateTime time, String source)
+    public ClockEvent(String id, String title, String description, ZonedDateTime time, String source, boolean enabled)
     {
         this.id = id;
         this.title = title;
         this.description = description;
         this.time = time;
         this.source = source;
+        this.enabled = enabled;
     }
 
-    public String getId() { return id; }
     public String getTitle() { return title; }
     public String getDescription() { return description; }
     public ZonedDateTime getTime() { return time; }
     public String getSource() { return source; }
+    public boolean isEnabled() { return enabled; }
 
     public State getState() { return state; }
 

@@ -34,7 +34,6 @@ public class ClockEventManager
 
             for (ZmanEntry entry : entries)
             {
-                if (!entry.enabled()) continue;
 
                 ClockEvent event = buildEvent(entry, targetDate);
 
@@ -50,7 +49,7 @@ public class ClockEventManager
 
         if (time == null) return null;
 
-        return new ClockEvent(entry.methodName(), entry.title(), entry.description(), time, entry.methodName());
+        return new ClockEvent(entry.methodName(), entry.title(), entry.description(), time, entry.methodName(), entry.enabled());
     }
 
     // TIME RESOLUTION -------------------------------------------------------------------
