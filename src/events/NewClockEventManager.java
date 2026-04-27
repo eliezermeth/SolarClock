@@ -152,3 +152,7 @@ public class NewClockEventManager implements TimeObserver
         }
     }
 }
+// to do
+// modify so that all clock events are calculated; only some are shown
+// start time pull from previous chatzos halailah, and go until tomorrow's chatzos halailah
+// turnover occurs after chatzos halailah
