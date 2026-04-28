@@ -44,12 +44,12 @@ public class DigitalClockPanel extends GridRegionPanel
 
     private void createStandardClock()
     {
-        new StandardClockPanel(this, standardClockPanel);
+        new StandardClockPanel(standardClockPanel);
     }
 
     private void createHalachicClock()
     {
-        new HalachicClockPanel( this, halachicClockPanel);
+        new HalachicClockPanel( halachicClockPanel);
     }
 
     private void createConversionTable()

@@ -22,6 +22,8 @@ public class Settings
     public static Color DAY_COLOR = new Color(255, 255, 200);
     /** Color for the night segment of the analog clock. */
     public static Color NIGHT_COLOR = new Color(100, 100, 255);
+    /** Color for the twilight (dawn & dusk) segments of the clock. */
+    public static Color TWILIGHT_COLOR = new Color(185, 185, 255);
     /** Color for the current-time hand of the analog clock. */
     public static Color TIME_HAND_COLOR = Color.RED;
 

@@ -2,6 +2,7 @@ package main;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
+import events.ClockEventManager;
 import interfaces.TerminatorObserver;
 import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
@@ -31,6 +32,7 @@ public final class ClockBrain
 
     public final ZoneId zoneId;
     private VirtualClock virtualClock;
+    private ClockEventManager eventManager;
 
     protected TerminatorTimes terminatorTimes = new TerminatorTimes();
     /**
@@ -57,18 +59,20 @@ public final class ClockBrain
         // get and intitialize time
         zoneId = this.czc.getGeoLocation().getTimeZone().toZoneId();
         virtualClock = new VirtualClock(zoneId);
-
         calculateSolarTerminators();
         initializeTimeProgression();
         createTekufahScheduler();
+
+        // start event manager
+        eventManager = new ClockEventManager(this);
+
         setTimeProgression(true); // TODO is this proper?
     }
 
-    public synchronized static ClockBrain getInstance() // synchronized for thread-safe when/if implemented
+    public synchronized static ClockBrain getInstance() // synchronized for thread safety when/if implemented
     {
         if (INSTANCE == null)
             INSTANCE = new ClockBrain();
-
         return INSTANCE;
     }
 
@@ -98,6 +102,15 @@ public final class ClockBrain
     public ComplexZmanimCalendar getComplexZmanimCalendar()
     {
         return (ComplexZmanimCalendar) czc.clone();
+    }
+
+    /**
+     * Get the event manager (containing all {@code ClocEvent}s) of the {@code ClockBrain}.
+     * @return instance of {@code ClockEventManager} created by the {@code ClockBrain}
+     */
+    public ClockEventManager getEventManager()
+    {
+        return eventManager; // should this be masked?
     }
 
     // Terminator methods -----------------------------------------------------------------
@@ -207,7 +220,7 @@ public final class ClockBrain
     /**
      * Method to create the thread that will update the tekufos at the proper time.
      */
-    private void createTekufahScheduler()
+    private void createTekufahScheduler()  // TODO do away with this method
     {
         TimeScheduler tekufahScheduler = new TimeScheduler(virtualClock);
         tekufahScheduler.scheduleRepeat(

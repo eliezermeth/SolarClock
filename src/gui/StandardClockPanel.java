@@ -10,17 +10,15 @@ import java.time.ZonedDateTime;
 
 public class StandardClockPanel implements TimeObserver
 {
-    private ClockBrain clock;
-    private DigitalClockPanel parent;
-    private JPanel panel;
+    private final ClockBrain clock;
+    private final JPanel panel;
 
     // Moving parts
-    private JLabel[] components = new JLabel[3]; // HH MM SS
+    private final JLabel[] components = new JLabel[3]; // HH MM SS
 
-    public StandardClockPanel(DigitalClockPanel parent, JPanel child)
+    public StandardClockPanel(JPanel child)
     {
         this.clock = ClockBrain.getInstance();
-        this.parent = parent;
         this.panel = child;
 
         createStandardClock();

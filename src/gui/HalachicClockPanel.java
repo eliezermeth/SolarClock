@@ -14,13 +14,12 @@ import java.time.ZonedDateTime;
 
 public class HalachicClockPanel implements TimeObserver, TerminatorObserver
 {
-    private ClockBrain clock;
-    private DigitalClockPanel parent;
-    private JPanel panel;
+    private final ClockBrain clock;
+    private final JPanel panel;
 
     // Moving parts
-    private JLabel[] fracClockComponents = new JLabel[2]; // HH Chalakim
-    private JLabel[] regularClockComponents = new JLabel[3]; // HH MM SS
+    private final JLabel[] fracClockComponents = new JLabel[2]; // HH Chalakim
+    private final JLabel[] regularClockComponents = new JLabel[3]; // HH MM SS
 
     // Values for calculations
     private int hour = -1, min = -1; // hour
@@ -30,10 +29,9 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
     private double cheilekFracPerMilli = -1;
     double adjustedMinuteLength = -1, adjustedSecondLength = -1; // milliseconds in halachic minute/second for tekufah
 
-    public HalachicClockPanel(DigitalClockPanel parent, JPanel child)
+    public HalachicClockPanel(JPanel child)
     {
         this.clock = ClockBrain.getInstance();
-        this.parent = parent;
         this.panel = child;
 
         createHalachicClock();
@@ -117,7 +115,7 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
 
     /**
      * Update the halachic clock to the current time.
-     * @param currentTime
+     * @param currentTime the current {@code LocalTime}
      */
     public void updateHalachicClock(LocalTime currentTime)
     {

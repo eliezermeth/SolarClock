@@ -1,12 +1,12 @@
 package events;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
-import com.kosherjava.zmanim.util.Zman;
 import interfaces.TimeObserver;
 import interfaces.ZmanEventObserver;
 import main.ClockBrain;
 import util.ZmanOptionsConfigManager;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -14,15 +14,17 @@ import java.util.*;
 
 public class ClockEventManager implements TimeObserver
 {
-    private final ClockBrain clock = ClockBrain.getInstance();
+    private final ClockBrain clock ;
 
     private final IndexedSet<ClockEvent> allEvents = new IndexedSet<>();
     private final IndexedSet<ClockEvent> upcoming = new IndexedSet<>();
 
     private final List<ZmanEventObserver> zmanEventObservers = new ArrayList<>();
 
-    public ClockEventManager()
+    public ClockEventManager(ClockBrain clock)
     {
+        this.clock = clock;
+
         // initialize
         initialize();
 
@@ -312,8 +314,8 @@ public class ClockEventManager implements TimeObserver
 
     public static void main(String[] args)
     {
-        ClockEventManager manager = new ClockEventManager();
-
+        ClockBrain clock = ClockBrain.getInstance();
+        ClockEventManager manager = clock.getEventManager();
         List<ClockEvent> events = manager.getAllEvents();
 
         Date date;
@@ -321,7 +323,7 @@ public class ClockEventManager implements TimeObserver
         {
             date = Date.from(event.getTime().toInstant());
 
-            System.out.println(String.format("%s\n%tF %tT\n", event.getTitle(), date, date));
+            System.out.printf("%s\n%tF %tT\n%n", event.getTitle(), date, date);
         }
     }
 }
