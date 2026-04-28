@@ -10,7 +10,7 @@ public interface TimeObserver
 
     /**
      * Update the time within a class.  May also be used to repaint the panel.
-     * @param time
+     * @param time {@code ZonedDateTime} the time all listeners should be updated to
      */
     void updateTime(ZonedDateTime time);
 }

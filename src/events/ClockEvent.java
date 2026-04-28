@@ -30,6 +30,7 @@ public class ClockEvent implements Comparable<ClockEvent>
         this.enabled = enabled;
     }
 
+    public String getId() { return id; }
     public String getTitle() { return title; }
     public String getDescription() { return description; }
     public ZonedDateTime getTime() { return time; }
