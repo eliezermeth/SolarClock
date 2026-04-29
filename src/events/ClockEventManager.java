@@ -280,6 +280,49 @@ public class ClockEventManager implements TimeObserver
         return null;
     }
 
+    /**
+     * Returns the first visible (enabled) upcoming {@code ClockEvent} within a list.
+     * @return the first active upcoming {@code ClockEvent}; {@code null} if none active
+     */
+    public ClockEvent getUpcomingFirstVisibleEvent()
+    {
+        return getFirstVisibleEvent(upcoming.asUnmodifiableList());
+    }
+
+    /**
+     * Returns all visible (enabled) events within a list.
+     * @param list list to search for visible events
+     * @return list of visible events
+     */
+    public List<ClockEvent> getVisibleEvents(List<ClockEvent> list)
+    {
+        List<ClockEvent> visibleList = new LinkedList<>();
+
+        for (ClockEvent event : list)
+            if (event.isEnabled())
+                visibleList.add(event);
+
+        return visibleList;
+    }
+
+    /**
+     * Returns all visible events {@code ClockEvent}s saved for current time period.
+     * @return all enabled {@code ClockEvent}s
+     */
+    public List<ClockEvent> getVisibleAllEvents()
+    {
+        return getVisibleEvents(allEvents.asUnmodifiableList());
+    }
+
+    /**
+     * Returns upcoming visible events {@code ClockEvent}s saved for current time period.
+     * @return upcoming enabled {@code ClockEvent}s
+     */
+    public List<ClockEvent> getVisibleUpcomingEvents()
+    {
+        return getVisibleEvents(upcoming.asUnmodifiableList());
+    }
+
     // ---------------------------------------------------------------------------------------
     // Observer methods
     // ---------------------------------------------------------------------------------------
