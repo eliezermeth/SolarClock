@@ -34,8 +34,8 @@ public class DigitalClockPanel extends GridRegionPanel
         addRegion(11, 1, 3, 2, halachicClockPanel);
 
         // taller regions
-        //addRegion(1, 5, 3, 4, new JPanel()); // upcomingTimesPanel
-        //addRegion(11, 5, 3, 4, new JPanel()); // conversionTablePanel
+        //addRegion(1, 5, 3, 4, new JPanel()); // conversionTablePanel
+        addRegion(11, 5, 3, 4, upcomingTimesPanel); // upcomingTimesPanel
     }
 
     /// --------------------------------------------------------------
@@ -59,7 +59,7 @@ public class DigitalClockPanel extends GridRegionPanel
 
     private void createUpcomingTimes()
     {
-
+        new UpcomingTimesPanel(upcomingTimesPanel);
     }
 
     // --------------------------------------------------------------

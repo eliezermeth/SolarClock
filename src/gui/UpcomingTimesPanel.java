@@ -6,6 +6,7 @@ import events.ClockEventManager;
 import main.ClockBrain;
 
 import javax.swing.*;
+import java.awt.*;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -19,6 +20,11 @@ public class UpcomingTimesPanel
 
     private ClockEventManager clockEventManager;
     private ClockEvent nextUpcomingVisibleEvent;
+
+    private JPanel imminentEvent;
+    private JLabel imminentTitle, imminentTime, imminentCountdown;
+
+    private List<JPanel> upcomingList;
 
     /**
      * Constructor.
@@ -34,8 +40,47 @@ public class UpcomingTimesPanel
         nextUpcomingVisibleEvent = clockEventManager.getUpcomingFirstVisibleEvent();
 
         // construct panels
+        this.panel.setLayout(new BoxLayout(this.panel, BoxLayout.Y_AXIS));
+        this.panel.setOpaque(false);
+        constructImminentPanel();
+
+        panel.add(Box.createVerticalGlue()); // stick elements to top
         // need method to condense ClockEvent into printable text
     }
+
+    public void constructImminentPanel()
+    {
+        imminentEvent = new JPanel(new GridBagLayout());
+        imminentEvent.setOpaque(false);
+        imminentEvent.setMaximumSize(new Dimension(Integer.MAX_VALUE, imminentEvent.getPreferredSize().height));
+        imminentEvent.setAlignmentX(Component.CENTER_ALIGNMENT);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5); // padding
+
+        // Label
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        imminentTitle = new JLabel("Imminent zman");
+        imminentEvent.add(imminentEvent, gbc);
+
+        // Time
+        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        imminentTime = new JLabel("--:--:--");
+        imminentTime.add(imminentEvent, gbc);
+
+        // Countdown
+        gbc.gridx = 1; gbc.gridy = 1;
+        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        imminentCountdown = new JLabel("--:--");
+        imminentCountdown.add(imminentEvent, gbc);
+
+        panel.add(imminentEvent);
+    }
+
+    // special panel for imminent
+    // regular queue for others
 
     public static void main(String[] args)
     {

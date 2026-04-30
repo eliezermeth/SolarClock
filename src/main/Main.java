@@ -66,6 +66,8 @@ public class Main
         layeredPane.add(dcp, Integer.valueOf(1));
         dcp.setStandardClockEnabled(true);
         dcp.setHalachicClockEnabled(true);
+        dcp.setConversionTableEnabled(false);
+        dcp.setUpcomingTimesEnabled(true);
 
 
         frame.setVisible(true);
