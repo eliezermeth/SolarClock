@@ -3,16 +3,18 @@ package gui;
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import events.ClockEvent;
 import events.ClockEventManager;
+import interfaces.TimeObserver;
 import main.ClockBrain;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
-public class UpcomingTimesPanel
+public class UpcomingTimesPanel implements TimeObserver
 {
     private ClockBrain clock;
     private ComplexZmanimCalendar czc;
@@ -44,11 +46,17 @@ public class UpcomingTimesPanel
         this.panel.setOpaque(false);
         constructImminentPanel();
 
+        updateImminentPanelEvent(clockEventManager.getUpcomingFirstVisibleEvent());
+        updateImminentPanelCountdown(clock.getCurrentDateTime());
+
         panel.add(Box.createVerticalGlue()); // stick elements to top
         // need method to condense ClockEvent into printable text
+
+        // register as observer for relevant
+        clock.registerTimeObserver(this);
     }
 
-    public void constructImminentPanel()
+    private void constructImminentPanel()
     {
         imminentEvent = new JPanel(new GridBagLayout());
         imminentEvent.setOpaque(false);
@@ -60,23 +68,60 @@ public class UpcomingTimesPanel
         // Label
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 1.0; gbc.weighty = 1.0;
+        gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         imminentTitle = new JLabel("Imminent zman");
-        imminentEvent.add(imminentEvent, gbc);
+        imminentTitle.setHorizontalAlignment(JLabel.CENTER);
+        imminentEvent.add(imminentTitle, gbc);
 
         // Time
         gbc.gridx = 0; gbc.gridy = 1;
         gbc.weightx = 1.0; gbc.weighty = 1.0;
+        gbc.gridwidth = 1;
         imminentTime = new JLabel("--:--:--");
-        imminentTime.add(imminentEvent, gbc);
+        imminentEvent.add(imminentTime, gbc);
 
         // Countdown
         gbc.gridx = 1; gbc.gridy = 1;
         gbc.weightx = 1.0; gbc.weighty = 1.0;
+        gbc.gridwidth = 1;
         imminentCountdown = new JLabel("--:--");
-        imminentCountdown.add(imminentEvent, gbc);
+        imminentEvent.add(imminentCountdown, gbc);
 
         panel.add(imminentEvent);
+    }
+
+    private void updateImminentPanelEvent(ClockEvent event)
+    {
+        // if
+        nextUpcomingVisibleEvent = event;
+
+        imminentTitle.setText(nextUpcomingVisibleEvent.getTitle());
+        // remove trailing nanoseconds
+        imminentTime.setText(nextUpcomingVisibleEvent.getTime().toLocalTime().truncatedTo(ChronoUnit.SECONDS).toString());
+
+        // cause countdown to recalculate
+        updateImminentPanelCountdown(clock.getCurrentDateTime());
+    }
+
+    private void updateImminentPanelCountdown(ZonedDateTime now)
+    {
+        Duration countdown = Duration.between(now, nextUpcomingVisibleEvent.getTime());
+        long seconds = countdown.getSeconds();
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long secs = seconds % 60;
+
+        if (hours > 0)
+            imminentCountdown.setText(String.format("%d:%02d:%02d%n", hours, minutes, secs));
+        else
+            imminentCountdown.setText(String.format("%02d:%02d%n", minutes, secs));
+    }
+
+    @Override
+    public void updateTime(ZonedDateTime time)
+    {
+        updateImminentPanelCountdown(time);
     }
 
     // special panel for imminent
@@ -114,6 +159,16 @@ public class UpcomingTimesPanel
             System.out.printf("%d:%02d:%02d%n", hours, minutes, secs);
         else
             System.out.printf("%02d:%02d%n", minutes, secs);
+
+        // Create JFrame (main window of application)
+        JFrame frame = new JFrame("Test Frame");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(200, 600);
+        frame.setLayout(new BorderLayout());
+        JPanel panel = new JPanel();
+        new UpcomingTimesPanel(panel);
+        frame.add(panel, BorderLayout.CENTER);
+        frame.setVisible(true);
 
     }
 }
