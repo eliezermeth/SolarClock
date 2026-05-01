@@ -7,6 +7,9 @@ import interfaces.TimeObserver;
 import main.ClockBrain;
 
 import javax.swing.*;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -88,12 +91,35 @@ public class UpcomingTimesPanel implements TimeObserver
         imminentCountdown = new JLabel("--:--");
         imminentEvent.add(imminentCountdown, gbc);
 
+        JTextPane pane = new JTextPane();
+        pane.setText("Here is some extrememely long text that has the only purpose of causing a wrapped text within the TextPane.");
+        pane.setEditable(false);
+        pane.setFocusable(false);
+        pane.setOpaque(false);
+        pane.setBorder(null);
+        StyledDocument doc = pane.getStyledDocument();
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+        Font labelFont = UIManager.getFont("Label.font");
+        StyleConstants.setFontFamily(attrs, labelFont.getFamily());
+        StyleConstants.setFontSize(attrs, labelFont.getSize());
+        StyleConstants.setBold(attrs, labelFont.isBold());
+        StyleConstants.setForeground(attrs, UIManager.getColor("Label.foreground"));
+        StyleConstants.setAlignment(attrs, StyleConstants.ALIGN_CENTER);
+        doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
+        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.CENTER;
+        imminentEvent.add(pane, gbc);
+
+        pane.setText("This is new text, designed to test if the attributes stay the same after text change.");
+
         panel.add(imminentEvent);
     }
 
     private void updateImminentPanelEvent(ClockEvent event)
     {
-        // if
         nextUpcomingVisibleEvent = event;
 
         imminentTitle.setText(nextUpcomingVisibleEvent.getTitle());
@@ -115,7 +141,7 @@ public class UpcomingTimesPanel implements TimeObserver
         if (hours > 0)
             imminentCountdown.setText(String.format("%d:%02d:%02d%n", hours, minutes, secs));
         else
-            imminentCountdown.setText(String.format("%02d:%02d%n", minutes, secs));
+            imminentCountdown.setText(String.format("%1d:%02d%n", minutes, secs)); // even if less than minute; 0 shows up
     }
 
     @Override
