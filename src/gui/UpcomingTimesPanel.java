@@ -94,12 +94,12 @@ public class UpcomingTimesPanel implements TimeObserver
         {
             date = Date.from(event.getTime().toInstant());
 
-            System.out.printf("%s\n%tF %tT\n%n", event.getTitle(), date, date);
+            System.out.printf("%s\n%tF %tT\n%n", event.getZman().getTitle(), date, date);
         }
 
         System.out.println("\n----------\n");
         ClockEvent e = events.getFirst();
-        System.out.println(e.getTitle());
+        System.out.println(e.getZman().getTitle());
         System.out.println(e.getTime().toLocalTime());
 
         Duration d = Duration.between(clock.getCurrentDateTime(), e.getTime());
@@ -205,7 +205,7 @@ class EventPanel
      */
     private void setEventDetails(ClockEvent event)
     {
-        title.setText(event.getTitle());
+        title.setText(event.getZman().getTitle());
         time.setText(event.getTime().toLocalTime().truncatedTo(ChronoUnit.SECONDS).toString());
         // countdown cannot be set without an update from the clock
     }

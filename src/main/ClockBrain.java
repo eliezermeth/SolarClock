@@ -64,7 +64,7 @@ public final class ClockBrain
         createTekufahScheduler();
 
         // start event manager
-        eventManager = new ClockEventManager(this);
+        eventManager = new ClockEventManager(this); // TODO REMOVE commenting out
 
         setTimeProgression(true); // TODO is this proper?
     }

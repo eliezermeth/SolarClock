@@ -2,14 +2,13 @@ package util;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import events.ZmanEntry;
+import util.enums.Zman;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Breaks the <code>ZmanimOptions</code> file into the proper segments for operation.
@@ -37,75 +36,62 @@ public class ZmanOptionsConfigManager
      */
     private void loadFile()
     {
-        String text = null;
         try {
-            text = Files.readString(Path.of(filename));
-        } catch (IOException e) {
-            throw new RuntimeException("Error with file " + Path.of(filename) + "\n" +e);
-        }
-        entries.clear();
-        entries.addAll(parse(text));
-    }
+            List<String> lines = Files.readAllLines(Path.of(filename));
+            entries.clear();
 
-    /**
-     * Parse the text into the proper <code>ZmanEntry</code> pieces.
-     * @param text file text
-     * @return List of <code>ZmanEntry</code> (in order)
-     */
-    public static List<ZmanEntry> parse(String text)
-    {
-        List <ZmanEntry> list = new ArrayList<>();
+            Set<Zman> seen = new HashSet<>();
 
-        String[] sections = text.split("\\*\\*\\*"); // split text on keybreak ***
+            for (String raw : lines)
+            {
+                String line = raw.strip();
+                if (line.isEmpty() || line.startsWith("#")) continue; // skip blank and comment lines
 
-        for (String section : sections)
-        {
-            section = section.strip();
-            if (section.isEmpty()) continue;
+                String[] parts = line.split(",");
+                if (parts.length != 2) continue; // improperly formatted line
 
-            List<String> lines = section.lines().map(String::strip).filter(s -> !s.isEmpty()).toList();
+                String id = parts[0].trim();
+                boolean enabled = Boolean.parseBoolean(parts[1].trim());
 
-            String title = lines.getFirst();
-            String methodName = lines.get(lines.size() - 2); // second to last line
-            boolean enabled = Boolean.parseBoolean(lines.getLast());
+                Zman zman = Zman.fromId(id);
+                if (zman == null) continue; // unknown ID; skip (possible log)
 
-            // optional description
-            String description = "";
-            if (lines.size() > 3)
-                description = String.join("\n", lines.subList(1, lines.size() - 2));
+                Method method;
+                try
+                {
+                    method = ComplexZmanimCalendar.class.getMethod(zman.getMethodName());
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException("Failed attempting call of method " + zman.getMethodName() + " for " +
+                            zman, e);
+                }
 
-            Method method;
-            try {
-                method = ComplexZmanimCalendar.class.getMethod(methodName);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException("Failed attempting call of method " + methodName, e);
+                entries.add(new ZmanEntry(zman, method, enabled));
+                seen.add(zman);
             }
 
-            list.add(new ZmanEntry(title, description, methodName, method, enabled));
+            // Append any missing enum values (to keep system stable if enum grows)
+            for (Zman z : Zman.values())
+                if (!seen.contains(z))
+                    entries.add(new ZmanEntry(z, null, false)); // add as disabled
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading config file", e);
         }
-
-        return list;
     }
 
     /**
      * Toggle (and save) the setting for a method between true and false.
-     * @param methodName Plaintext method name for setting to be toggled.
+     * @param zman the {@code Zman} for the setting to be toggled.
      * @throws IOException If file was unable to be successfully written.
      */
-    public void toggle(String methodName) throws IOException
+    public void toggle(Zman zman) throws IOException
     {
         for (int i = 0; i < entries.size(); i++)
         {
-            ZmanEntry old = entries.get(i);
+            ZmanEntry e = entries.get(i);
 
-            if (old.methodName().equals(methodName))
+            if (e.zman() == zman)
             {
-                ZmanEntry updated = new ZmanEntry(
-                        old.title(), old.description(),
-                        old.methodName(), old.method(),
-                        !old.enabled()
-                );
-                entries.set(i, updated);
+                entries.set(i, new ZmanEntry(zman, e.method(), !e.enabled()));
 
                 rewriteFile();
                 return; // break out of loop
@@ -113,7 +99,7 @@ public class ZmanOptionsConfigManager
         }
 
         // if method not found in list
-        throw new IllegalArgumentException("Method not found: " + methodName);
+        throw new IllegalArgumentException("Zman not found: " + zman);
     }
 
     /**
@@ -124,18 +110,12 @@ public class ZmanOptionsConfigManager
     {
         StringBuilder sb = new StringBuilder();
 
-        for (int i = 0; i < entries.size(); i++)
+        for (ZmanEntry e : entries)
         {
-            ZmanEntry e = entries.get(i);
+            Zman z = e.zman();
 
-            sb.append(e.title()).append("\n");
-            if (!e.description().isBlank())
-                sb.append(e.description()).append("\n");
-            sb.append(e.methodName()).append("\n");
-            sb.append(e.enabled()).append("\n");
-
-            if (i < entries.size() - 1)
-                sb.append("***\n");
+            sb.append("# ").append(z.getTitle()).append("\n"); // sets comment as title; change?
+            sb.append(z.getId()).append(",").append(e.enabled()).append("\n\n");
         }
 
         Files.writeString(Path.of(filename), sb.toString());

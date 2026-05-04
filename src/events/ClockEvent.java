@@ -1,5 +1,7 @@
 package events;
 
+import util.enums.Zman;
+
 import java.time.ZonedDateTime;
 
 public class ClockEvent implements Comparable<ClockEvent>
@@ -10,31 +12,22 @@ public class ClockEvent implements Comparable<ClockEvent>
         TRIGGERED
     }
 
-    private final String id;
-    private final String title;
-    private final String description;
+    private final Zman zman;
 
     private final ZonedDateTime time;
-    private final String source;
     private final boolean enabled;
 
     private State state = State.PENDING;
 
-    public ClockEvent(String id, String title, String description, ZonedDateTime time, String source, boolean enabled)
+    public ClockEvent(Zman zman, ZonedDateTime time, boolean enabled)
     {
-        this.id = id;
-        this.title = title;
-        this.description = description;
+        this.zman = zman;
         this.time = time;
-        this.source = source;
         this.enabled = enabled;
     }
 
-    public String getId() { return id; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
+    public Zman getZman() { return zman; }
     public ZonedDateTime getTime() { return time; }
-    public String getSource() { return source; }
     public boolean isEnabled() { return enabled; }
 
     public State getState() { return state; }
@@ -49,12 +42,12 @@ public class ClockEvent implements Comparable<ClockEvent>
 
         if (cmp != 0) return cmp;
 
-        return this.id.compareTo(other.id);
+        return this.zman.compareTo(other.zman);
     }
 
     @Override
     public String toString()
     {
-        return id + " @ " + time + " [" + state + "]";
+        return zman + " @ " + time + " [" + state + "]";
     }
 }

@@ -5,6 +5,7 @@ import interfaces.TimeObserver;
 import interfaces.ZmanEventObserver;
 import main.ClockBrain;
 import util.ZmanOptionsConfigManager;
+import util.enums.Zman;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -38,6 +39,7 @@ public class ClockEventManager implements TimeObserver
     private void initialize()
     {
         List<ZmanEntry> entries = ZmanOptionsConfigManager.getInstance().getEntries(); // should this be saved?
+
         // worry about them changing during run?
         ZoneId zone = clock.getComplexZmanimCalendar().getCalendar().getTimeZone().toZoneId();
 
@@ -54,10 +56,9 @@ public class ClockEventManager implements TimeObserver
         // add chatzos halailah to event list
         ZmanEntry solarMidnight = null;
         for (int i = entries.size() - 1; solarMidnight == null && i >= 0; i--) // short circuit when found
-            if ("getSolarMidnight".equals(entries.get(i).methodName()))
+            if (entries.get(i).zman() == Zman.SOLAR_MIDNIGHT)
                 solarMidnight = entries.get(i);
-        addEvent(new ClockEvent(solarMidnight.methodName(), solarMidnight.title(), solarMidnight.description(),
-                chatzosHalailah, solarMidnight.methodName(), solarMidnight.enabled()));
+        addEvent(new ClockEvent(solarMidnight.zman(),  chatzosHalailah, solarMidnight.enabled()));
 
         // Get zmanim for next day
         ComplexZmanimCalendar day = changeCalendarDay(priorDay, 1); // go to next day
@@ -116,10 +117,9 @@ public class ClockEventManager implements TimeObserver
             Date d = (Date) entry.method().invoke(czc);
             if (d == null) return null; // if zman does not occur (that day)
             ZonedDateTime time = ZonedDateTime.ofInstant(d.toInstant(), zone);
-            return new ClockEvent(entry.methodName(), entry.title(), entry.description(),
-                    time, entry.methodName(), entry.enabled());
+            return new ClockEvent(entry.zman(),  time, entry.enabled());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to invoke method: " + entry.methodName(), e);
+            throw new RuntimeException("Failed to invoke method: " + entry.zman().getMethodName(), e);
         }
     }
 
@@ -146,7 +146,7 @@ public class ClockEventManager implements TimeObserver
         next.markTriggered();
         upcoming.poll(); // remove just-passed event
 
-        if (next.getId().equals("getSolarMidnight")) // end of day, generate new events
+        if (next.getZman() == Zman.SOLAR_MIDNIGHT) // end of day, generate new events
         {
             allEvents.clear();
             upcoming.clear();
@@ -206,14 +206,14 @@ public class ClockEventManager implements TimeObserver
     /**
      * Returns a list of all of a specific type of event within the provided list.
      * @param list {@code List<ClockEvent>} to be searched
-     * @param methodName {@code ComplexZmanimCalendar} name of method ( {@code ClockEvent} id) to find
-     * @return {@code List<ClockEvent>} of all {@code methodName}s in {@code list}; {@code null} if none
+     * @param zman {@code Zman} to find
+     * @return {@code List<ClockEvent>} of all {@code Zman}s in {@code list}; {@code null} if none
      */
-    public List<ClockEvent> getListOfEvent(List<ClockEvent> list, String methodName)
+    public List<ClockEvent> getListOfEvent(List<ClockEvent> list, Zman zman)
     {
         List<ClockEvent> temp = new LinkedList<>();
         for (ClockEvent e : list)
-            if (e.getId().equals(methodName))
+            if (e.getZman() == zman)
                 temp.add(e);
         return !temp.isEmpty() ? temp : null;
     }
@@ -221,24 +221,24 @@ public class ClockEventManager implements TimeObserver
     /**
      * Returns the first of a specific type of {@code ClockEvent} within the provided list.
      * @param list {@code List<ClockEvent>} to be searched
-     * @param methodName {@code ComplexZmanimCalendar} name of method ( {@code ClockEvent} id) to find
+     * @param zman {@code Zman} to find
      * @return first {@code methodName} of {@code ClockEvent} in {@code list}; {@code null} if none
      */
-    public ClockEvent getFirst(List<ClockEvent> list, String methodName)
+    public ClockEvent getFirst(List<ClockEvent> list, Zman zman)
     {
-        List<ClockEvent> temp = getListOfEvent(list, methodName);
+        List<ClockEvent> temp = getListOfEvent(list, zman);
         return (!temp.isEmpty()) ? temp.getFirst() : null;
     }
 
     /**
      * Returns the last of a specific type of {@code ClockEvent} within the provided list.
      * @param list {@code List<ClockEvent>} to be searched
-     * @param methodName {@code ComplexZmanimCalendar} name of method ( {@code ClockEvent} id) to find
+     * @param zman {@code Zman} to find
      * @return last {@code methodName} of {@code ClockEvent} in {@code list}; {@code null} if none
      */
-    public ClockEvent getLast(List<ClockEvent> list, String methodName)
+    public ClockEvent getLast(List<ClockEvent> list, Zman zman)
     {
-        List<ClockEvent> temp = getListOfEvent(list, methodName);
+        List<ClockEvent> temp = getListOfEvent(list, zman);
         return (!temp.isEmpty()) ? temp.getLast() : null;
     }
 
@@ -248,12 +248,12 @@ public class ClockEventManager implements TimeObserver
      * @param occurrenceNumber nth occurrence of {@code methodName} within {@code list}; {@code 0, 1,...} from
      *                         beginning, {@code -1, -2,...} from end (will snap to nearest event if number is out of
      *                         bounds)
-     * @param methodName {@code ComplexZmanimCalendar} name of method ( {@code ClockEvent} id) to find
+     * @param zman {@code Zman} to find
      * @return nth occurrence of {@code methodName} in {@code list}; {@code null} if no events
      */
-    public ClockEvent get(List<ClockEvent> list, int occurrenceNumber, String methodName)
+    public ClockEvent get(List<ClockEvent> list, int occurrenceNumber, Zman zman)
     {
-        ArrayList<ClockEvent> temp = (ArrayList<ClockEvent>) getListOfEvent(list, methodName);
+        ArrayList<ClockEvent> temp = (ArrayList<ClockEvent>) getListOfEvent(list, zman);
 
         if (temp == null) return null;
 
@@ -366,7 +366,7 @@ public class ClockEventManager implements TimeObserver
         {
             date = Date.from(event.getTime().toInstant());
 
-            System.out.printf("%s\n%tF %tT\n%n", event.getTitle(), date, date);
+            System.out.printf("%s\n%tF %tT\n%n", event.getZman().getTitle(), date, date);
         }
     }
 }

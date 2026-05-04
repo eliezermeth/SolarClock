@@ -1,47 +1,23 @@
-Dawn: 72 minutes at 16.1 degrees
-getAlos16Point1Degrees
-true
-***
-Earliest talis & tefillin (sun is 10.2 degrees below horizon)
-getMisheyakir10Point2Degrees
-true
-***
-Sunrise
-Sunrise
-true
-***
-SZK"Sh'ma (M"A): (72 minutes at) 16.1 degrees
-getSofZmanShmaMGA16Point1Degrees
-true
-***
-SZ"Tfila (Gra & Ball HaTanya)
-getSofZmanTfilaGRA
-true
-***
-Midday
-getChatzos
-true
-***
-Earliest mincha (lechumra)
-getMinchaGedola
-true
-***
-Plag Ha"Mincha (Gra & Baal HaTanya)
-getPlagHamincha
-true
-***
-Sunset
-getSunset
-true
-***
-Nightfall - 3 stars emerge (36 minutes as degrees)
-getTzais
-true
-***
-Nightfall - 72 minutes
-getTzais72
-true
-***
-Chatzos HaLailah (Solar Midnight)
-getSolarMidnight
-true
+# Dawn: 72 minutes at 16.1 degrees
+alos-16.1-degrees,true
+# Earliest talis & tefillin (sun is 10.2 degrees below horizon)
+misheyakir-10.2-degrees,true
+sunrise,true
+# SZK"Sh'ma (M"A): (72 minutes at) 16.1 degrees
+szks-mga-16.1-degrees,true
+# SZ"Tfila (Gra & Ball HaTanya)
+szt-gra,true
+# Midday / Chatzos HaYom
+chatzos-hayom,true
+# Earliest mincha (lechumra)
+mincha-gedolah,true
+# Plag Ha"Mincha (Gra & Baal HaTanya)
+plag-hamincha-gra,true
+# Sunset
+sunset,true
+# Nightfall - 3 stars emerge (36 minutes as degrees)
+tzais-3stars-36min-as-degrees,true
+# Nightfall - 72 minutes
+tzais-72min,true
+# Chatzos HaLailah (Solar Midnight)
+chatzos-halailah,true
