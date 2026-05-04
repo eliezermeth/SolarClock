@@ -72,7 +72,7 @@ public class ZmanOptionsConfigManager
             // Append any missing enum values (to keep system stable if enum grows)
             for (Zman z : Zman.values())
                 if (!seen.contains(z))
-                    entries.add(new ZmanEntry(z, null, false)); // add as disabled
+                    entries.add(new ZmanEntry(z, null, false)); // add as disable
         } catch (IOException e) {
             throw new RuntimeException("Error reading config file", e);
         }
