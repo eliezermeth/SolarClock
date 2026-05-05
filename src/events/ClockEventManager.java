@@ -366,7 +366,7 @@ public class ClockEventManager implements TimeObserver
         {
             date = Date.from(event.getTime().toInstant());
 
-            System.out.printf("%s\n%tF %tT\n%n", event.getZman().getTitle(), date, date);
+            System.out.printf("%s\n%tF %tT\n%n", event.getTitle(), date, date);
         }
     }
 }

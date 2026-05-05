@@ -27,6 +27,8 @@ public class ClockEvent implements Comparable<ClockEvent>
     }
 
     public Zman getZman() { return zman; }
+    public String getTitle() { return zman.getTitle(); }
+    public String getDescription() { return zman.getDescription(); }
     public ZonedDateTime getTime() { return time; }
     public boolean isEnabled() { return enabled; }
 
