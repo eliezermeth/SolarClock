@@ -4,6 +4,7 @@ import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import events.ClockEvent;
 import events.ClockEventManager;
 import interfaces.TimeObserver;
+import interfaces.ZmanEventObserver;
 import main.ClockBrain;
 
 import javax.swing.*;
@@ -18,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class UpcomingTimesPanel implements TimeObserver
+public class UpcomingTimesPanel implements TimeObserver, ZmanEventObserver
 {
     private ClockBrain clock;
     private ComplexZmanimCalendar czc;
@@ -81,6 +82,12 @@ public class UpcomingTimesPanel implements TimeObserver
     public void updateTime(ZonedDateTime time)
     {
         updateDisplayedListCountdown(time);
+    }
+
+    @Override
+    public void updateZmanEvent(ClockEvent event)
+    {
+        refreshDisplayedList();
     }
 
     public static void main(String[] args)

@@ -2,14 +2,15 @@ package main;
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
+import events.ClockEvent;
 import events.ClockEventManager;
 import interfaces.TerminatorObserver;
 import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
+import interfaces.ZmanEventObserver;
 import util.*;
 import util.enums.Terminator;
 
-import javax.swing.*;
 import javax.swing.Timer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -24,7 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Singleton class for holding the logic of the clock - the ComplexZmanimCalendar, current time, and time methods that
  * are not specialized to a single use.  Allows observers using the <code>ClockObserver</code> interface.
  */
-public final class ClockBrain
+public final class ClockBrain implements ZmanEventObserver
 {
     private static ClockBrain INSTANCE;
 
@@ -65,6 +66,8 @@ public final class ClockBrain
 
         // start event manager
         eventManager = new ClockEventManager(this);
+
+        eventManager.registerZmanEventObserver(this);
 
         setTimeProgression(true); // TODO is this proper?
     }
@@ -285,9 +288,9 @@ public final class ClockBrain
     private void initializeTimeProgression()
     {
         // set clock time
-        if (DebugTimeModifications.TIME_OFFSET.enabled) // should this change for debugging?
+        if (DebugTimeModifications.OFFSET.enabled) // should this change for debugging?
         {
-            virtualClock.offset(DebugTimeModifications.TIME_OFFSET.duration);
+            virtualClock.offset(DebugTimeModifications.OFFSET.duration);
         }
 
         // timer
@@ -374,6 +377,14 @@ public final class ClockBrain
     {
         for (TerminatorObserver observer : terminatorObservers)
             observer.updateTerminatorCalculations();
+    }
+
+    // as observer -------------------------------------
+
+    @Override
+    public void updateZmanEvent(ClockEvent event)
+    {
+        eventManager = getEventManager(); // TODO proper
     }
 
     // ---------------------------------------------------------------------------------------

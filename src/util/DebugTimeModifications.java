@@ -10,30 +10,30 @@ public class DebugTimeModifications
     /**
      * Controls this entire class; if <code>false</code>, unlikely for other elements to work
      */
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     /**
      * If time should be offset from current time.
-     * Check <code>enabled</code> to see if offset time is enabled.
-     * Stored in <code>Duration</code>, which contains days, hours, minutes, and seconds.
-     * Allows <code>HOURS</code>, <code>MINS</code>, and <code>SECS</code>.
+     * Check {@code enabled} to see if offset time is enabled.
+     * Stored in {@code Duration}, which contains days, hours, minutes, and seconds.
+     * Allows {@code HOURS}, {@code MINS}, and {@code SECS}.
      */
-    public enum TIME_OFFSET
+    public enum OFFSET
     {;
-        public static final boolean enabled = false;
+        public static final boolean enabled = true;
         private static final int DAYS = 0;
-        private static final int HOURS = 12;
-        private static final int MINS =  0;
+        private static final int HOURS = 1;
+        private static final int MINS =  50;
         private static final int SECS =  0;
         public static final Duration duration = Duration.ofDays(DAYS).plusHours(HOURS).plusMinutes(MINS).plusSeconds(SECS);
     }
 
     /**
-     * Whether time should be accelerated.  If so, it will do so by <code>SECONDS</code> per iteration.
+     * Whether time should be accelerated.  If so, it will operate at the set speed, where {@code 1.0} is normal.
      */
-    public enum TIME_ACCELERATION
+    public enum SPEED
     {;
-      public static final boolean enabled = false;
-      public static final int SECONDS = 1;
+      public static final boolean enabled = true;
+      public static final double speed = 3.0;
     }
 }

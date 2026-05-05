@@ -1,5 +1,7 @@
 package main;
 
+import util.DebugTimeModifications;
+
 import java.time.*;
 
 public class VirtualClock
@@ -17,11 +19,21 @@ public class VirtualClock
         this.zoneId = zoneId;
         this.baseVirtualTime = ZonedDateTime.now(zoneId);
         this.baseRealTime = Instant.now();
+
+        // for debugging
+        if (DebugTimeModifications.DEBUG)
+        {
+            // change offset first, so speed is only applied after that change
+            if (DebugTimeModifications.OFFSET.enabled)
+                offset(DebugTimeModifications.OFFSET.duration);
+            if (DebugTimeModifications.SPEED.enabled)
+                setSpeed(DebugTimeModifications.SPEED.speed);
+        }
     }
 
     /**
      * Core calculation: virtual = base + (elapsed * speed)
-     * @return current <code>ZonedDateTime</code> of <code>VirtualClock</code>
+     * @return current {@code ZonedDateTime} of {@code VirtualClock}
      */
     public ZonedDateTime now()
     {
@@ -61,7 +73,7 @@ public class VirtualClock
 
     /**
      * Get the current speed of the clock.
-     * @return <code>double</code> where 1.0 = real time, 0 = pause, negative = reversed
+     * @return {@code double} where 1.0 = real time, 0 = pause, negative = reversed
      */
     public double getSpeed()
     {
@@ -71,7 +83,7 @@ public class VirtualClock
     /**
      * Gets the saved speed of the clock; useful for when clock is paused and want to see speed clock had been running
      * at.
-     * @return <code>double</code> of speed of clock when not paused; 1.0 = real time, 0 = pause, negative = reversed
+     * @return {@code double} of speed of clock when not paused; 1.0 = real time, 0 = pause, negative = reversed
      */
     public double getSavedSpeed()
     {

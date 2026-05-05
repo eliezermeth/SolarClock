@@ -23,6 +23,10 @@ public class ZmanOptionsConfigManager
         loadFile();
     }
 
+    /**
+     * Returns a synchronized instance of {@code ZmanOptionsConfigManager}.
+     * @return synchronized instance
+     */
     public synchronized static ZmanOptionsConfigManager getInstance()
     {
         return INSTANCE;
