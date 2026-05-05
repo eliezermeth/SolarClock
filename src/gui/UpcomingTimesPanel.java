@@ -51,6 +51,8 @@ public class UpcomingTimesPanel implements TimeObserver
 
         // register as observer for relevant
         clock.registerTimeObserver(this);
+
+        // TODO elements do not yet disappear after time has passed
     }
 
     private void refreshDisplayedList()
