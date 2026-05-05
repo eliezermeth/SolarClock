@@ -56,7 +56,7 @@ public class ZmanOptionsConfigManager
                 entries[zman.ordinal()] = new ZmanEntry(zman, generateReflectedMethod(zman), enabled); // add to proper slot in order
             }
 
-            // Append any missing enum values (to keep system stable if enum grows); TODO make sure adds in order
+            // Append any missing enum values (to keep system stable if enum grows)
             for (int i = 0; i < entries.length; i++)
                 if (entries[i] != null && entries[i] == null) // was not set
                 {
