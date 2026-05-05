@@ -4,6 +4,7 @@ import util.enums.SHAAH_TICK_MARK_STYLE;
 import util.enums.ViewMode;
 
 import java.awt.*;
+import java.nio.file.Path;
 
 public class Settings
 {
@@ -40,4 +41,10 @@ public class Settings
 
     /** How many days zmanim events should be retained for */
     public static int EVENT_RETENTION_DAYS = 2;
+
+    /**
+     * {@code Path} to config file containing zmanim settings; used by {@code ZmanOptionsConfigManager}.
+     */
+    public static Path zmanConfigFile = Path.of("src/util/ZmanimOptions");
+
 }

@@ -7,7 +7,6 @@ import util.enums.Zman;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -18,8 +17,6 @@ public class ZmanOptionsConfigManager
     private static ZmanOptionsConfigManager INSTANCE = new ZmanOptionsConfigManager();
 
     private final ZmanEntry[] entries = new ZmanEntry[Zman.values().length]; // set to number of enum Zman
-
-    private static final String filename = "src/util/ZmanimOptions";
 
     private ZmanOptionsConfigManager()
     {
@@ -40,7 +37,7 @@ public class ZmanOptionsConfigManager
         Arrays.fill(entries, null);
 
         try {
-            List<String> lines = Files.readAllLines(Path.of(filename));
+            List<String> lines = Files.readAllLines(Settings.zmanConfigFile);
 
             for (String raw : lines)
             {
@@ -124,7 +121,7 @@ public class ZmanOptionsConfigManager
         for (ZmanEntry e : entries)
             map.put(e.zman(), e);
 
-        List<String> lines = Files.readAllLines(Path.of(filename));
+        List<String> lines = Files.readAllLines(Settings.zmanConfigFile);
 
         if (!lines.isEmpty()) // read successful; write with existing order and comments
         {
@@ -165,7 +162,7 @@ public class ZmanOptionsConfigManager
             sb.append(e.zman().getId()).append(",").append(e.enabled()).append("\n");
         }
 
-        Files.writeString(Path.of(filename), sb.toString().strip());
+        Files.writeString(Settings.zmanConfigFile, sb.toString().strip());
     }
 
     /**
