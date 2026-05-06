@@ -138,8 +138,10 @@ public class ClockEventManager implements TimeObserver
     @Override
     public void updateTime(ZonedDateTime time)
     {
+        System.out.println("Updating time in ClockEventManager");
         if (upcoming.peek().getTime().isAfter(time))
             return; // no event yet; do nothing
+        System.out.println("\n\n\nNew event\n\n\n");
 
         // equal to or after event time
         ClockEvent next = upcoming.peek();
@@ -153,12 +155,12 @@ public class ClockEventManager implements TimeObserver
             initialize(); // get new events
         }
 
-        if (next.isEnabled()) // if this one was visible, alert observers to next visible event
-            notifyZmanEventObservers();
-
         // should not need to happen, but just in case
         if (upcoming.isEmpty())
             initialize();
+
+        if (next.isEnabled()) // if this one was visible, alert observers to next visible event
+            notifyZmanEventObservers();
     }
 
     /**

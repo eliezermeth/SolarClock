@@ -384,7 +384,7 @@ public final class ClockBrain implements ZmanEventObserver
     @Override
     public void updateZmanEvent(ClockEvent event)
     {
-        eventManager = getEventManager(); // TODO proper
+        //eventManager = getEventManager(); // TODO proper
     }
 
     // ---------------------------------------------------------------------------------------

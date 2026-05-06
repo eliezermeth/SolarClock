@@ -23,7 +23,7 @@ public class DebugTimeModifications
         public static final boolean enabled = true;
         private static final int DAYS = 0;
         private static final int HOURS = 1;
-        private static final int MINS =  50;
+        private static final int MINS =  0;
         private static final int SECS =  0;
         public static final Duration duration = Duration.ofDays(DAYS).plusHours(HOURS).plusMinutes(MINS).plusSeconds(SECS);
     }
@@ -33,7 +33,7 @@ public class DebugTimeModifications
      */
     public enum SPEED
     {;
-      public static final boolean enabled = true;
+      public static final boolean enabled = false;
       public static final double speed = 3.0;
     }
 }
