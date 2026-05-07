@@ -287,12 +287,6 @@ public final class ClockBrain implements ZmanEventObserver
      */
     private void initializeTimeProgression()
     {
-        // set clock time
-        if (DebugTimeModifications.OFFSET.enabled) // should this change for debugging?
-        {
-            virtualClock.offset(DebugTimeModifications.OFFSET.duration);
-        }
-
         // timer
         int second = 1000; // milliseconds
         int timerIterationSpeed = (int) (.1 * second); // how often timer should activate

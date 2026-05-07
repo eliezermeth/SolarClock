@@ -8,24 +8,23 @@ import java.time.Duration;
 public class DebugTimeModifications
 {
     /**
-     * Controls this entire class; if <code>false</code>, unlikely for other elements to work
+     * Controls this entire class; if {@code false}, unlikely for other elements to work
      */
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     /**
      * If time should be offset from current time.
      * Check {@code enabled} to see if offset time is enabled.
-     * Stored in {@code Duration}, which contains days, hours, minutes, and seconds.
-     * Allows {@code HOURS}, {@code MINS}, and {@code SECS}.
+     * Stored in {@code duration}, which contains days, hours, minutes, and seconds.
+     * Allows changes to days, hours, minutes, and seconds.
      */
     public enum OFFSET
     {;
-        public static final boolean enabled = true;
-        private static final int DAYS = 0;
-        private static final int HOURS = 1;
-        private static final int MINS =  0;
-        private static final int SECS =  0;
-        public static final Duration duration = Duration.ofDays(DAYS).plusHours(HOURS).plusMinutes(MINS).plusSeconds(SECS);
+        public static final boolean enabled = false;
+        /** [ DAYS, HOURS, MINUTES, SECONDS ] */
+        private static final int[] offset = new int[] {0, 2, 10, 0};
+        public static final Duration duration = Duration.ofDays(offset[0]).plusHours(offset[1])
+                .plusMinutes(offset[2]).plusSeconds(offset[3]);
     }
 
     /**
