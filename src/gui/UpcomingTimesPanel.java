@@ -47,20 +47,18 @@ public class UpcomingTimesPanel implements TimeObserver, ZmanEventObserver
         refreshDisplayedList();
         updateDisplayedListCountdown(clock.getCurrentDateTime());
 
-        panel.add(Box.createVerticalGlue()); // stick elements to top
         // need method to condense ClockEvent into printable text
 
         // register as observer for relevant
         clock.registerTimeObserver(this);
         clockEventManager.registerZmanEventObserver(this);
-
-        // TODO elements do not yet disappear after time has passed
     }
 
     private void refreshDisplayedList()
     {
         // clear displayed list
         displayedList.clear();
+        panel.removeAll(); // remove from GUI
 
         List<ClockEvent> upcoming = clockEventManager.getVisibleUpcomingEvents();
 
@@ -71,6 +69,10 @@ public class UpcomingTimesPanel implements TimeObserver, ZmanEventObserver
             displayedList.add(event); // add to displayed list
             panel.add(event.getPanel()); // add to panel
         }
+
+        panel.add(Box.createVerticalGlue()); // stick elements to top
+        panel.revalidate();
+        panel.repaint(); // is this necessary?
     }
 
     private void updateDisplayedListCountdown(ZonedDateTime now)
@@ -157,7 +159,6 @@ class EventPanel
 
         panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
         panel.setAlignmentX(Component.CENTER_ALIGNMENT);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
@@ -206,6 +207,9 @@ class EventPanel
 
         // set event-specific details
         setEventDetails(event);
+
+        Dimension pref = panel.getPreferredSize();
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, pref.height));
     }
 
     /**
@@ -233,9 +237,9 @@ class EventPanel
         long secs = seconds % 60;
 
         if (hours > 0)
-            countdown.setText(String.format("%d:%02d:%02d%n", hours, minutes, secs));
+            countdown.setText(String.format("%d:%02d:%02d", hours, minutes, secs));
         else
-            countdown.setText(String.format("%1d:%02d%n", minutes, secs)); // even if less than minute; 0 shows up
+            countdown.setText(String.format("%d:%02d", minutes, secs)); // even if less than minute; 0 shows up
     }
 
     /**

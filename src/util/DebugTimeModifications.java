@@ -10,7 +10,7 @@ public class DebugTimeModifications
     /**
      * Controls this entire class; if {@code false}, unlikely for other elements to work
      */
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     /**
      * If time should be offset from current time.
@@ -22,7 +22,7 @@ public class DebugTimeModifications
     {;
         public static final boolean enabled = true;
         /** [ DAYS, HOURS, MINUTES, SECONDS ] */
-        private static final int[] offset = new int[] {0, 2, 0, 0};
+        private static final int[] offset = new int[] {0, 1, 35, 0};
         public static final Duration duration = Duration.ofDays(offset[0]).plusHours(offset[1])
                 .plusMinutes(offset[2]).plusSeconds(offset[3]);
     }
