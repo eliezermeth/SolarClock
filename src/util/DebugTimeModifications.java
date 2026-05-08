@@ -10,7 +10,7 @@ public class DebugTimeModifications
     /**
      * Controls this entire class; if {@code false}, unlikely for other elements to work
      */
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     /**
      * If time should be offset from current time.
@@ -20,9 +20,9 @@ public class DebugTimeModifications
      */
     public enum OFFSET
     {;
-        public static final boolean enabled = false;
+        public static final boolean enabled = true;
         /** [ DAYS, HOURS, MINUTES, SECONDS ] */
-        private static final int[] offset = new int[] {0, 2, 10, 0};
+        private static final int[] offset = new int[] {0, 2, 0, 0};
         public static final Duration duration = Duration.ofDays(offset[0]).plusHours(offset[1])
                 .plusMinutes(offset[2]).plusSeconds(offset[3]);
     }
@@ -32,7 +32,7 @@ public class DebugTimeModifications
      */
     public enum SPEED
     {;
-      public static final boolean enabled = false;
-      public static final double speed = 3.0;
+      public static final boolean enabled = true;
+      public static final double speed = 5.0;
     }
 }

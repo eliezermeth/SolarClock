@@ -52,6 +52,7 @@ public class UpcomingTimesPanel implements TimeObserver, ZmanEventObserver
 
         // register as observer for relevant
         clock.registerTimeObserver(this);
+        clockEventManager.registerZmanEventObserver(this);
 
         // TODO elements do not yet disappear after time has passed
     }
