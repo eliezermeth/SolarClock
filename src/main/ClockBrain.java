@@ -6,7 +6,6 @@ import events.ClockEvent;
 import events.ClockEventManager;
 import interfaces.TerminatorObserver;
 import interfaces.TimeObserver;
-import interfaces.EqualViewOption;
 import interfaces.ZmanEventObserver;
 import util.*;
 import util.enums.Terminator;
@@ -29,21 +28,19 @@ public final class ClockBrain implements ZmanEventObserver
 {
     private static ClockBrain INSTANCE;
 
-    private ComplexZmanimCalendar czc;
+    private final ComplexZmanimCalendar czc;
 
     public final ZoneId zoneId;
-    private VirtualClock virtualClock;
-    private ClockEventManager eventManager;
+    private final VirtualClock virtualClock;
+    private final ClockEventManager eventManager;
 
-    protected TerminatorTimes terminatorTimes = new TerminatorTimes();
+    private final TerminatorTimes terminatorTimes = new TerminatorTimes();
     /**
      * Lock to prevent Timer from causing updates to sections while terminator times need to be updated.
      */
     private final ReentrantLock lock = new ReentrantLock();
 
-    protected ArrayList<EqualViewOption> updatable = new ArrayList<>();
-
-    protected Timer timer;
+    private Timer timer;
 
     private final List<TimeObserver> timeObservers = new ArrayList<>();
     private final List<TerminatorObserver> terminatorObservers = new ArrayList<>();
@@ -57,7 +54,7 @@ public final class ClockBrain implements ZmanEventObserver
                 TimeZone.getTimeZone(location.getRegion())
         ));
 
-        // get and intitialize time
+        // get and initialize time
         zoneId = this.czc.getGeoLocation().getTimeZone().toZoneId();
         virtualClock = new VirtualClock(zoneId);
         calculateSolarTerminators();
@@ -99,8 +96,8 @@ public final class ClockBrain implements ZmanEventObserver
     }
 
     /**
-     * Get a copy of the <code>ComplexZmanimCalendar</code> used by the clock.
-     * @return clone of current <code>ComplexZmanimCalendar</code>
+     * Get a copy of the {@code ComplexZmanimCalendar} used by the clock.
+     * @return clone of current {@code ComplexZmanimCalendar}
      */
     public ComplexZmanimCalendar getComplexZmanimCalendar()
     {
@@ -125,9 +122,9 @@ public final class ClockBrain implements ZmanEventObserver
      * <p>The current time is placed into a tekufah.  If the time corresponds to the beginning of a tekufah, then all
      * calculations start from there.  However, if the time corresponds to the middle of a tekufah, then the terminators
      * bracketing the current time will be the first terminators used.  This will necessitate a date change of the
-     * <code>ComplexZmanimCalendar</code> calendar.</p>
+     * {@code ComplexZmanimCalendar} calendar.</p>
      */
-    protected void calculateSolarTerminators()
+    private void calculateSolarTerminators()
     {
         // currently uses getSunrise() for delineations; switch to higher-order based on options for delineations?
 
@@ -213,7 +210,7 @@ public final class ClockBrain implements ZmanEventObserver
      * the middle of a day tekufah, the order will be (1) past sunrise, (2) upcoming sunset, (3) upcoming sunrise.
      * Should advance upon reaching the first upcoming tekufah, with (2) becoming (1), (3) becoming (2), and the new (3)
      * being calculated.
-     * @return
+     * @return clock's instance of {@code TerminatorTimes}
      */
     public TerminatorTimes getTerminatorTimes()
     {
@@ -240,8 +237,8 @@ public final class ClockBrain implements ZmanEventObserver
     // Time methods --------------------------------------------------------------------------
 
     /**
-     * Get the current <code>LocalTime</code> time of the clock.
-     * @return
+     * Get the current {@code LocalTimeLocalTime} time of the clock.
+     * @return {@code LocalTime} of clock
      */
     public LocalTime getCurrentTime()
     {
@@ -257,7 +254,7 @@ public final class ClockBrain implements ZmanEventObserver
 
     /**
      * If clock time should move; if not, clock will remain on one time.
-     * @param progress
+     * @param progress {@code true} if clock should tick
      */
     public void setTimeProgression(boolean progress)
     {
@@ -274,8 +271,8 @@ public final class ClockBrain implements ZmanEventObserver
     }
 
     /**
-     * If clock time should move; if not, clock will remain on one time.
-     * @return
+     * If clock time moves; if not, clock remains on one time.
+     * @return if clock time is progressing
      */
     public boolean getTimeProgression()
     {
@@ -289,7 +286,7 @@ public final class ClockBrain implements ZmanEventObserver
     {
         // timer
         int timerIterationSpeed = (int) (Constants.MILLIS_PER_SECOND / Settings.clockUpdatesPerSecond); // how often timer activates
-        timer = new Timer(timerIterationSpeed, e ->
+        timer = new Timer(timerIterationSpeed, _ ->
         {
             // update current time
             // virtualClock automatically updates itself every time it is polled
@@ -320,7 +317,7 @@ public final class ClockBrain implements ZmanEventObserver
 
     /**
      * Add a time observer to the ClockBrain.
-     * @param observer
+     * @param observer instance of {@code TimeObserver}
      */
     public void registerTimeObserver(TimeObserver observer)
     {
@@ -329,7 +326,7 @@ public final class ClockBrain implements ZmanEventObserver
 
     /**
      * Remove a time observer from the ClockBrain.
-     * @param observer
+     * @param observer instance of {@code TimeObserver}
      */
     public void unregisterTimeObserver(TimeObserver observer)
     {
@@ -347,7 +344,7 @@ public final class ClockBrain implements ZmanEventObserver
 
     /**
      * Add a terminator observer to the ClockBrain.
-     * @param observer
+     * @param observer instance of {@code TerminatorObserver}
      */
     public void registerTerminatorObserver(TerminatorObserver observer)
     {
@@ -356,7 +353,7 @@ public final class ClockBrain implements ZmanEventObserver
 
     /**
      * Remove a terminator observer from the ClockBrain.
-     * @param observer
+     * @param observer instance of {@code TerminatorObserver}
      */
     public void unregisterTerminatorObserver(TerminatorObserver observer)
     {
