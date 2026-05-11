@@ -7,11 +7,12 @@ import main.ClockBrain;
 import util.ZmanOptionsConfigManager;
 import util.enums.Zman;
 
-import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ClockEventManager implements TimeObserver
 {
@@ -22,9 +23,17 @@ public class ClockEventManager implements TimeObserver
 
     private final List<ZmanEventObserver> zmanEventObservers = new ArrayList<>();
 
+    private ComplexZmanimCalendar calculationCalendar; // holds day of calendar from which zman events are calculated
+    private final ZoneId zone;
+
+    private List<ZmanEntry> entries = ZmanOptionsConfigManager.getInstance().getEntries(); // worry about changing?
+    private Map<Zman, ZmanEntry> entryMap = entries.stream().collect(Collectors.toMap(ZmanEntry:: zman, Function.identity()));
+
     public ClockEventManager(ClockBrain clock)
     {
         this.clock = clock;
+        calculationCalendar = this.clock.getComplexZmanimCalendar(); // sets with clone
+        zone = calculationCalendar.getCalendar().getTimeZone().toZoneId(); // worry about them changing during run?
 
         // initialize
         initialize();
@@ -40,18 +49,15 @@ public class ClockEventManager implements TimeObserver
     {
         List<ZmanEntry> entries = ZmanOptionsConfigManager.getInstance().getEntries(); // should this be saved?
 
-        // worry about them changing during run?
-        ZoneId zone = clock.getComplexZmanimCalendar().getCalendar().getTimeZone().toZoneId();
-
         // Previous chatzos halailah
-        ComplexZmanimCalendar priorDay = changeCalendarDay(clock.getComplexZmanimCalendar(), -1);
+        mutateCalendarDate(-1); // send to yesterday
         ZonedDateTime now = clock.getCurrentDateTime();
-        ZonedDateTime chatzosHalailah = priorDay.getSolarMidnight().toInstant().atZone(now.getZone());
+        ZonedDateTime chatzosHalailah = calculationCalendar.getSolarMidnight().toInstant().atZone(now.getZone());
 
         if (now.isBefore(chatzosHalailah)) // need to go back another day
         {
-            priorDay = changeCalendarDay(priorDay, -1);
-            chatzosHalailah = priorDay.getSolarMidnight().toInstant().atZone(now.getZone());
+            mutateCalendarDate(-1);
+            chatzosHalailah = calculationCalendar.getSolarMidnight().toInstant().atZone(now.getZone());
         }
         // add chatzos halailah to event list
         ZmanEntry solarMidnight = null;
@@ -61,38 +67,36 @@ public class ClockEventManager implements TimeObserver
         addEvent(new ClockEvent(solarMidnight.zman(),  chatzosHalailah, solarMidnight.enabled()));
 
         // Get zmanim for next day
-        ComplexZmanimCalendar day = changeCalendarDay(priorDay, 1); // go to next day
-        ClockEvent temp = null;
+        mutateCalendarDate(1); // go to next day
+        ClockEvent temp;
         // iterate over zmanim
         for (ZmanEntry entry : entries)
         {
-            temp = constructEvent(day, entry, zone);
-            if (temp == null) continue; // if zman does not occur (that day), skip
-            addEvent(temp);
+            temp = constructEvent(entry);
+            if (temp != null) addEvent(temp); // if zman does not occur (that day), skip
         }
 
-        // For day after, get first triggered zman
-        ComplexZmanimCalendar tomorrow = changeCalendarDay(day, 1); // go to next day
-        temp = null;
-        for (ZmanEntry entry : entries)
-            if (entry.enabled())
-            {
-                temp = constructEvent(day, entry, zone);
-                if (temp != null) break; // if event searched exists that day, exit loop
-            }
-        if (temp != null) // would only still be null if no selected events occur the next day (unlikely)
-            addEvent(temp);
+        // Determine and add (for day after) all zmanim passed this day to prime rolling events
+        mutateCalendarDate(1); // go to next day
+        for (int i = 1; i < allEvents.size(); i++) // start after the first chatzos halailah (?)
+        {
+            if (allEvents.get(i).getZman() == upcoming.peek().getZman()) // if zman is the same type as the upcoming
+                break; // stop the rolling update; this will occur at some point
+
+            // if event has already passed
+            temp = constructEvent(entryMap.get(allEvents.get(i).getZman()));
+            if (temp != null) addEvent(temp); // if zman does not occur (that day), skip
+
+        }
     }
 
     /**
-     * Change a calendar by a specified number of days.
-     * @param czc the {@code ComplexZmanimCalendar} containing the calendar to change
+     * Mutates the {@code calculationCalendar} variable by a specified number of days.
      * @param daysChange the number of days the calendar should change; positive for future, negative for past
-     * @return the {@code ComplexZmanimCalendar} set to the desired day
      */
-    private ComplexZmanimCalendar changeCalendarDay(ComplexZmanimCalendar czc, int daysChange)
+    private void mutateCalendarDate(int daysChange)
     {
-        Calendar cal = czc.getCalendar();
+        Calendar cal = calculationCalendar.getCalendar();
         LocalDate today = cal.toInstant().atZone(cal.getTimeZone().toZoneId()).toLocalDate();
         LocalDate targetDate = today.plusDays(daysChange);
 
@@ -100,21 +104,19 @@ public class ClockEventManager implements TimeObserver
         cal.set(Calendar.YEAR, targetDate.getYear());
         cal.set(Calendar.MONTH, targetDate.getMonthValue() - 1);
         cal.set(Calendar.DAY_OF_MONTH, targetDate.getDayOfMonth());
-        czc.setCalendar(cal);
-        return czc;
+        calculationCalendar.setCalendar(cal);
     }
 
     /**
-     * Construct a {@code ClockEvent} for the specified {@code ZmanEntry} on the day in {@code ComplexZmanimCalendar}
-     * @param czc {@code ComplexZmanimCalendar} set to a specific day
+     * Construct a {@code ClockEvent} for the specified {@code ZmanEntry} on the day stored as
+     * {@code ComplexZmanimCalendar calculationCalendar}.
      * @param entry {@code ZmanEntry} of data to gather/construct
-     * @param zone the {@code ZoneId} of the {@code ComplexZmanimCalendar}
      * @return a constructed {@code ClockEvent}; {@code null} if zman does not occur (that day)
      */
-    private ClockEvent constructEvent(ComplexZmanimCalendar czc, ZmanEntry entry, ZoneId zone)
+    private ClockEvent constructEvent(ZmanEntry entry)
     {
         try {
-            Date d = (Date) entry.zman().getMethod().invoke(czc);
+            Date d = (Date) entry.zman().getMethod().invoke(calculationCalendar);
             if (d == null) return null; // if zman does not occur (that day)
             ZonedDateTime time = ZonedDateTime.ofInstant(d.toInstant(), zone);
             return new ClockEvent(entry.zman(),  time, entry.enabled());
@@ -144,41 +146,29 @@ public class ClockEventManager implements TimeObserver
         // equal to or after event time
         ClockEvent next = upcoming.peek();
         next.markTriggered();
+
+        // add newly-calculated event to end of queue
+        if (next.getZman() == Zman.SOLAR_MIDNIGHT)
+            mutateCalendarDate(1); // proceed to next day
+        ClockEvent temp = constructEvent(entryMap.get(next.getZman())); // prep event
+        if (temp != null) addEvent(temp); // if zman does not occur that day, skip
         upcoming.poll(); // remove just-passed event
 
-        if (next.getZman() == Zman.SOLAR_MIDNIGHT) // end of day, generate new events
+        if (next.getZman() == Zman.SOLAR_MIDNIGHT) // end of day; clean allEvents list
         {
-            allEvents.clear();
-            upcoming.clear();
-            initialize(); // get new events
+            // force-remove the first event; test elements after
+            // remove until next solar midnight
+            do {
+                allEvents.poll();
+            } while (allEvents.peek().getZman() != Zman.SOLAR_MIDNIGHT);
         }
 
-        // should not need to happen, but just in case
+        // should never need to happen, but just in case
         if (upcoming.isEmpty())
             initialize();
 
         if (next.isEnabled()) // if this one was visible, alert observers to next visible event
             notifyZmanEventObservers();
-    }
-
-    /**
-     * Remove all events that occurred before a specific time.
-     * @param list {@code IndexedSet<ClockEvent>} to operate on
-     * @param cutoff {@code ZonedDateTime} of earliest permitted time in event lists.
-     */
-    public void pruneBefore(IndexedSet<ClockEvent> list, ZonedDateTime cutoff)
-    {
-        while (true) // works since IndexedSet<ClockEvent>s are in chronological order
-        {
-            try {
-                if (list.peek().getTime().isBefore(cutoff)) // if first element is before cutoff time, remove
-                    list.poll();
-                else
-                    break; // once first element is after, no further elements need be checked
-            } catch (NoSuchElementException e) {
-                break; // do nothing; list is empty
-            }
-        }
     }
 
     // ---------------------------------------------------------------------------------------

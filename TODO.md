@@ -20,6 +20,11 @@ where the exact position (or centered) is given.
 or from the shaos zmanios (alos-tzeis?).
 - Nightly hour marks are not properly spaced during night.
 
+## ClockEventManager
+- The lines simliar to `if (ClockEvent == null)` may cause problem in the
+future because certain events may not occur every day, and the event 
+should still be added tested for the next-day calculation.
+
 ##
 - TimeScheduler may not deal well with the debugging portion due to offset
 time
@@ -30,3 +35,5 @@ time
 standard and daylight savings time).
 - Add section for where between alos and sunrise and same for night (new
 color?).
+- Certain elements (such as `ClockEvents`) may break if clock is run in 
+reverse.
