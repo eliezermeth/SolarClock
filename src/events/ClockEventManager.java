@@ -23,11 +23,11 @@ public class ClockEventManager implements TimeObserver
 
     private final List<ZmanEventObserver> zmanEventObservers = new ArrayList<>();
 
-    private ComplexZmanimCalendar calculationCalendar; // holds day of calendar from which zman events are calculated
+    private final ComplexZmanimCalendar calculationCalendar; // holds day of calendar from which zman events are calculated
     private final ZoneId zone;
 
-    private List<ZmanEntry> entries = ZmanOptionsConfigManager.getInstance().getEntries(); // worry about changing?
-    private Map<Zman, ZmanEntry> entryMap = entries.stream().collect(Collectors.toMap(ZmanEntry:: zman, Function.identity()));
+    private final List<ZmanEntry> entries = ZmanOptionsConfigManager.getInstance().getEntries(); // worry about changing?
+    private final Map<Zman, ZmanEntry> entryMap = entries.stream().collect(Collectors.toMap(ZmanEntry:: zman, Function.identity()));
 
     public ClockEventManager(ClockBrain clock)
     {
@@ -340,7 +340,7 @@ public class ClockEventManager implements TimeObserver
      */
     public void notifyZmanEventObservers()
     {
-        ClockEvent alert = getFirstVisibleEvent(upcoming.asUnmodifiableList());
+        ClockEvent alert = getUpcomingFirstVisibleEvent();
         for (ZmanEventObserver observer : zmanEventObservers)
             observer.updateZmanEvent(alert);
     }
