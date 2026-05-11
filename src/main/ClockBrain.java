@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Singleton class for holding the logic of the clock - the ComplexZmanimCalendar, current time, and time methods that
- * are not specialized to a single use.  Allows observers using the <code>ClockObserver</code> interface.
+ * are not specialized to a single use.  Allows observers using the {@code ClockObserver} interface.
  */
 public final class ClockBrain implements ZmanEventObserver
 {
@@ -288,8 +288,7 @@ public final class ClockBrain implements ZmanEventObserver
     private void initializeTimeProgression()
     {
         // timer
-        int second = 1000; // milliseconds
-        int timerIterationSpeed = (int) (.1 * second); // how often timer should activate
+        int timerIterationSpeed = (int) (Constants.MILLIS_PER_SECOND / Settings.clockUpdatesPerSecond); // how often timer activates
         timer = new Timer(timerIterationSpeed, e ->
         {
             // update current time

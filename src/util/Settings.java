@@ -39,8 +39,20 @@ public class Settings
     /** Whether the tick marks for the sha'os should have their standard times displayed on the analog clock. */
     public static boolean ANALOG_SHAAH_TIME_MARKINGS = true;
 
-    /** How many days zmanim events should be retained for */
-    public static int EVENT_RETENTION_DAYS = 2;
+    // ------------------------------------------------------------------
+    // Other (should later be segmented)
+    // ------------------------------------------------------------------
+    /**
+     * How many times per second the clock should update.<br>
+     * Default: {@code 10}<br><br>
+     * <b>Note for users:</b> If this number is set to {@code 1}, it will only update one time per second.  While this may
+     * not seem to cause any difference for the standard clock, it will affect the displayed numbers for the halachic
+     * clock sections, along with those displays with countdowns.  They will appear stuttery, due to their times not
+     * necessarily lining up to the standard one-second length.  As such, higher numbers will provide a smoother
+     * experience, but will increase system load.<br>
+     * <b>Programmer's note:</b> This should eventually be moved into a settings file to allow for it to change.
+     */
+    public static int clockUpdatesPerSecond = 10;
 
     /**
      * {@code Path} to config file containing zmanim settings; used by {@code ZmanOptionsConfigManager}.
