@@ -1,5 +1,8 @@
 package util.enums;
 
+import com.kosherjava.zmanim.ComplexZmanimCalendar;
+
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -87,6 +90,7 @@ public enum Zman
     private final String title;
     private final String description;
     private final String methodName;
+    private final Method method;
 
     /**
      * Constructor.
@@ -102,6 +106,22 @@ public enum Zman
         this.title = title;
         this.description = description;
         this.methodName = methodName;
+        this.method = generateReflectedMethod();
+    }
+
+    /**
+     * Returns the reflected method this {@code Zman} runs through {@code ComplexZmanimCalendar}.  Throws a
+     * {@code RuntimeException} if the attempted method call fails.
+     * @return reflected {@code Method}
+     */
+    private Method generateReflectedMethod()
+    {
+        try {
+            return ComplexZmanimCalendar.class.getMethod(methodName);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Failed attempting call of method " + methodName + " for Zman " +
+                    title, e);
+        }
     }
 
     /**
@@ -125,6 +145,15 @@ public enum Zman
      * @return method name for reflection
      */
     public String getMethodName() { return methodName; }
+
+    /**
+     * Returns the method to call in {@code ComplexZmanimCalendar} to get the correct time.
+     * @return reflected {@code Method}
+     */
+    public Method getMethod()
+    {
+        return method;
+    }
 
     // Lookup map
     private static final Map<String, Zman> BY_ID =

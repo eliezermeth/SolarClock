@@ -57,7 +57,7 @@ public class ZmanOptionsConfigManager
                 Zman zman = Zman.fromId(id);
                 if (zman == null) continue; // unknown ID; skip (possible log)
 
-                entries[zman.ordinal()] = new ZmanEntry(zman, generateReflectedMethod(zman), enabled); // add to proper slot in order
+                entries[zman.ordinal()] = new ZmanEntry(zman, enabled); // add to proper slot in order
             }
 
             // Append any missing enum values (to keep system stable if enum grows)
@@ -65,27 +65,10 @@ public class ZmanOptionsConfigManager
                 if (entries[i] != null && entries[i] == null) // was not set
                 {
                     Zman zman = Zman.values()[i];
-                    entries[i] = new ZmanEntry(zman, generateReflectedMethod(zman), false); // add as disabled
+                    entries[i] = new ZmanEntry(zman, false); // add as disabled
                 }
         } catch (IOException e) {
             throw new RuntimeException("Error reading config file", e);
-        }
-    }
-
-    /**
-     * Returns the reflected method the {@code Zman} runs through {@code ComplexZmanimCalendar}.  Throws a
-     * {@code RunTimeException} if the attempted method call fails.
-     * @param zman {@code Zman} containing the method to call
-     * @return reflected {@code Method}
-     */
-    private Method generateReflectedMethod(Zman zman)
-    {
-        try
-        {
-            return ComplexZmanimCalendar.class.getMethod(zman.getMethodName());
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Failed attempting call of method " + zman.getMethodName() + " for " +
-                    zman, e);
         }
     }
 
@@ -101,7 +84,7 @@ public class ZmanOptionsConfigManager
             if (entries[i] != null &&entries[i].zman() == zman)
             {
                 ZmanEntry temp = entries[i];
-                entries[i] = new ZmanEntry(temp.zman(), temp.method(), !temp.enabled());
+                entries[i] = new ZmanEntry(temp.zman(), !temp.enabled());
 
                 rewriteFile();
                 return; // break out of loop and avoid throwing error

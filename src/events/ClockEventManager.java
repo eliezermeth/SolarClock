@@ -114,7 +114,7 @@ public class ClockEventManager implements TimeObserver
     private ClockEvent constructEvent(ComplexZmanimCalendar czc, ZmanEntry entry, ZoneId zone)
     {
         try {
-            Date d = (Date) entry.method().invoke(czc);
+            Date d = (Date) entry.zman().getMethod().invoke(czc);
             if (d == null) return null; // if zman does not occur (that day)
             ZonedDateTime time = ZonedDateTime.ofInstant(d.toInstant(), zone);
             return new ClockEvent(entry.zman(),  time, entry.enabled());
