@@ -1,6 +1,5 @@
 package gui;
 
-import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import events.ClockEvent;
 import events.ClockEventManager;
 import interfaces.TimeObserver;
@@ -21,21 +20,18 @@ import java.util.List;
 
 public class UpcomingTimesPanel implements TimeObserver, ZmanEventObserver
 {
-    private ClockBrain clock;
-    private ComplexZmanimCalendar czc;
-    private JPanel panel;
+    private final JPanel panel;
 
-    private ClockEventManager clockEventManager;
-    private List<EventPanel> displayedList = new ArrayList<>();
+    private final ClockEventManager clockEventManager;
+    private final List<EventPanel> displayedList = new ArrayList<>();
 
     /**
      * Constructor.
-     * @param panel
+     * @param panel {@code JPanel} where all elements can exist.
      */
     public UpcomingTimesPanel(JPanel panel)
     {
-        this.clock = ClockBrain.getInstance();
-        czc = clock.getComplexZmanimCalendar();
+        ClockBrain clock = ClockBrain.getInstance();
         this.panel = panel;
 
         clockEventManager = clock.getEventManager();
@@ -96,7 +92,6 @@ public class UpcomingTimesPanel implements TimeObserver, ZmanEventObserver
     public static void main(String[] args)
     {
         ClockBrain clock = ClockBrain.getInstance();
-        ComplexZmanimCalendar czc = clock.getComplexZmanimCalendar();
         ClockEventManager eventManager = clock.getEventManager();
 
         // matching from myzmanim.com; times appear to be ~10 second earlier due to location
