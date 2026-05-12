@@ -1,5 +1,6 @@
 package gui;
 
+import events.ClockEventManager;
 import interfaces.TerminatorObserver;
 import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
@@ -27,24 +28,27 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     private ClockBrain clock; // singleton; provider
     private LocalTime currentTime; // used for ease of calculations, rather than ZonedDateTime
 
+    private ClockEventManager eventManager;
+
     // for use to set lines at proper position in circle
-    /**
-     * Radians for the position of sunrise on the clock.
-     */
+    /** Radians for the position of sunrise on the clock. */
     private double offsetSunrise;
-    /**
-     * Radians for the position of sunset on the clock.
-     */
+    /** Radians for the position of sunset on the clock. */
     private double offsetSunset;
+    /** Radians for the position of dawn on the clock. */
+    private double offsetDawn;
+    /** Radians for the position of dusk on the clock. */
+    private double offsetDusk;
+
     // range of day and night of circle
-    /**
-     * The distance clockwise from the sunrise angle to the sunset angle (e.g. day).
-     */
+    /** The distance clockwise from the sunrise angle to the sunset angle (e.g. day). */
     private double angularSpanDay;
-    /**
-     * The distance clockwise from the sunset angle to the sunrise angle (e.g. night).
-     */
+    /** The distance clockwise from the sunset angle to the sunrise angle (e.g. night). */
     private double angularSpanNight;
+    /** The distance clockwise from the morning twilight to the sunrise (e.g. dawn). */
+    private double angularSpanDawn;
+    /** The distance clockwise from the night twilight to the sunset (e.g. dusk). */
+    private double angularSpanDusk;
 
     // Cached layout; recalculated based on window size whenever changed
     private int diameter, radius, centerX, centerY;
@@ -61,6 +65,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     public AnalogClockPanel()
     {
         clock = ClockBrain.getInstance();
+        eventManager = clock.getEventManager();
+        // TODO register to clockEventManager as listener
 
         // register with ClockBrain as an observer
         clock.registerTimeObserver(this);
