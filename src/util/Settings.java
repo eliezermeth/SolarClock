@@ -10,8 +10,6 @@ public class Settings
 {
     public static String location = "Pikesville";
 
-
-
     // ------------------------------------------------------------------
     // Analog clock settings
     // ------------------------------------------------------------------
@@ -21,10 +19,14 @@ public class Settings
     // Analog clock colors
     /** Color for the day segment of the analog clock. */
     public static Color DAY_COLOR = new Color(255, 255, 200);
+    /** Color for the twilight (dawn & dusk) segments of the clock when sun is between 0° and 6° below the horizon. */
+    public static Color CIVIL_TWILIGHT_COLOR = new Color(199, 199, 220);
+    /** Color for the twilight (dawn & dusk) segments of the clock when sun is between 6° and 12° below the horizon. */
+    public static Color NAUTICAL_TWILIGHT_COLOR = new Color(170, 170, 230);
+    /** Color for the twilight (dawn & dusk) segments of the clock when sun is between 12° and 18° below the horizon. */
+    public static Color ASTRONOMICAL_TWILIGHT_COLOR = new Color(128, 128, 245);
     /** Color for the night segment of the analog clock. */
     public static Color NIGHT_COLOR = new Color(100, 100, 255);
-    /** Color for the twilight (dawn & dusk) segments of the clock. */
-    public static Color TWILIGHT_COLOR = new Color(185, 185, 255);
     /** Color for the current-time hand of the analog clock. */
     public static Color TIME_HAND_COLOR = Color.RED;
 

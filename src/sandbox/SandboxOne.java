@@ -1,14 +1,13 @@
 package sandbox;
 
+import com.kosherjava.zmanim.AstronomicalCalendar;
+import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter;
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar;
 import main.ClockBrain;
 
 import java.lang.reflect.Method;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -51,23 +50,25 @@ public class SandboxOne
         // day to print properly.
     }
 
-    public String testReflection()
+    public void multipleTwilights()
     {
-        return "Reflected";
+        ClockBrain clock = ClockBrain.getInstance();
+        ComplexZmanimCalendar czc = clock.getComplexZmanimCalendar();
+
+        System.out.println("Start Astronomical: " + czc.getBeginAstronomicalTwilight());
+        System.out.println("Start Nautical: " + czc.getBeginNauticalTwilight());
+        System.out.println("Start Civil: " + czc.getBeginCivilTwilight());
+        System.out.println("Sunrise: " + czc.getSunrise());
+        System.out.println("Sunset: " + czc.getSunset());
+        System.out.println("End Civil: " + czc.getEndCivilTwilight());
+        System.out.println("End Nautical: " + czc.getEndNauticalTwilight());
+        System.out.println("End Astronomical: " + czc.getEndAstronomicalTwilight());
     }
 
     public static void main(String[] args)
     {
-        try
-        {
-            SandboxOne s1 = new SandboxOne();
-            //s1.hebrewDate();
-            String methodName = "testReflection";
-            Method m = SandboxOne.class.getMethod(methodName);
-            Object result = m.invoke(s1);
-            System.out.println((String) result);
-        } catch (Exception e) {
-            System.out.println(e);
-        }
+        SandboxOne s1 = new SandboxOne();
+        //s1.hebrewDate();
+        s1.multipleTwilights();
     }
 }

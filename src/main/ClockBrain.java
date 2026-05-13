@@ -286,7 +286,7 @@ public final class ClockBrain implements ZmanEventObserver
     {
         // timer
         int timerIterationSpeed = (int) (Constants.MILLIS_PER_SECOND / Settings.clockUpdatesPerSecond); // how often timer activates
-        timer = new Timer(timerIterationSpeed, _ ->
+        timer = new Timer(timerIterationSpeed, e ->
         {
             // update current time
             // virtualClock automatically updates itself every time it is polled
