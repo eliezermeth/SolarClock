@@ -39,3 +39,8 @@ color?).
 reverse.
 - Rewrite sections in `README`, `AnalogClockPanel`, etc. to accommodate 
 for new changes to sunrise/sunset calculations.
+- At the current moment, AnalogClockPanel (and HalachicTimes) are using 
+uniform periods within segments (that is, it calculates midday at the 
+middle time between sunrise and sunset), and not the astronomical times. 
+Perhaps split into UNIFORM_SUNDIAL and ASTRONOMICAL_SUNDIAL (where the sun 
+being at its zenith is at the top of the clock).
