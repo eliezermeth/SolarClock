@@ -9,6 +9,7 @@ import util.*;
 import util.enums.Circle;
 import util.enums.SHAAH_TICK_MARK_STYLE;
 import util.enums.Terminator;
+import util.enums.Zman;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,6 +18,7 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -29,16 +31,13 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     private LocalTime currentTime; // used for ease of calculations, rather than ZonedDateTime
 
     private ClockEventManager eventManager;
+    private SolarTimes solarTimes;
 
     // for use to set lines at proper position in circle
     /** Radians for the position of sunrise on the clock. */
     private double offsetSunrise;
     /** Radians for the position of sunset on the clock. */
     private double offsetSunset;
-    /** Radians for the position of dawn on the clock. */
-    private double offsetDawn;
-    /** Radians for the position of dusk on the clock. */
-    private double offsetDusk;
 
     // range of day and night of circle
     /** The distance clockwise from the sunrise angle to the sunset angle (e.g. day). */
@@ -67,6 +66,10 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         clock = ClockBrain.getInstance();
         eventManager = clock.getEventManager();
         // TODO register to clockEventManager as listener
+
+        solarTimes = new SolarTimes(clock.getComplexZmanimCalendar());
+        solarTimes.setDate(eventManager.getFirst(eventManager.getUpcomingEvents(), Zman.SUNRISE));
+        // TODO when it needs to update
 
         // register with ClockBrain as an observer
         clock.registerTimeObserver(this);
@@ -373,13 +376,14 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             /*
             By setting to this, the day and night arcs must now be modified. They can no longer be 50/50, but must
             calculate the percentage of the 24-hour period is contained by each.  Day should be centered with chatzos
-            at the top, and night corresponding.  It will need to recalculate and repaint at terminator change.  All
-            calculations must happen as an offset of these times.
+            at the top, and night corresponding.  It will recalculate at true midnight, and all calculations must happen
+            as an offset of these times.  It will repaint after it has recalculated positions.
              */
 
             // The current tekufah will have its percentage rendered correctly (the other may be slightly too
             // large/small); however, the day portion will be centered to the top of the 24-hour circle.
             long periodTime = clock.getTerminatorTimes().getTekufahSpan(0);
+            long newDayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
 
             double topPeriodTime = periodTime; // initialize to daytime
             if (clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNSET))
@@ -398,7 +402,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         // calculate the distance clockwise from sunrise angle to sunset angle (e.g. day)
         angularSpanDay = (offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
-        angularSpanNight = (2 * Math.PI) - angularSpanDay;
+        angularSpanNight = (2 * Math.PI) - angularSpanDay; // TODO this will need to change
 
         if (USE_BUFFERED_IMAGE)
             createStaticImage();
