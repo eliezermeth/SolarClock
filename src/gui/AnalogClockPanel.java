@@ -38,16 +38,25 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     private double offsetSunrise;
     /** Radians for the position of sunset on the clock. */
     private double offsetSunset;
+    /** Radians for the position of true midday on the clock. */
+    private double offsetMidday;
+    /** Radians for the position of (starting) true midnight on the clock. */
+    private double offsetMidnight;
 
     // range of day and night of circle
     /** The distance clockwise from the sunrise angle to the sunset angle (e.g. day). */
     private double angularSpanDay;
     /** The distance clockwise from the sunset angle to the sunrise angle (e.g. night). */
     private double angularSpanNight;
-    /** The distance clockwise from the morning twilight to the sunrise (e.g. dawn). */
-    private double angularSpanDawn;
-    /** The distance clockwise from the night twilight to the sunset (e.g. dusk). */
-    private double angularSpanDusk;
+
+    /** The distance clockwise from the true midnight angle to the sunrise angle (which contains dawn). */
+    private double angularSpanDawnNight;
+    /** The distance clockwise from the sunrise angle to the true midday angle. */
+    private double angularSpanMorning;
+    /** The distance clockwise from the true midday angle to the sunset angle. */
+    private double angularSpanAfternoon;
+    /** The distance clockwise from the sunset angle to the true midnight angle (which contains dusk). */
+    private double angularSpanDuskNight;
 
     // Cached layout; recalculated based on window size whenever changed
     private int diameter, radius, centerX, centerY;
@@ -379,30 +388,30 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             at the top, and night corresponding.  It will recalculate at true midnight, and all calculations must happen
             as an offset of these times.  It will repaint after it has recalculated positions.
              */
-
-            // The current tekufah will have its percentage rendered correctly (the other may be slightly too
-            // large/small); however, the day portion will be centered to the top of the 24-hour circle.
-            long periodTime = clock.getTerminatorTimes().getTekufahSpan(0);
-            long newDayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
-
-            double topPeriodTime = periodTime; // initialize to daytime
-            if (clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNSET))
-                topPeriodTime = Constants.MILLIS_PER_DAY - periodTime; // if first period is night, get 24-hour remainder and set top
-
-            double percentOfCircle = (topPeriodTime / Constants.MILLIS_PER_DAY) * 100;
-            double halfDaySegment = percentOfCircle / 2;
-            double radianOnePercent = (2 * Math.PI) / 100;
-            double sunriseAngle = Circle.TOP.radians + (halfDaySegment * radianOnePercent);
-            double sunsetAngle = ((Circle.TOP.radians - (halfDaySegment * radianOnePercent)) +
+            long dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
+            double percentOfCircle = ((double) dayPeriodTime / Constants.MILLIS_PER_DAY) * 100;
+            double newHalfDaySegment = percentOfCircle / 2;
+            double newRadianOnePercent = (2 * Math.PI) / 100;
+            double sunriseAngle = Circle.TOP.radians + (newHalfDaySegment * newRadianOnePercent);
+            double sunsetAngle = ((Circle.TOP.radians - (newHalfDaySegment * newRadianOnePercent)) +
                     Circle.RIGHT.radians) % Circle.RIGHT.radians; // force it to be a positive number
 
             offsetSunrise = sunriseAngle;
             offsetSunset = sunsetAngle;
         }
 
-        // calculate the distance clockwise from sunrise angle to sunset angle (e.g. day)
-        angularSpanDay = (offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
-        angularSpanNight = (2 * Math.PI) - angularSpanDay; // TODO this will need to change
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // This will need to be changed when astronomical vs. time-bound features are implemented.
+        // At this point, it is set to astronomical.
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        offsetMidday = Circle.TOP.radians;
+        offsetMidnight = Circle.BOTTOM.radians;
+
+        // calculate the distance clockwise from for each of the four sections
+        angularSpanDawnNight = (offsetSunrise - offsetMidnight + (2 * Math.PI)) % (2 * Math.PI);
+        angularSpanMorning = (offsetMidday - offsetSunrise + (2 * Math.PI)) % (2 * Math.PI);
+        angularSpanAfternoon = (offsetSunset - offsetMidday + (2 * Math.PI)) % (2 * Math.PI);
+        angularSpanDawnNight = (offsetMidnight - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
 
         if (USE_BUFFERED_IMAGE)
             createStaticImage();
