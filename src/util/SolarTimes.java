@@ -9,6 +9,7 @@ import util.enums.Zman;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.GregorianCalendar;
@@ -26,15 +27,15 @@ public class SolarTimes
         /** The period of twilight before sunrise. */
         DAWN {
             @Override
-            Date get(AstronomicalCalendar cal, Twilight twilight) { return twilight.getBegin(cal); }
+            Date get(ComplexZmanimCalendar cal, Twilight twilight) { return twilight.getBegin(cal); }
         },
         /** The period of twilight after sunset. */
         DUSK {
             @Override
-            Date get(AstronomicalCalendar cal, Twilight twilight) { return twilight.getEnd(cal); }
+            Date get(ComplexZmanimCalendar cal, Twilight twilight) { return twilight.getEnd(cal); }
         };
 
-        abstract Date get(AstronomicalCalendar cal, Twilight twilight);
+        abstract Date get(ComplexZmanimCalendar cal, Twilight twilight);
     }
 
 
@@ -46,36 +47,40 @@ public class SolarTimes
     {
         /** When the sun is 0°-6° below the horizon. */
         CIVIL {
-            Date getBegin(AstronomicalCalendar cal) { return cal.getBeginCivilTwilight(); }
-            Date getEnd(AstronomicalCalendar cal) { return cal.getEndCivilTwilight(); }
+            Date getBegin(ComplexZmanimCalendar cal) { return cal.getBeginCivilTwilight(); }
+            Date getEnd(ComplexZmanimCalendar cal) { return cal.getEndCivilTwilight(); }
         },
         /** When the sun is 6°-12° below the horizon. */
         NAUTICAL {
-            Date getBegin(AstronomicalCalendar cal) { return cal.getBeginNauticalTwilight(); }
-            Date getEnd(AstronomicalCalendar cal) { return cal.getEndNauticalTwilight(); }
+            Date getBegin(ComplexZmanimCalendar cal) { return cal.getBeginNauticalTwilight(); }
+            Date getEnd(ComplexZmanimCalendar cal) { return cal.getEndNauticalTwilight(); }
         },
         /** When the sun is 12°-18° below the horizon. */
         ASTRONOMICAL {
-            Date getBegin(AstronomicalCalendar cal) { return cal.getBeginAstronomicalTwilight(); }
-            Date getEnd(AstronomicalCalendar cal) { return cal.getEndAstronomicalTwilight(); }
+            Date getBegin(ComplexZmanimCalendar cal) { return cal.getBeginAstronomicalTwilight(); }
+            Date getEnd(ComplexZmanimCalendar cal) { return cal.getEndAstronomicalTwilight(); }
         };
 
-        abstract Date getBegin(AstronomicalCalendar cal);
-        abstract Date getEnd(AstronomicalCalendar cal);
+        abstract Date getBegin(ComplexZmanimCalendar cal);
+        abstract Date getEnd(ComplexZmanimCalendar cal);
     }
 
-
-    private final AstronomicalCalendar cal;
+    private final ComplexZmanimCalendar cal;
     private final ZoneId zone;
+
+    // Solar times that may be commonly called for calculations; others called via methods
+    private ZonedDateTime midnight,
+            sunrise, midday, sunset,
+            nextMidnight;
 
     /**
      * Preps a class that allows easy calculation of sunrise, sunset, and twilight times.  The date for calculations
-     * can be changed using the {@code setDate} method, and should be used immediately after creation.
-     * @param cal the {@code AstronomicalCalendar} containing the location data and methods
+     * can be changed using the {@code setDate} method, and must be used after creation to prime certain times.
+     * @param cal the {@code ComplexZmanimCalendar} containing the location data and methods
      */
-    public SolarTimes(AstronomicalCalendar cal)
+    public SolarTimes(ComplexZmanimCalendar cal)
     {
-        this.cal = (AstronomicalCalendar) cal.clone();
+        this.cal = (ComplexZmanimCalendar) cal.clone();
         this.zone = cal.getCalendar().getTimeZone().toZoneId();
     }
 
@@ -96,6 +101,41 @@ public class SolarTimes
 
         // valid type of ClockEvent, proceed with calculations
         cal.setCalendar(GregorianCalendar.from(event.getTime()));
+
+        setCommonTimes();
+    }
+
+    private void setCommonTimes()
+    {
+        sunrise = dateToZonedDateTime(cal.getSunrise());
+        midday = dateToZonedDateTime(cal.getChatzos());
+        sunset = dateToZonedDateTime(cal.getSunset());
+
+        // get midnights; make certain they are correct
+        Date temp = cal.getSolarMidnight();
+        if (temp.before(cal.getSunrise()))
+        {
+            midnight = dateToZonedDateTime(temp);
+            ComplexZmanimCalendar czc = (ComplexZmanimCalendar) cal.clone(); // copy to prevent errors for later calculations
+            czc.getCalendar().add(Calendar.DAY_OF_MONTH, 1);
+            nextMidnight = dateToZonedDateTime(czc.getSolarMidnight());
+        }
+        else // the temp midnight was after sunrise; need to go back a day
+        {
+            nextMidnight = dateToZonedDateTime(temp);
+            ComplexZmanimCalendar czc = (ComplexZmanimCalendar) cal.clone(); // copy to prevent errors for later calculations
+            czc.getCalendar().add(Calendar.DAY_OF_MONTH, -1);
+            midnight = dateToZonedDateTime(czc.getSolarMidnight());
+        }
+    }
+
+    /**
+     * Get the midnight time for the day.  As default, this returns astronomical midnight, when the sun is at its nadir.
+     * @return {@code ZonedDateTime}
+     */
+    public ZonedDateTime getMidnight()
+    {
+        return midnight;
     }
 
     /**
@@ -104,7 +144,16 @@ public class SolarTimes
      */
     public ZonedDateTime getSunrise()
     {
-        return dateToZonedDateTime(cal.getSunrise());
+        return sunrise;
+    }
+
+    /**
+     * Get the midday time for the day.  As default, this returns astronomical noon, when the sun is at its zenith.
+     * @return {@code ZonedDateTime}
+     */
+    public ZonedDateTime getMidday()
+    {
+        return midday;
     }
 
     /**
@@ -113,7 +162,16 @@ public class SolarTimes
      */
     public ZonedDateTime getSunset()
     {
-        return dateToZonedDateTime(cal.getSunset());
+        return sunset;
+    }
+
+    /**
+     * Get the midnight time for the next day.  As default, this returns astronomical midnight, when the sun is at its nadir.
+     * @return {@code ZonedDateTime}
+     */
+    public ZonedDateTime getNextMidnight()
+    {
+        return nextMidnight;
     }
 
     /**
@@ -147,13 +205,16 @@ public class SolarTimes
         SolarTimes st = new SolarTimes(czc);
         st.setDate(events.getFirst(events.getUpcomingEvents(), Zman.SUNRISE));
 
+        System.out.println("Midnight: " + st.getMidnight());
         System.out.println("Start Astronomical: " + st.getTwilight(Period.DAWN, Twilight.ASTRONOMICAL));
         System.out.println("Start Nautical: " + st.getTwilight(Period.DAWN, Twilight.NAUTICAL));
         System.out.println("Start Civil: " + st.getTwilight(Period.DAWN, Twilight.CIVIL));
         System.out.println("Sunrise: " + st.getSunrise());
+        System.out.println("Midday: " + st.getMidday());
         System.out.println("Sunset: " + st.getSunset());
         System.out.println("End Civil: " + st.getTwilight(Period.DUSK, Twilight.CIVIL));
         System.out.println("End Nautical: " + st.getTwilight(Period.DUSK, Twilight.NAUTICAL));
         System.out.println("End Astronomical: " + st.getTwilight(Period.DUSK, Twilight.ASTRONOMICAL));
+        System.out.println("Midnight: " + st.getNextMidnight());
     }
 }
