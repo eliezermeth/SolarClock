@@ -306,22 +306,25 @@ public class SolarTimes
         ClockEventManager events = clock.getEventManager();
 
         SolarTimes st = new SolarTimes(czc);
-        st.setDate(events.getFirst(events.getUpcomingEvents(), Zman.SUNRISE));
+        st.setDate(events.getFirst(events.getAllEvents(), Zman.SUNRISE));
+        System.out.println(String.format("%20s", "Midnight: ") + st.getMidnight());
+        System.out.println(String.format("%20s", "Start Astronomical: ") + st.getTwilight(Period.DAWN, Twilight.ASTRONOMICAL));
+        System.out.println(String.format("%20s", "Start Nautical: ") + st.getTwilight(Period.DAWN, Twilight.NAUTICAL));
+        System.out.println(String.format("%20s", "Start Civil: ") + st.getTwilight(Period.DAWN, Twilight.CIVIL));
+        System.out.println(String.format("%20s", "Sunrise: ") + st.getSunrise());
+        System.out.println(String.format("%20s", "Midday: ") + st.getMidday());
+        System.out.println(String.format("%20s", "Sunset: ") + st.getSunset());
+        System.out.println(String.format("%20s", "End Civil: ") + st.getTwilight(Period.DUSK, Twilight.CIVIL));
+        System.out.println(String.format("%20s", "End Nautical: ") + st.getTwilight(Period.DUSK, Twilight.NAUTICAL));
+        System.out.println(String.format("%20s", "End Astronomical: ") + st.getTwilight(Period.DUSK, Twilight.ASTRONOMICAL));
+        System.out.println(String.format("%20s", "Midnight: ") + st.getNextMidnight());
 
-        System.out.println("Midnight: " + st.getMidnight());
-        System.out.println("Start Astronomical: " + st.getTwilight(Period.DAWN, Twilight.ASTRONOMICAL));
-        System.out.println("Start Nautical: " + st.getTwilight(Period.DAWN, Twilight.NAUTICAL));
-        System.out.println("Start Civil: " + st.getTwilight(Period.DAWN, Twilight.CIVIL));
-        System.out.println("Sunrise: " + st.getSunrise());
-        System.out.println("Midday: " + st.getMidday());
-        System.out.println("Sunset: " + st.getSunset());
-        System.out.println("End Civil: " + st.getTwilight(Period.DUSK, Twilight.CIVIL));
-        System.out.println("End Nautical: " + st.getTwilight(Period.DUSK, Twilight.NAUTICAL));
-        System.out.println("End Astronomical: " + st.getTwilight(Period.DUSK, Twilight.ASTRONOMICAL));
-        System.out.println("Midnight: " + st.getNextMidnight());
+        System.out.println();
+        System.out.println(String.format("%20s", "Astronomical noon: ") + st.getMidday(MidpointMode.ASTRONOMICAL));
+        System.out.println(String.format("%20s", "Median noon: ") + st.getMidday(MidpointMode.MEDIAN));
 
-        System.out.println("\n\n\n\n");
-        System.out.println(st.getMidday(MidpointMode.ASTRONOMICAL));
-        System.out.println(st.getMidday(MidpointMode.MEDIAN));
+        System.out.println();
+        System.out.println(String.format("%20s", "Now: ") + clock.getCurrentDateTime());
+        System.out.println(String.format("%20s", "Midnight: ") + st.getMidnight());
     }
 }

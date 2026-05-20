@@ -1,12 +1,12 @@
 package gui;
 
 import java.awt.*;
-import java.time.LocalTime;
+import java.time.ZonedDateTime;
 
 public class StaticLine
 {
-    /** <code>LocalTime</code> for the position of the line/information on the analog clock. */
-    protected LocalTime time;
+    /** <code>ZonedDateTime</code> for the position of the line/information on the analog clock. */
+    protected ZonedDateTime time;
     /** Text for the label; if text is blank, the text portion should not be displayed. */
     protected String label;
     /** Thickness of the line; if width is <code>0</code>, the line portion should not be displayed. */
@@ -21,12 +21,12 @@ public class StaticLine
     /**
      * Information for a static line to be displayed on the analog clock.  Defaults to solid line, but can be changed
      * to be <code>dotted</code>.
-     * @param time <code>LocalTime</code> for when information should be calculated.
+     * @param time <code>ZonedDateTime</code> for when information should be calculated.
      * @param label Text for label; if text is blank, the text portion should not be displayed.
      * @param thickness Thickness of the line; if width is <code>0</code>, the line portion should not be displayed.
      * @param color Color of the line.
      */
-    StaticLine(LocalTime time, String label, int thickness, Color color)
+    StaticLine(ZonedDateTime time, String label, int thickness, Color color)
     {
         this.time = time;
         this.label = label;

@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,7 +78,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // TODO register to clockEventManager as listener
 
         solarTimes = new SolarTimes(clock.getComplexZmanimCalendar());
-        solarTimes.setDate(eventManager.getFirst(eventManager.getUpcomingEvents(), Zman.SUNRISE));
+        solarTimes.setDate(eventManager.getFirst(eventManager.getAllEvents(), Zman.SUNRISE));
         // TODO when it needs to update
 
         // register with ClockBrain as an observer
@@ -135,7 +136,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         {
             g2d.setColor(Settings.TIME_HAND_COLOR);
             g2d.setStroke(new BasicStroke(1));
-            drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentTime());
+            drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentDateTime());
         }
     }
 
@@ -254,14 +255,14 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         {
             g2d.setColor(Settings.TIME_HAND_COLOR);
             g2d.setStroke(new BasicStroke(1));
-            drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentTime());
+            drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentDateTime());
         }
 
         // Draw the circle outline; last to place over other elements that may overlap
         drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
     }
 
-    private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time)
+    private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, ZonedDateTime time)
     {
         double angle = calculateAngle(time);
         double endX = centerX + radius * Math.cos(angle);
@@ -282,7 +283,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         g2d.setStroke(new BasicStroke(1.0f)); // reset stroke
     }
 
-    private void drawLabel(Graphics2D g2d, int centerX, int centerY, int radius, LocalTime time, String label)
+    private void drawLabel(Graphics2D g2d, int centerX, int centerY, int radius, ZonedDateTime time, String label)
     {
         // short-circuit if no text
         if (label.isEmpty()) return;
@@ -318,53 +319,53 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         g2d.drawString(label, labelX, labelY);
     }
 
-    private double calculateAngle(LocalTime time)
+    private double calculateAngle(ZonedDateTime time)
     {
-        double angularSpan; // the span used for the tekufah in the calculation
-        int targetedTekufah; // what tekufah the targeted time is during
-        boolean daytime;
+        double offset; // the starting offset for the quadrant span
+        double angularSpan; // span used for the quadrant in the calculation
+        ZonedDateTime startTimeDemarcation, endTimeDemarcation;
 
-        // Test if within the first tekufah; t0 <= time < t1
-        if (!time.isBefore(clock.getTerminatorTimes().getTerminator(0).toLocalTime()) && // time is at or after first terminator
-                time.isBefore(clock.getTerminatorTimes().getTerminator(1).toLocalTime())) // time is strictly before second
+        if (time.isBefore(solarTimes.getMidnight()))
+            throw new IllegalArgumentException("Element time is too early:\n" +
+                    time + " is before " + solarTimes.getMidnight());
+        else if (time.isBefore(solarTimes.getSunrise())) // quadrant 3; earliest section
         {
-            targetedTekufah = 0; // use first and second terminators
-            if (clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE))
-            {
-                angularSpan = angularSpanDay; // use day span for percent; use day calculations
-                daytime = true;
-            }
-            else
-            {
-                angularSpan = angularSpanNight; // use night span for percent; use night calculations
-                daytime = false;
-            }
+            offset = offsetMidnight;
+            angularSpan = angularSpanDawnNight;
+            startTimeDemarcation = solarTimes.getMidnight();
+            endTimeDemarcation = solarTimes.getSunrise();
         }
-        else // during second span
+        else if (time.isBefore(solarTimes.getMidday())) // quadrant 2; first day section
         {
-            targetedTekufah = 1; // use second and third terminators
-            if (clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE))
-            {
-                angularSpan = angularSpanNight;
-                daytime = false;
-            }
-            else
-            {
-                angularSpan = angularSpanDay;
-                daytime = true;
-            }
+            offset = offsetSunrise;
+            angularSpan = angularSpanMorning;
+            startTimeDemarcation = solarTimes.getSunrise();
+            endTimeDemarcation = solarTimes.getMidday();
         }
+        else if (time.isBefore(solarTimes.getSunset())) // quadrant 1; second day section
+        {
+            offset = offsetMidday;
+            angularSpan = angularSpanAfternoon;
+            startTimeDemarcation = solarTimes.getMidday();
+            endTimeDemarcation = solarTimes.getSunset();
+        }
+        else if (time.isBefore(solarTimes.getNextMidnight())) // quadrant 4; latest section
+        {
+            offset = offsetSunset;
+            angularSpan = angularSpanDuskNight;
+            startTimeDemarcation = solarTimes.getSunset();
+            endTimeDemarcation = solarTimes.getNextMidnight();
+        }
+        else // time is past permissible
+            throw new IllegalArgumentException("Element time is too late:\n" +
+                    time + " is after " + solarTimes.getNextMidnight());
 
-        long totalSeconds = clock.getTerminatorTimes().getTekufahSpan(targetedTekufah);
-        long currentSeconds = TimeUtil.calculateMillisBetween(clock.getTerminatorTimes().getTerminator(targetedTekufah).toLocalTime(),
-                time);
+        long totalMillis = Duration.between(startTimeDemarcation, endTimeDemarcation).toMillis();
+        long elapsedSeconds = Duration.between(startTimeDemarcation, time).toMillis();
 
         // get percent of angular span
-        double spanToAdd = angularSpan * ((double) currentSeconds / totalSeconds);
-        if (daytime)
-            return offsetSunrise - spanToAdd;
-        else
-            return offsetSunset - spanToAdd; // POTENTIAL - change to +
+        double spanToAdd = angularSpan * ((double) elapsedSeconds / totalMillis);
+        return offset - spanToAdd; // subtract to have clockwise motion
     }
 
     // TODO update to accommodate ViewModes
@@ -394,7 +395,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             double newRadianOnePercent = (2 * Math.PI) / 100;
             double sunriseAngle = Circle.TOP.radians + (newHalfDaySegment * newRadianOnePercent);
             double sunsetAngle = ((Circle.TOP.radians - (newHalfDaySegment * newRadianOnePercent)) +
-                    Circle.RIGHT.radians) % Circle.RIGHT.radians; // force it to be a positive number
+                    Circle.RIGHT.radians) % (2 * Math.PI); // force it to be a positive number
 
             offsetSunrise = sunriseAngle;
             offsetSunset = sunsetAngle;
@@ -411,10 +412,21 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         angularSpanDawnNight = (offsetSunrise - offsetMidnight + (2 * Math.PI)) % (2 * Math.PI);
         angularSpanMorning = (offsetMidday - offsetSunrise + (2 * Math.PI)) % (2 * Math.PI);
         angularSpanAfternoon = (offsetSunset - offsetMidday + (2 * Math.PI)) % (2 * Math.PI);
-        angularSpanDawnNight = (offsetMidnight - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
+        angularSpanDuskNight = (offsetMidnight - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
+
+        angularSpanDawnNight = smallestAngularSpan(offsetMidnight, offsetSunrise);
+        angularSpanMorning = smallestAngularSpan(offsetSunrise, offsetMidday);
+        angularSpanAfternoon = smallestAngularSpan(offsetMidday, offsetSunset);
+        angularSpanDuskNight = smallestAngularSpan(offsetSunset, offsetMidnight);
 
         if (USE_BUFFERED_IMAGE)
             createStaticImage();
+    }
+
+    private double smallestAngularSpan(double a, double b)
+    {
+        double diff = Math.abs(a - b) % (2 * Math.PI);
+        return Math.min(diff, (2 * Math.PI) - diff);
     }
 
     /**
@@ -436,15 +448,14 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
      */
     public void addTerminatorLines()
     {
-        this.addStaticLine(clock.getTerminatorTimes().getTerminator(0).toLocalTime(),
-                clock.getTerminatorTimes().getStartingTerminator().toString(), 3, Color.GREEN);
-        Terminator other = clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE) ?
-                Terminator.SUNSET : Terminator.SUNRISE;
-        this.addStaticLine(clock.getTerminatorTimes().getTerminator(1).toLocalTime(), other.toString(), 3, Color.GREEN);
+        this.addStaticLine(solarTimes.getMidnight(), "Midnight", 2, Color.GREEN);
+        this.addStaticLine(solarTimes.getSunrise(), "Sunrise", 2, Color.GREEN);
+        this.addStaticLine(solarTimes.getMidday(), "Midday", 2, Color.GREEN);
+        this.addStaticLine(solarTimes.getSunset(), "Sunset", 2, Color.GREEN);
     }
 
     /**
-     * Display hour tick marks between sunrise and sunset: 1 - 11 in day; 13 - 23 in night
+     * Display hour tick marks between sunrise and sunset.
      */
     public void addHourTickMarks()
     {
@@ -454,25 +465,26 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         if (Settings.ANALOG_SHAAH_TICK_MARK_STYLE == SHAAH_TICK_MARK_STYLE.ONE_TWELFTH_OF_TEKUFAH)
         {
-            // calculate shaah for the time period
-            // start of tekufah; offset of time due to day or night
-            int[][] tekufahSettings = new int[][] {
-                    new int[] { 0, clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNRISE) ? 0 : 12},
-                    new int[] { 1, clock.getTerminatorTimes().getStartingTerminator().equals(Terminator.SUNSET) ? 0 : 12}
-            };
+            // calculate sha'ah for time period; will be based on what has been determined as default for midday/night
+            int [] hoursOffset = new int[] { 6, 0, 6, 0}; // start from midnight
+            ZonedDateTime[] demarcations = new ZonedDateTime[]
+                    { solarTimes.getMidnight(), solarTimes.getSunrise(), solarTimes.getMidday(),
+                    solarTimes.getSunset(), solarTimes.getNextMidnight() }; // include next midnight to give spans
 
-            for (int[] tekufah : tekufahSettings)
+            for (int period = 0; period < hoursOffset.length; period++)
             {
-                LocalTime tekufahStart = clock.getTerminatorTimes().getTerminator(tekufah[0]).toLocalTime();
-                long tekufahShaah = clock.getTerminatorTimes().getTekufahShaah(tekufah[0]);
+                ZonedDateTime startTime = demarcations[period];
+                long spanMillis = Duration.between(demarcations[period], demarcations[period + 1]).toMillis();
+                long shaahLength = spanMillis / 6; // six sha'os per quadrant
 
-                for (int i = 0; i < 12; i++) // 0 to include terminator, 1 to exclude
+                for (int hour = 0; hour < 6; hour++) // six sha'os per quadrant
                 {
                     // 1. Time
-                    LocalTime tickMark = tekufahStart.plusSeconds(
-                            (tekufahShaah / 1000) * i); // millis to seconds, then multiply by hours
+                    ZonedDateTime tickMark = startTime.plusSeconds(
+                            (shaahLength * hour) / Constants.MILLIS_PER_SECOND); // multiply by hours, then millis to seconds
                     // 2. Text
                     String text = (Settings.ANALOG_SHAAH_TIME_MARKINGS) ? tickMark.format(formatter) : "";
+                    // Hour number can be gotten via hoursOffset[period] + hour
 
                     // add to static line array
                     StaticLine sl = this.addStaticLine(tickMark, text,
@@ -480,7 +492,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                             Settings.ANALOG_SHAAH_TICK_MARKS_COLOR);
                     sl.setDotted(10, 10);
                 }
-            }
+            } // above code has not been tested for accuracy
         }
         // TODO other methods of calculations
 
@@ -509,14 +521,14 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
     /**
      * Add a custom static line to the analog clock.
-     * @param time <code>LocalTime</code> for the position of the line.
+     * @param time <code>ZonedDateTime</code> for the position of the line.
      * @param label Text for the label; if text is blank, the text portion should not be displayed.
      * @param thickness Thickness of the line; if width is <code>0</code>, the line portion should not be displayed.
      * @param color Color of the line.
      *
      * @return The <code>StaticLine</code> that was added to the <code>ArrayList</code>.
      */
-    public StaticLine addStaticLine(LocalTime time, String label, int thickness, Color color)
+    public StaticLine addStaticLine(ZonedDateTime time, String label, int thickness, Color color)
     {
         StaticLine sl = new StaticLine(time, label, thickness, color);
         staticLines.add(sl);
@@ -548,7 +560,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     public void updateTerminatorCalculations()
     {
         clearStaticLines();
-        addHourTickMarks();
+        //addHourTickMarks();
         // TODO reset static lines, etc
         calculateEqualDayNightView();
         repaint();
@@ -574,6 +586,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         AnalogClockPanel clockPanel = new AnalogClockPanel();
         clockPanel.addHourTickMarks();
+        //clockPanel.addTerminatorLines();
 
         GridRegionPanel grp = new GridRegionPanel(10, 15);
         grp.addRegion(2, 1, 11, 8, clockPanel);
