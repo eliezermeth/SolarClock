@@ -213,7 +213,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // Draw the top half of the circle
         Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
                 Math.toDegrees(offsetSunset),
-                Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
+                Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)), // direction matters
                 Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
         g2d.setColor(Settings.DAY_COLOR); // Light yellow
         g2d.fill(dayArc);
@@ -223,8 +223,49 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                 Math.toDegrees(offsetSunrise),
                 360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
                 Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
+//        nightArc = createArcSegment(
+//                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL)),
+//                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL)));
         g2d.setColor(Settings.NIGHT_COLOR); // Light deep blue
         g2d.fill(nightArc);
+
+        // TODO deduct from night
+        // civil dawn
+        Arc2D.Double civilDawn = createArcSegment(offsetSunrise,
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL)));
+        g2d.setColor(Settings.CIVIL_TWILIGHT_COLOR);
+        g2d.fill(civilDawn);
+        // nautical dawn
+        Arc2D.Double nauticalDawn = createArcSegment(
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL)),
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL)));
+        g2d.setColor(Settings.NAUTICAL_TWILIGHT_COLOR);
+        g2d.fill(nauticalDawn);
+        // astronomical dawn
+        Arc2D.Double astronomicalDawn = createArcSegment(
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL)),
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL)));
+        g2d.setColor(Settings.ASTRONOMICAL_TWILIGHT_COLOR);
+        g2d.fill(astronomicalDawn);
+
+        // civil dusk; reverse
+        Arc2D.Double civilDusk = createArcSegment(
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL)),
+                offsetSunset);
+        g2d.setColor(Settings.CIVIL_TWILIGHT_COLOR);
+        g2d.fill(civilDusk);
+        // nautical dawn
+        Arc2D.Double nauticalDusk = createArcSegment(
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL)),
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL)));
+        g2d.setColor(Settings.NAUTICAL_TWILIGHT_COLOR);
+        g2d.fill(nauticalDusk);
+        // astronomical dawn
+        Arc2D.Double astronomicalDusk = createArcSegment(
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL)),
+                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL)));
+        g2d.setColor(Settings.ASTRONOMICAL_TWILIGHT_COLOR);
+        g2d.fill(astronomicalDusk);
 
         // Draw static lines with optional labels
         for (StaticLine line : staticLines)
@@ -260,6 +301,17 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         // Draw the circle outline; last to place over other elements that may overlap
         drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
+    }
+
+    private Arc2D.Double createArcSegment(double a, double b)
+    {
+        double start = a;
+        double end = b;
+
+        double span = (end - start + (2 * Math.PI)) % (2 * Math.PI); // CCW-compatible span for Arc2D
+
+        return new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
+                Math.toDegrees(start), Math.toDegrees(span), Arc2D.PIE);
     }
 
     private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, ZonedDateTime time)
@@ -586,7 +638,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         AnalogClockPanel clockPanel = new AnalogClockPanel();
         clockPanel.addHourTickMarks();
-        //clockPanel.addTerminatorLines();
+        clockPanel.addTerminatorLines();
 
         GridRegionPanel grp = new GridRegionPanel(10, 15);
         grp.addRegion(2, 1, 11, 8, clockPanel);
