@@ -1,12 +1,17 @@
 package util;
 
-import com.kosherjava.zmanim.AstronomicalCalendar;
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import events.ClockEvent;
 import events.ClockEventManager;
 import main.ClockBrain;
+import util.enums.Elevation;
+import util.enums.MidpointMode;
 import util.enums.Zman;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.sql.Time;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
@@ -68,10 +73,13 @@ public class SolarTimes
     private final ComplexZmanimCalendar cal;
     private final ZoneId zone;
 
+    Method calcSunrise;
+    Method calcSunset;
+
     // Solar times that may be commonly called for calculations; others called via methods
-    private ZonedDateTime midnight,
-            sunrise, midday, sunset,
-            nextMidnight;
+    private ZonedDateTime pastSunset, nadir,
+            sunrise, zenith, sunset,
+            nextNadir, nextSunrise;
 
     /**
      * Preps a class that allows easy calculation of sunrise, sunset, and twilight times.  The date for calculations
@@ -87,7 +95,10 @@ public class SolarTimes
     /**
      * Calculate the solar times for a specific day.  To force certainty regarding which day, this {@code ClockEvent}
      * is required to have a {@code Zman} type of {@code Zman.SUNRISE}, {@code Zman.MIDDAY}, or {@code Zman.SUNSET},
-     * along with its time event being of the same time zone as the class's {@code AstronomicalCalendar}.
+     * along with its time event being of the same time zone as the class's {@code AstronomicalCalendar}.<br>
+     * Calculations will use the settings determined by {@code Settings.ANALOG_MIDPOINT_MODE} and
+     * {@code Settings.ELEVATION}.  The elevation will determine the sunrise/sunset, and may influence the midpoint mode,
+     * if it is to be determined via the median time between those.  As of now, it will not affect the zenith.
      * @param event {@code ClockEvent} with {@code Zman} of permitted type, containing a {@code ZonedDateTime} around
      *                                which the date for times will be set
      */
@@ -102,40 +113,92 @@ public class SolarTimes
         // valid type of ClockEvent, proceed with calculations
         cal.setCalendar(GregorianCalendar.from(event.getTime()));
 
+        // reset method reflections each day (should this be changed?)
+        try {
+            if (Settings.ANALOG_ELEVATION == Elevation.ACTUAL)
+            {
+                calcSunrise = ComplexZmanimCalendar.class.getMethod("getSunrise");
+                calcSunset = ComplexZmanimCalendar.class.getMethod("getSunset");
+            }
+            else // Elevation.SEA_LEVEL
+            {
+                calcSunrise = ComplexZmanimCalendar.class.getMethod("getSeaLevelSunrise");
+                calcSunset = ComplexZmanimCalendar.class.getMethod("getSeaLevelSunset");
+            }
+        } catch (NoSuchMethodException e) { // never should happen, since methods are predetermined
+            throw new RuntimeException("Unable to determine method for calculation.", e);
+        }
+
         setCommonTimes();
     }
 
     private void setCommonTimes()
     {
-        sunrise = dateToZonedDateTime(cal.getSunrise());
-        midday = dateToZonedDateTime(cal.getChatzos());
-        sunset = dateToZonedDateTime(cal.getSunset());
+        // create duplicates to allow modifications and avoid errors for future calculations
+        ComplexZmanimCalendar yesterday = (ComplexZmanimCalendar) cal.clone();
+        yesterday.getCalendar().add(Calendar.DAY_OF_MONTH, -1);
+        ComplexZmanimCalendar tomorrow = (ComplexZmanimCalendar) cal.clone();
+        tomorrow.getCalendar().add(Calendar.DAY_OF_MONTH, 1);
 
-        // get midnights; make certain they are correct
-        Date temp = cal.getSolarMidnight();
-        if (temp.before(cal.getSunrise()))
+        // get sunrises and sunsets
+        try {
+            pastSunset = dateToZonedDateTime((Date) calcSunset.invoke(yesterday));
+            sunrise = dateToZonedDateTime((Date) calcSunrise.invoke(cal));
+            sunset = dateToZonedDateTime((Date) calcSunset.invoke(cal));
+            nextSunrise = dateToZonedDateTime((Date) calcSunrise.invoke(tomorrow));
+        } catch (InvocationTargetException | IllegalAccessException e)
         {
-            midnight = dateToZonedDateTime(temp);
-            ComplexZmanimCalendar czc = (ComplexZmanimCalendar) cal.clone(); // copy to prevent errors for later calculations
-            czc.getCalendar().add(Calendar.DAY_OF_MONTH, 1);
-            nextMidnight = dateToZonedDateTime(czc.getSolarMidnight());
+            throw new RuntimeException("Failed to invoke sunrise/sunset method for day.", e);
+        }
+
+
+        zenith = dateToZonedDateTime(cal.getChatzos());
+
+        // get astronomical midnights; make certain they are correct
+        Date temp = cal.getSolarMidnight();
+        if (temp.before(cal.getSunrise())) // does not require the precise time; can use default sunrise
+        {
+            nadir = dateToZonedDateTime(temp);
+            nextNadir = dateToZonedDateTime(tomorrow.getSolarMidnight());
         }
         else // the temp midnight was after sunrise; need to go back a day
         {
-            nextMidnight = dateToZonedDateTime(temp);
-            ComplexZmanimCalendar czc = (ComplexZmanimCalendar) cal.clone(); // copy to prevent errors for later calculations
-            czc.getCalendar().add(Calendar.DAY_OF_MONTH, -1);
-            midnight = dateToZonedDateTime(czc.getSolarMidnight());
+            nextNadir = dateToZonedDateTime(temp);
+            nadir = dateToZonedDateTime(yesterday.getSolarMidnight());
         }
     }
 
     /**
-     * Get the midnight time for the day.  As default, this returns astronomical midnight, when the sun is at its nadir.
+     * Get the sunset time for the previous day.
+     * @return {@code ZonedDateTime}
+     */
+    public ZonedDateTime getPastSunset()
+    {
+        return pastSunset;
+    }
+
+    /**
+     * Get the midnight time for the day.  As the default method, it will return the nadir or median, depending on
+     * {@code Settings.ANALONG_MIDPOINT_MODE}.
      * @return {@code ZonedDateTime}
      */
     public ZonedDateTime getMidnight()
     {
-        return midnight;
+        return getMidnight(Settings.ANALOG_MIDPOINT_MODE);
+    }
+
+    /**
+     * Return a specific midnight time.
+     * @param mode {@code ASTRONOMICAL} (when the sun is at its nadir) or {@code MEDIAN} (the midpoint between sunset
+     *                                 and sunrise
+     * @return midnight
+     */
+    public ZonedDateTime getMidnight(MidpointMode mode)
+    {
+        if (mode == MidpointMode.ASTRONOMICAL)
+            return nadir;
+        else // MEDIAN
+            return TimeUtil.midpoint(pastSunset, sunrise);
     }
 
     /**
@@ -148,12 +211,27 @@ public class SolarTimes
     }
 
     /**
-     * Get the midday time for the day.  As default, this returns astronomical noon, when the sun is at its zenith.
+     * Get the midday time for the day.  As the default method, this returns zenith or median, depending on
+     * {@code Settings.ANALOG_MIDPOINT_MODE}.
      * @return {@code ZonedDateTime}
      */
     public ZonedDateTime getMidday()
     {
-        return midday;
+        return getMidday(Settings.ANALOG_MIDPOINT_MODE);
+    }
+
+    /**
+     * Return a specific midday time.
+     * @param mode {@code ASTRONOMICAL} (when the sun is at its zenith) or {@code MEDIAN} (the midpoint between sunrise
+     *                                 and sunset
+     * @return midday
+     */
+    public ZonedDateTime getMidday(MidpointMode mode)
+    {
+        if (mode == MidpointMode.ASTRONOMICAL)
+            return zenith;
+        else // MEDIAN
+            return TimeUtil.midpoint(sunrise, sunset);
     }
 
     /**
@@ -166,12 +244,36 @@ public class SolarTimes
     }
 
     /**
-     * Get the midnight time for the next day.  As default, this returns astronomical midnight, when the sun is at its nadir.
+     * Get the midnight time for the next day.  As the default method, it will return the nadir or median, depending on
+     * {@code Settings.ANALONG_MIDPOINT_MODE}.
      * @return {@code ZonedDateTime}
      */
     public ZonedDateTime getNextMidnight()
     {
-        return nextMidnight;
+        return getNextMidnight(Settings.ANALOG_MIDPOINT_MODE);
+    }
+
+    /**
+     * Return a specific midnight time for the next day.
+     * @param mode {@code ASTRONOMICAL} (when the sun is at its nadir) or {@code MEDIAN} (the midpoint between sunset
+     *                                 and sunrise
+     * @return midnight
+     */
+    public ZonedDateTime getNextMidnight(MidpointMode mode)
+    {
+        if (mode == MidpointMode.ASTRONOMICAL)
+            return nextNadir;
+        else // MEDIAN
+            return TimeUtil.midpoint(sunset, nextSunrise);
+    }
+
+    /**
+     * Get the sunrise time for the next day.
+     * @return {@code ZonedDateTime}
+     */
+    public ZonedDateTime getNextSunrise()
+    {
+        return nextSunrise;
     }
 
     /**
@@ -196,6 +298,7 @@ public class SolarTimes
         return ZonedDateTime.ofInstant(d.toInstant(), zone);
     }
 
+
     public static void main(String[] args)
     {
         ClockBrain clock = ClockBrain.getInstance();
@@ -216,5 +319,9 @@ public class SolarTimes
         System.out.println("End Nautical: " + st.getTwilight(Period.DUSK, Twilight.NAUTICAL));
         System.out.println("End Astronomical: " + st.getTwilight(Period.DUSK, Twilight.ASTRONOMICAL));
         System.out.println("Midnight: " + st.getNextMidnight());
+
+        System.out.println("\n\n\n\n");
+        System.out.println(st.getMidday(MidpointMode.ASTRONOMICAL));
+        System.out.println(st.getMidday(MidpointMode.MEDIAN));
     }
 }

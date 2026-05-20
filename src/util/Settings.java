@@ -1,5 +1,7 @@
 package util;
 
+import util.enums.Elevation;
+import util.enums.MidpointMode;
 import util.enums.SHAAH_TICK_MARK_STYLE;
 import util.enums.ViewMode;
 
@@ -40,6 +42,10 @@ public class Settings
     public static byte ANALOG_SHAAH_TICK_MARK_WIDTH = 1;
     /** Whether the tick marks for the sha'os should have their standard times displayed on the analog clock. */
     public static boolean ANALOG_SHAAH_TIME_MARKINGS = true;
+    /** If the midpoints should be centered between sunrise/sunset, or via the sun. */
+    public static MidpointMode ANALOG_MIDPOINT_MODE = MidpointMode.ASTRONOMICAL;
+    /** If it should use the user's current elevation, or sea level. */
+    public static Elevation ANALOG_ELEVATION = Elevation.ACTUAL;
 
     // ------------------------------------------------------------------
     // Other (should later be segmented)
