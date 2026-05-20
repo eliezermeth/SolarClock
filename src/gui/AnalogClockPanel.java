@@ -57,7 +57,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     /** The distance clockwise from the sunset angle to the true midnight angle (which contains dusk). */
     private double angularSpanDuskNight;
 
-    private List<TwilightSegment> cachedTwilightSegments;
+    private List<SolarArcSegment> cachedTwilightSegments;
 
     // Cached layout; recalculated based on window size whenever changed
     private int diameter, radius, centerX, centerY;
@@ -260,46 +260,46 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     private void buildSolarArcSections()
     {
         // TODO rebuild when SolarTimes updates
-        List<TwilightSegment> list = new ArrayList<>();
+        List<SolarArcSegment> list = new ArrayList<>();
 
         // input elements within segments in ccw-order
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL),
                 solarTimes.getMidnight(),
                 Settings.NIGHT_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL),
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL),
                 Settings.ASTRONOMICAL_TWILIGHT_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL),
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL),
                 Settings.NAUTICAL_TWILIGHT_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getSunrise(),
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL),
                 Settings.CIVIL_TWILIGHT_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getMidday(),
                 solarTimes.getSunrise(),
                 Settings.DAY_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getSunset(),
                 solarTimes.getMidday(),
                 Settings.DAY_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL),
                 solarTimes.getSunset(),
                 Settings.CIVIL_TWILIGHT_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL),
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL),
                 Settings.NAUTICAL_TWILIGHT_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL),
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL),
                 Settings.ASTRONOMICAL_TWILIGHT_COLOR));
-        list.add(new TwilightSegment(
+        list.add(new SolarArcSegment(
                 solarTimes.getNextMidnight(),
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL),
                 Settings.NIGHT_COLOR));
@@ -318,7 +318,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
     private void drawSolarArcSections(Graphics2D g2d)
     {
-        for (TwilightSegment s : cachedTwilightSegments)
+        for (SolarArcSegment s : cachedTwilightSegments)
         {
             double start = calculateAngle(s.start());
             double end = calculateAngle(s.end());
