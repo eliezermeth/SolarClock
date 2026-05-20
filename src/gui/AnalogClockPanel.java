@@ -8,7 +8,6 @@ import main.ClockBrain;
 import util.*;
 import util.enums.Circle;
 import util.enums.SHAAH_TICK_MARK_STYLE;
-import util.enums.Terminator;
 import util.enums.Zman;
 
 import javax.swing.*;
@@ -22,7 +21,6 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,6 +57,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     /** The distance clockwise from the sunset angle to the true midnight angle (which contains dusk). */
     private double angularSpanDuskNight;
 
+    private List<TwilightSegment> cachedTwilightSegments;
+
     // Cached layout; recalculated based on window size whenever changed
     private int diameter, radius, centerX, centerY;
 
@@ -79,6 +79,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         solarTimes = new SolarTimes(clock.getComplexZmanimCalendar());
         solarTimes.setDate(eventManager.getFirst(eventManager.getAllEvents(), Zman.SUNRISE));
+        buildSolarArcSections();
         // TODO when it needs to update
 
         // register with ClockBrain as an observer
@@ -209,63 +210,16 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
     private void drawClock(Graphics2D g2d) // normal draw OPTION 2 - part 2
     {
+        drawSolarArcSections(g2d);
 
-        // Draw the top half of the circle
-        Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
-                Math.toDegrees(offsetSunset),
-                Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)), // direction matters
-                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(Settings.DAY_COLOR); // Light yellow
-        g2d.fill(dayArc);
-
-        // Draw the bottom half of the circle
-        Arc2D.Double nightArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
-                Math.toDegrees(offsetSunrise),
-                360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
-                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-//        nightArc = createArcSegment(
-//                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL)),
-//                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL)));
-        g2d.setColor(Settings.NIGHT_COLOR); // Light deep blue
-        g2d.fill(nightArc);
-
-        // TODO deduct from night
-        // civil dawn
-        Arc2D.Double civilDawn = createArcSegment(offsetSunrise,
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL)));
-        g2d.setColor(Settings.CIVIL_TWILIGHT_COLOR);
-        g2d.fill(civilDawn);
-        // nautical dawn
-        Arc2D.Double nauticalDawn = createArcSegment(
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL)),
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL)));
-        g2d.setColor(Settings.NAUTICAL_TWILIGHT_COLOR);
-        g2d.fill(nauticalDawn);
-        // astronomical dawn
-        Arc2D.Double astronomicalDawn = createArcSegment(
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL)),
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL)));
-        g2d.setColor(Settings.ASTRONOMICAL_TWILIGHT_COLOR);
-        g2d.fill(astronomicalDawn);
-
-        // civil dusk; reverse
-        Arc2D.Double civilDusk = createArcSegment(
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL)),
-                offsetSunset);
-        g2d.setColor(Settings.CIVIL_TWILIGHT_COLOR);
-        g2d.fill(civilDusk);
-        // nautical dawn
-        Arc2D.Double nauticalDusk = createArcSegment(
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL)),
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL)));
-        g2d.setColor(Settings.NAUTICAL_TWILIGHT_COLOR);
-        g2d.fill(nauticalDusk);
-        // astronomical dawn
-        Arc2D.Double astronomicalDusk = createArcSegment(
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL)),
-                calculateAngle(solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL)));
-        g2d.setColor(Settings.ASTRONOMICAL_TWILIGHT_COLOR);
-        g2d.fill(astronomicalDusk);
+        // draw line on midnight to close gap of arcs
+        g2d.setColor(Settings.NIGHT_COLOR);
+        g2d.setStroke(new BasicStroke(1));
+        drawLineAtTime(g2d, centerX, centerY, radius, solarTimes.getMidnight());
+        // draw line on midday to close gap of arcs
+        g2d.setColor(Settings.DAY_COLOR);
+        g2d.setStroke(new BasicStroke(1));
+        drawLineAtTime(g2d, centerX, centerY, radius, solarTimes.getMidday());
 
         // Draw static lines with optional labels
         for (StaticLine line : staticLines)
@@ -303,15 +257,73 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
     }
 
-    private Arc2D.Double createArcSegment(double a, double b)
+    private void buildSolarArcSections()
     {
-        double start = a;
-        double end = b;
+        // TODO rebuild when SolarTimes updates
+        List<TwilightSegment> list = new ArrayList<>();
 
+        // input elements within segments in ccw-order
+        list.add(new TwilightSegment(
+                solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL),
+                solarTimes.getMidnight(),
+                Settings.NIGHT_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL),
+                solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL),
+                Settings.ASTRONOMICAL_TWILIGHT_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL),
+                solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL),
+                Settings.NAUTICAL_TWILIGHT_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getSunrise(),
+                solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL),
+                Settings.CIVIL_TWILIGHT_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getMidday(),
+                solarTimes.getSunrise(),
+                Settings.DAY_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getSunset(),
+                solarTimes.getMidday(),
+                Settings.DAY_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL),
+                solarTimes.getSunset(),
+                Settings.CIVIL_TWILIGHT_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL),
+                solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL),
+                Settings.NAUTICAL_TWILIGHT_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL),
+                solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL),
+                Settings.ASTRONOMICAL_TWILIGHT_COLOR));
+        list.add(new TwilightSegment(
+                solarTimes.getNextMidnight(),
+                solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL),
+                Settings.NIGHT_COLOR));
+
+        cachedTwilightSegments = list;
+    }
+
+    private void createArcSegment(Graphics2D g2d, double start, double end, Color color)
+    {
         double span = (end - start + (2 * Math.PI)) % (2 * Math.PI); // CCW-compatible span for Arc2D
-
-        return new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
+        Arc2D.Double arc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
                 Math.toDegrees(start), Math.toDegrees(span), Arc2D.PIE);
+        g2d.setColor(color);
+        g2d.fill(arc);
+    }
+
+    private void drawSolarArcSections(Graphics2D g2d)
+    {
+        for (TwilightSegment s : cachedTwilightSegments)
+        {
+            double start = calculateAngle(s.start());
+            double end = calculateAngle(s.end());
+            createArcSegment(g2d, start, end, s.color());
+        }
     }
 
     private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, ZonedDateTime time)
@@ -401,7 +413,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             startTimeDemarcation = solarTimes.getMidday();
             endTimeDemarcation = solarTimes.getSunset();
         }
-        else if (time.isBefore(solarTimes.getNextMidnight())) // quadrant 4; latest section
+        else if (time.isBefore(solarTimes.getNextMidnight()) || time.isEqual(solarTimes.getNextMidnight())) // quadrant 4; latest section
         {
             offset = offsetSunset;
             angularSpan = angularSpanDuskNight;
@@ -638,7 +650,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         AnalogClockPanel clockPanel = new AnalogClockPanel();
         clockPanel.addHourTickMarks();
-        clockPanel.addTerminatorLines();
+        // clockPanel.addTerminatorLines();
 
         GridRegionPanel grp = new GridRegionPanel(10, 15);
         grp.addRegion(2, 1, 11, 8, clockPanel);
