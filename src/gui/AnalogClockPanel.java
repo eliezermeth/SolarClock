@@ -57,7 +57,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     /** The distance clockwise from the sunset angle to the true midnight angle (which contains dusk). */
     private double angularSpanDuskNight;
 
-    private List<SolarArcSegment> cachedTwilightSegments;
+    private List<SolarArcSegment> cachedSolarSegments;
 
     // Cached layout; recalculated based on window size whenever changed
     private int diameter, radius, centerX, centerY;
@@ -304,7 +304,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL),
                 Settings.NIGHT_COLOR));
 
-        cachedTwilightSegments = list;
+        cachedSolarSegments = list;
     }
 
     private void createArcSegment(Graphics2D g2d, double start, double end, Color color)
@@ -318,7 +318,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
     private void drawSolarArcSections(Graphics2D g2d)
     {
-        for (SolarArcSegment s : cachedTwilightSegments)
+        for (SolarArcSegment s : cachedSolarSegments)
         {
             double start = calculateAngle(s.start());
             double end = calculateAngle(s.end());
