@@ -5,12 +5,70 @@ import java.awt.*;
 import java.awt.geom.Arc2D;
 
 /**
- * Renders angular (conical) gradient arc segments using slice-based approximation.
+ * Renders angular (conical) gradient arc segments using slice-based approximation.  The bounds of the arc (top-right XY
+ * position and size of containing circle) should be set before drawing an arc.  These settings will persist until
+ * changed, and may be modified with {@link ConicalGradientArc#setArc2DDoubleDimensions(int, int, int, int)}.  The
+ * direction of drawing may also be modified from counterclockwise to clockwise.
  */
 public class ConicalGradientArc
 {
-    // upper xy coordinates, width, and height of containing square of arc
-    private int x, y, w, h;
+    private int x, y, w, h; // upper xy coordinates, width, and height of containing square of arc
+    private boolean clockwiseDraw = false;
+
+    /**
+     * Draw a conical gradient arc changing from one color into the second.  It will start with the first color at full
+     * saturation, and transition until it ends with the second color at full saturation.
+     *
+     * @param g {@link Graphics} object allowing arc to be drawn
+     * @param c1 Starting {@link Color}
+     * @param c2 Ending {@link Color}
+     * @param startDegree The starting angle (in degrees) of the circle where the arc should begin, where {@code 0} is
+     *                    the right side, {code 90} is the top, etc.
+     * @param spanDegrees How many degrees the arc should cover from the {code startDegree}.  The primary direction will
+     *                    be orchestrated by the {@code reversedDraw} variable.  A normal draw will draw in the
+     *                    counterclockwise direction, and a reversed draw will draw in the clockwise direction.  Passing
+     *                    a negative number will reverse the direction the arc is draw based on the {@code reversedDraw}
+     *                    variable.
+     * @param steps The number of arcs to be drawn to create the gradient.  Positive numbers will cause a smoother
+     *              transition the larger the number is; negative numbers will draw a dynamic number of arcs based on
+     *              the maximum possible arcs to be drawn based on the radians available.  {@code -1} will divide that
+     *              number by {@code 1} (allowing maximum smoothness), {@code -2} by {@code 2}, etc.
+     *
+     * @throws IllegalArgumentException if attempting to draw an arc while the dimensions of the bounding square have a
+     *                                  width or height of 0
+     */
+    public void drawGradientArc(Graphics g, Color c1, Color c2, double startDegree, double spanDegrees, int steps)
+    {
+        if (w == 0 || h == 0) // should this worry about xy coordinates off the pane?
+            throw new IllegalArgumentException("Arc must have height and width.");
+
+        Graphics2D g2d = (Graphics2D) g;
+        setRenderingHints(g2d);
+
+        int numSlices = calculateSteps(Math.abs(spanDegrees), steps);
+        double sliceSize = spanDegrees / numSlices;
+        double HIDE_RENDERING_GAPS = 0.5;
+        // 0.2 = minimal (clean, high slice count), 0.5 = balanced, 1.0 = aggressive (safe, slightly distorts geometry)
+
+        // set variables based on reversedDraw
+        double startAngle = (clockwiseDraw) ? (startDegree + spanDegrees) : startDegree; // if true, start at end
+        int direction = (clockwiseDraw) ? -1 : 1;
+
+        for (int i = 0; i < numSlices; i++)
+        {
+            double t = Math.clamp((double) i / (numSlices - 1), 0.0, 1.0); // calculate position in range of slices
+            Color blended = interpolate(c1, c2, t); // get color at specified position between the two colors
+            double sliceStart = startAngle + (sliceSize * i * direction); // compute where slice starts in the circle
+            Arc2D.Double slice = new Arc2D.Double(x, y, w, h, sliceStart, sliceSize + HIDE_RENDERING_GAPS,
+                    Arc2D.PIE);
+            g2d.setColor(blended);
+            g2d.fill(slice);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+    // Getters / setters
+    // ---------------------------------------------------------------------------------------------------
 
     /**
      * Sets the location parameters for the {@link Arc2D.Double} arc.
@@ -27,102 +85,38 @@ public class ConicalGradientArc
         this.h = h;
     }
 
-
     /**
-     * Fill an angular arc with a gradient of colors.
-     * @param g2d Graphics contexts
-     * @param centerX center x of circle
-     * @param centerY center y of circle
-     * @param radius radius of circle
-     * @param startAngle start angle in radians (clockwise system expected)
-     * @param endAngle end angle in radians (clockwise system expected)
-     * @param startingFadeColor color that {@code mainColor} has halfway faded to at {@code startAngle}
-     * @param mainColor main color for arc
-     * @param endingFadeColor color that {@code mainColor} has halfway faded to at {@code endAngle}
-     * @param startFadePercentOfArc percent of the arc's span that is used for this fade; {@code 1.0} for the full arc
-     * @param endFadePercentOfArc percent of the arc's span that is used for this fade; {@code 1.0} for the full arc
-     * @param stepsForFadeRegions number of slices ({@code -1} for max; otherwise, higher = smoother but slower)
+     * Arcs are normally drawn in a counterclockwise direction.  This method allows the arcs to be drawn in a clockwise
+     * direction.
+     * @param clockwiseDraw {@code true} if the arc should be drawn in a clockwise direction
      */
-    public void fill(Graphics2D g2d, int centerX, int centerY, int radius, double startAngle, double endAngle,
-                     Color startingFadeColor, Color mainColor, Color endingFadeColor,
-                     double startFadePercentOfArc, double endFadePercentOfArc, int stepsForFadeRegions)
+    private void setClockwiseDraw(boolean clockwiseDraw)
     {
-        double span = normalizeClockwiseSpan(startAngle, endAngle);
-
-        if ((span <= 0.0001) || (stepsForFadeRegions != -1 && stepsForFadeRegions <= 0)) return; // do not draw
-
-        // prevent overlap for fade regions
-        double startFadeRatio = Math.clamp(startFadePercentOfArc, 0, 1);
-        double endFadeRatio = Math.clamp(endFadePercentOfArc, 0, 1);
-        // prevent invalid geometries
-        if (startFadeRatio + endFadeRatio > 1.0)
-        {
-            double scale = 1.0 / (startFadeRatio + endFadeRatio);
-            startFadeRatio *= scale;
-            endFadeRatio *= scale;
-        }
-
-        double startFadeDegrees = span * startFadeRatio;
-        double endFadeDegrees = span * endFadeRatio;
-        double middleDegrees = span - startFadeDegrees - endFadeDegrees; // remaining for solid middle
-
-        // final slice count
-        int startSlices = stepsForFadeRegions, endSlices = stepsForFadeRegions; // preset to parameter
-        if (stepsForFadeRegions == -1) // modify if for max
-        {
-            startSlices = (int) Math.ceil(radius * Math.toRadians(startFadeDegrees));
-            endSlices = (int) Math.ceil(radius * Math.toRadians(endFadeDegrees));
-        }
-
-        // Draw start gradient
-        for (int i = 0; i < startSlices; i++)
-        {
-            float t = (startSlices <= 1) ? 1f : (float) i / (startSlices - 1);
-            float mappedT = 0.5f + 0.5f * t; // x -> y, second half only
-            Color blended = interpolate(startingFadeColor, mainColor, mappedT);
-            double sliceStart = startAngle + (startFadeDegrees * i / startSlices);
-            double sliceExtent = startFadeDegrees / startSlices + 0.5;
-            Arc2D.Double slice = new Arc2D.Double(
-                    centerX - radius, centerY - radius, radius * 2.0, radius * 2.0,
-                    sliceStart, sliceExtent, Arc2D.PIE);
-            g2d.setColor(blended);
-            g2d.fill(slice);
-        }
-
-        // Draw solid middle
-        Arc2D.Double middleArc = new Arc2D.Double(
-                centerX - radius, centerY - radius, radius * 2.0, radius * 2.0,
-                startAngle + startFadeDegrees, middleDegrees, Arc2D.PIE);
-        g2d.setColor(mainColor);
-        g2d.fill(middleArc);
-
-        // Draw end gradient
-        for (int i = 0; i < endSlices; i++)
-        {
-            float t = (endSlices <= 1) ? 1f : (float) i / (endSlices - 1);
-            float mappedT = 0.5f * t; // y -> z, first half only
-            Color blended = interpolate(mainColor, endingFadeColor, mappedT);
-            double sliceStart = startAngle + startFadeDegrees + middleDegrees + (endFadeDegrees * i / endSlices);
-            double sliceExtent = endFadeDegrees / endSlices + 0.5;
-            Arc2D.Double slice = new Arc2D.Double(
-                    centerX - radius, centerY - radius, radius * 2.0, radius * 2.0,
-                    sliceStart, sliceExtent, Arc2D.PIE);
-            g2d.setColor(blended);
-            g2d.fill(slice);
-        }
-
-        // still need to fix seams
+        this.clockwiseDraw = clockwiseDraw;
     }
 
     /**
-     * Ensures always returns a clockwise positive span in radians.
-     * @param start
-     * @param end
-     * @return
+     * Returns whether the drawing direction of arcs has been reversed; that is, instead of drawing in the normal
+     * counterclockwise direction, arcs will be drawn in the clockwise direction.
+     * @return  {@code true} if the arc is to be drawn in a clockwise direction
      */
-    private double normalizeClockwiseSpan(double start, double end)
+    private boolean getClockwiseDraw()
     {
-        return (start - end + (2 * Math.PI)) % (2 * Math.PI);
+        return clockwiseDraw;
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+    // Utility methods
+    // ---------------------------------------------------------------------------------------------------
+
+    /**
+     * Set {@link Graphics2D} rendering hints for proper drawing
+     * @param g2d {@link Graphics2D} object
+     */
+    private void setRenderingHints(Graphics2D g2d)
+    {
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
     }
 
     /**
@@ -141,9 +135,25 @@ public class ConicalGradientArc
         return new Color(r, g, b);
     }
 
-    private int clamp(int v)
+    /**
+     * Returns the number of slices to be drawn over an arc.
+     * @param totalDegrees The total number of degrees covered by the arc.
+     * @param steps The number of slices to be drawn.  If {@code >= 0} (a positive number), then it will return that
+     *              number to be drawn as the slices.  If {@code < 0} (negative), then it will calculate the number of
+     *              radians covered by the arc. {@code -1} will return that number to be drawn as slices (which is the
+     *              maximum number of real slices to cover the arc), {@code -2} will return half that value, {@code -3}
+     *              one-third, etc.
+     * @return The number of slices to be drawn in the gradient arc.
+     */
+    public int calculateSteps(double totalDegrees, int steps)
     {
-        return Math.clamp(v, 0, 255);
+        if (steps >= 0)
+            return steps;
+
+        // steps is negative
+        // calculate number of 1-pixel arc segments along the outer edge
+        int maxSlices = (int) Math.ceil(Math.abs(Math.toRadians(totalDegrees) * (Math.min(w, h) / 2.0)));
+        return Math.max(1, maxSlices / -steps); // return a minimum of 1 slice
     }
 
     public static void main(String[] args)
@@ -161,33 +171,14 @@ public class ConicalGradientArc
                 protected void paintComponent(Graphics g)
                 {
                     super.paintComponent(g);
-                    Graphics2D g2d = (Graphics2D) g;
 
-                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                            RenderingHints.VALUE_ANTIALIAS_ON);
+                    arc.setArc2DDoubleDimensions(100, 100, 100, 100);
+                    arc.setClockwiseDraw(false);
+                    arc.drawGradientArc(g, Color.YELLOW, Color.BLUE, 0, 90, -1);
 
-                    int centerX = getWidth() / 2;
-                    int centerY = getHeight() / 2;
-                    int radius = 150;
-
-                    // IMPORTANT: convert to degrees
-                    double startAngle = 0;          // 0° = 3 o'clock
-                    double endAngle = -270;         // clockwise 270° sweep
-
-                    arc.fill(
-                            g2d,
-                            centerX,
-                            centerY,
-                            radius,
-                            Math.toRadians(startAngle),
-                            Math.toRadians(endAngle),
-                            Color.PINK.darker(),
-                            Color.BLUE,
-                            Color.CYAN,
-                            0.2,
-                            0.2,
-                            200
-                    );
+                    arc.setArc2DDoubleDimensions(300, 100, 100, 100);
+                    arc.setClockwiseDraw(true);
+                    arc.drawGradientArc(g, Color.YELLOW, Color.BLUE, 0, 90, -1);
                 }
             };
 
