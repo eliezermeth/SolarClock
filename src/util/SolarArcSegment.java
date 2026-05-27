@@ -6,6 +6,8 @@ import java.time.ZonedDateTime;
 public record SolarArcSegment(
         ZonedDateTime start,
         ZonedDateTime end,
-        Color color
+        Color startingFadeColor,
+        Color mainColor,
+        Color endingFadeColor
 )
 {}

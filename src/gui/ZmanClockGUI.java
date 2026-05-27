@@ -108,7 +108,7 @@
 //        // Draw static lines with optional labels
 //        for (StaticLine line : staticLines)
 //        {
-//            g2d.setColor(line.color);
+//            g2d.setColor(line.mainColor);
 //            g2d.setStroke(new BasicStroke(line.thickness));
 //            drawLineForTime(g2d, centerX, centerY, radius, line.time);
 //
@@ -252,9 +252,9 @@
 //        }
 //    }
 //
-//    public void addStaticLine(LocalTime time, String label, int thickness, Color color)
+//    public void addStaticLine(LocalTime time, String label, int thickness, Color mainColor)
 //    {
-//        staticLines.add(new StaticLine(time, label, thickness, color));
+//        staticLines.add(new StaticLine(time, label, thickness, mainColor));
 //        repaint();
 //    }
 //

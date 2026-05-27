@@ -58,11 +58,22 @@ public class AngularGradientArcDemo extends JPanel {
         // draw start gradient
         for (int i = 0; i < startSlices; i++)
         {
+            // calculate the position in the range of slices
             float t = (startSlices <= 1) ? 1f : (float) i / (startSlices - 1);
+
+            // 0.5f * t splits the possible range in half, then +0.5f forces it to the second half
             float mappedT = 0.5f + 0.5f * t; // x -> y, second half only
+
+            // get the color in the specified position between the two colors
             Color blended = interpolate(startingFadeColor, mainColor, mappedT);
+
+            // compute where the slice stars around the circle; incremented each time
             double sliceStart = startAngle + (startFadeDegrees * i / startSlices);
+
+            // calculate the angular span of the slice, then add +0.5 to hide the rendering gaps
             double sliceExtent = startFadeDegrees / startSlices + 0.5;
+
+            // create wedge, set color, and draw
             Arc2D.Double slice = new Arc2D.Double(x, y, size, size, sliceStart, sliceExtent, Arc2D.PIE);
             g2.setColor(blended);
             g2.fill(slice);
@@ -89,18 +100,12 @@ public class AngularGradientArcDemo extends JPanel {
 
         // fix seams
         g2.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
-        // start boundary
-        g2.setColor(startingFadeColor);
-        g2.draw(new Arc2D.Double(x, y, size, size, startAngle, 0.01, Arc2D.PIE));
         // start - middle boundary
         g2.setColor(mainColor);
         g2.draw(new Arc2D.Double(x, y, size, size, startAngle + startFadeDegrees, 0.01, Arc2D.PIE));
         // middle - end boundary
         g2.setColor(mainColor);
         g2.draw(new Arc2D.Double(x, y, size, size, startAngle + startFadeDegrees + middleDegrees, 0.01, Arc2D.PIE));
-        // end boundary
-        g2.setColor(mainColor);
-        g2.draw(new Arc2D.Double(x, y, size, size, startAngle + extent, 0.01, Arc2D.PIE));
 
         // Outer outline
         Arc2D.Double outline = new Arc2D.Double(

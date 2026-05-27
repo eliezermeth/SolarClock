@@ -32,7 +32,7 @@ public class SandboxGuiOne
 
     private static JPanel createColoredPanel(Color color, int x, int y, int width, int height)
     {
-        // Create colored JPanel with specific color and position
+        // Create colored JPanel with specific mainColor and position
         JPanel panel = new JPanel();
         panel.setBackground(color);
         panel.setBounds(x, y, width, height);
