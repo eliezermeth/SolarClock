@@ -39,6 +39,7 @@ public class ConicalGradientArc
      */
     public void drawGradientArc(Graphics g, Color c1, Color c2, double startDegree, double spanDegrees, int steps)
     {
+        // TODO if solid color
         if (w == 0 || h == 0) // should this worry about xy coordinates off the pane?
             throw new IllegalArgumentException("Arc must have height and width.");
 
@@ -90,7 +91,7 @@ public class ConicalGradientArc
      * direction.
      * @param clockwiseDraw {@code true} if the arc should be drawn in a clockwise direction
      */
-    private void setClockwiseDraw(boolean clockwiseDraw)
+    public void setClockwiseDraw(boolean clockwiseDraw)
     {
         this.clockwiseDraw = clockwiseDraw;
     }
@@ -100,7 +101,7 @@ public class ConicalGradientArc
      * counterclockwise direction, arcs will be drawn in the clockwise direction.
      * @return  {@code true} if the arc is to be drawn in a clockwise direction
      */
-    private boolean getClockwiseDraw()
+    public boolean getClockwiseDraw()
     {
         return clockwiseDraw;
     }

@@ -19,6 +19,7 @@ where the exact position (or centered) is given.
 - Determine what hour tick marks to use - calculated from sunrise-sunset, 
 or from the shaos zmanios (alos-tzeis?).
 - Nightly hour marks are not properly spaced during night.
+- Add lines to cover small gaps between different arc sections.
 
 ## ClockEventManager
 - The lines similar to `if (ClockEvent == null)` may cause problem in the

@@ -257,76 +257,81 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
     }
 
+    /**
+     * Craft the two daylight, two nighttime, and six twilight periods.
+     */
     private void buildSolarArcSections()
     {
         // TODO rebuild when SolarTimes updates
         List<SolarArcSegment> list = new ArrayList<>();
 
-        // input elements within segments in ccw-order
+        // input time elements within segments in ccw-order, but colors in correct order
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL),
                 solarTimes.getMidnight(),
-                Settings.ASTRONOMICAL_TWILIGHT_COLOR, Settings.NIGHT_COLOR, Settings.NIGHT_COLOR));
+                Settings.NIGHT_COLOR, Settings.NIGHT_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL),
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL),
-                Settings.NAUTICAL_TWILIGHT_COLOR, Settings.ASTRONOMICAL_TWILIGHT_COLOR, Settings.NIGHT_COLOR));
+                Settings.NIGHT_COLOR, Settings.ASTRONOMICAL_TWILIGHT_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL),
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL),
-                Settings.CIVIL_TWILIGHT_COLOR, Settings.NAUTICAL_TWILIGHT_COLOR, Settings.ASTRONOMICAL_TWILIGHT_COLOR));
+                Settings.ASTRONOMICAL_TWILIGHT_COLOR, Settings.NAUTICAL_TWILIGHT_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getSunrise(),
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL),
-                Settings.DAY_COLOR, Settings.CIVIL_TWILIGHT_COLOR, Settings.NAUTICAL_TWILIGHT_COLOR));
+                Settings.NAUTICAL_TWILIGHT_COLOR, Settings.DAY_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getMidday(),
                 solarTimes.getSunrise(),
-                Settings.DAY_COLOR, Settings.DAY_COLOR, Settings.CIVIL_TWILIGHT_COLOR));
+                Settings.DAY_COLOR, Settings.DAY_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getSunset(),
                 solarTimes.getMidday(),
-                Settings.CIVIL_TWILIGHT_COLOR, Settings.DAY_COLOR, Settings.DAY_COLOR));
+                Settings.DAY_COLOR, Settings.DAY_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL),
                 solarTimes.getSunset(),
-                Settings.DAY_COLOR, Settings.CIVIL_TWILIGHT_COLOR, Settings.NAUTICAL_TWILIGHT_COLOR));
+                Settings.DAY_COLOR, Settings.NAUTICAL_TWILIGHT_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL),
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL),
-                Settings.CIVIL_TWILIGHT_COLOR, Settings.NAUTICAL_TWILIGHT_COLOR, Settings.ASTRONOMICAL_TWILIGHT_COLOR));
+                Settings.NAUTICAL_TWILIGHT_COLOR, Settings.ASTRONOMICAL_TWILIGHT_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL),
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL),
-                Settings.NAUTICAL_TWILIGHT_COLOR, Settings.ASTRONOMICAL_TWILIGHT_COLOR, Settings.NIGHT_COLOR));
+                Settings.ASTRONOMICAL_TWILIGHT_COLOR, Settings.NIGHT_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getNextMidnight(),
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL),
-                Settings.ASTRONOMICAL_TWILIGHT_COLOR, Settings.NIGHT_COLOR, Settings.NIGHT_COLOR));
+                Settings.NIGHT_COLOR, Settings.NIGHT_COLOR));
 
         cachedSolarSegments = list;
     }
 
-    private void createArcSegment(Graphics2D g2d, double start, double end, Color color)
-    {
-        double span = (end - start + (2 * Math.PI)) % (2 * Math.PI); // CCW-compatible span for Arc2D
-        Arc2D.Double arc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
-                Math.toDegrees(start), Math.toDegrees(span), Arc2D.PIE);
-        g2d.setColor(color);
-        g2d.fill(arc);
-    }
 
     private void drawSolarArcSections(Graphics2D g2d)
     {
         ConicalGradientArc gradientArc = new ConicalGradientArc();
+        gradientArc.setArc2DDoubleDimensions(centerX - radius, centerY - radius, diameter, diameter);
+        gradientArc.setClockwiseDraw(true);
+
         for (SolarArcSegment s : cachedSolarSegments)
         {
-            double start = calculateAngle(s.start());
-            double end = calculateAngle(s.end());
-            createArcSegment(g2d, start, end, s.mainColor());
-//            gradientArc.fill(g2d, centerX, centerY, radius, start, end, s.startingFadeColor(), s.mainColor(),
-//                    s.endingFadeColor(), .3, .3, -1);
+            // calculate proper distance between start and end
+            double start = Math.toDegrees(calculateAngle(s.start()));
+            double end = Math.toDegrees(calculateAngle(s.end()));
+            int diff = (int) ((360 + end - start) % 360); // may wrap around circle
+
+            // draw arc
+            gradientArc.drawGradientArc(g2d, s.startingColor(), s.endingColor(), start, diff, -1);
+            // draw line between arcs to cover up gaps
+            //g2d.setColor(s.startingColor());
+            //drawLineAtTime(g2d, centerX, centerY, diameter / 2, s.end());
+            // TODO paint the small gaps in between the different arcs
         }
+        System.out.println("\n\n");
     }
 
     private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, ZonedDateTime time)
