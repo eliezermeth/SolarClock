@@ -42,7 +42,7 @@ public class Settings
     public static byte ANALOG_SHAAH_TICK_MARK_WIDTH = 1;
     /** Whether the tick marks for the sha'os should have their standard times displayed on the analog clock. */
     public static boolean ANALOG_SHAAH_TIME_MARKINGS = true;
-    /** If the midpoints should be centered between sunrise/sunset, or via the sun. */
+    /** If the midpoints should be centered between sunrise/sunset, or via the sun's zenith/nadir. */
     public static MidpointMode ANALOG_MIDPOINT_MODE = MidpointMode.ASTRONOMICAL;
     /** If it should use the user's current elevation, or sea level. */
     public static Elevation ANALOG_ELEVATION = Elevation.ACTUAL;
@@ -62,9 +62,12 @@ public class Settings
      */
     public static int clockUpdatesPerSecond = 10;
 
-    /**
-     * {@code Path} to config file containing zmanim settings; used by {@code ZmanOptionsConfigManager}.
-     */
+    /** If the midpoints should be centered between sunrise/sunset, or via the sun's zenith/nadir. */
+    public static MidpointMode MIDPOINT_MODE = MidpointMode.MEDIAN;
+    /** If zmanim calculations should take the user's current elevation into account, or use sea level. */
+    public static Elevation ELEVATION = Elevation.SEA_LEVEL;
+
+    /** {@link Path} to config file containing zmanim settings; used by {@link ZmanOptionsConfigManager}. */
     public static Path zmanConfigFile = Path.of("src/util/ZmanimOptions");
 
 }

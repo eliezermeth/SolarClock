@@ -20,7 +20,7 @@ public class DebugTimeModifications
      */
     public enum OFFSET
     {;
-        public static final boolean enabled = true;
+        public static final boolean enabled = false;
         /** [ DAYS, HOURS, MINUTES, SECONDS ] */
         private static final int[] offset = new int[] {0, 1, 35, 0};
         public static final Duration duration = Duration.ofDays(offset[0]).plusHours(offset[1])
@@ -32,7 +32,7 @@ public class DebugTimeModifications
      */
     public enum SPEED
     {;
-      public static final boolean enabled = true;
-      public static final double speed = 5.0;
+      public static final boolean enabled = false;
+      public static final double speed = 10.0;
     }
 }

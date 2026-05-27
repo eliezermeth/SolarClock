@@ -4,11 +4,13 @@ import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.util.GeoLocation;
 import events.ClockEvent;
 import events.ClockEventManager;
-import interfaces.TerminatorObserver;
+import interfaces.QuarterDayObserver;
 import interfaces.TimeObserver;
 import interfaces.ZmanEventObserver;
 import util.*;
+import util.enums.QuarterDayMark;
 import util.enums.Terminator;
+import util.enums.Zman;
 
 import javax.swing.Timer;
 import java.lang.reflect.InvocationTargetException;
@@ -34,7 +36,7 @@ public final class ClockBrain implements ZmanEventObserver
     private final VirtualClock virtualClock;
     private final ClockEventManager eventManager;
 
-    private final TerminatorTimes terminatorTimes = new TerminatorTimes();
+    private SolarTimes solarTimes;
     /**
      * Lock to prevent Timer from causing updates to sections while terminator times need to be updated.
      */
@@ -43,7 +45,7 @@ public final class ClockBrain implements ZmanEventObserver
     private Timer timer;
 
     private final List<TimeObserver> timeObservers = new ArrayList<>();
-    private final List<TerminatorObserver> terminatorObservers = new ArrayList<>();
+    private final List<QuarterDayObserver> quarterDayObservers = new ArrayList<>();
 
     private ClockBrain()
     {
@@ -57,12 +59,15 @@ public final class ClockBrain implements ZmanEventObserver
         // get and initialize time
         zoneId = this.czc.getGeoLocation().getTimeZone().toZoneId();
         virtualClock = new VirtualClock(zoneId);
-        calculateSolarTerminators();
+        solarTimes = new SolarTimes(getComplexZmanimCalendar());
         initializeTimeProgression();
-        createTekufahScheduler();
 
         // start event manager
         eventManager = new ClockEventManager(this);
+
+        // craft and initialize solar times
+        solarTimes = new SolarTimes(getComplexZmanimCalendar());
+        solarTimes.setDate(eventManager.getFirst(eventManager.getAllEvents(), Zman.SOLAR_MIDNIGHT));
 
         eventManager.registerZmanEventObserver(this);
 
@@ -113,124 +118,13 @@ public final class ClockBrain implements ZmanEventObserver
         return eventManager; // should this be masked?
     }
 
-    // Terminator methods -----------------------------------------------------------------
-
     /**
-     * Method to be called upon startup of the program, at solar terminator, and when parameters change.  This method
-     * gets the proper times for the terminators and which zmanim should be used for between them.
-     *
-     * <p>The current time is placed into a tekufah.  If the time corresponds to the beginning of a tekufah, then all
-     * calculations start from there.  However, if the time corresponds to the middle of a tekufah, then the terminators
-     * bracketing the current time will be the first terminators used.  This will necessitate a date change of the
-     * {@code ComplexZmanimCalendar} calendar.</p>
+     * Get the class holding the current solar times for the day.
+     * @return {@link SolarTimes}
      */
-    private void calculateSolarTerminators()
+    public SolarTimes getSolarTimes()
     {
-        // currently uses getSunrise() for delineations; switch to higher-order based on options for delineations?
-
-        ZonedDateTime now = virtualClock.now();
-        ZonedDateTime tempSunrise = czc.getSunrise().toInstant().atZone(zoneId);
-        ZonedDateTime tempSunset = czc.getSunset().toInstant().atZone(zoneId);
-
-        if (now.isBefore(tempSunrise)) // before sunrise; during previous night
-        {
-            // start from previous sunset
-            ComplexZmanimCalendar yesterday = changeDay(this.czc, -1);
-            terminatorTimes.setTerminator(0, yesterday.getSunset().toInstant().atZone(zoneId));
-            terminatorTimes.setStartingTerminator(Terminator.SUNSET);
-
-            terminatorTimes.setTerminator(1, tempSunrise);
-            terminatorTimes.setTerminator(2, tempSunset);
-        }
-        else if (Math.abs(Duration.between(now, tempSunrise).toMillis()) < 1000 ||     // at sunrise
-                now.isBefore(tempSunset))   // after sunrise, but before sunset
-        {
-            terminatorTimes.setTerminator(0, tempSunrise);
-            terminatorTimes.setStartingTerminator(Terminator.SUNRISE);
-            terminatorTimes.setTerminator(1, tempSunset);
-
-            // third terminator is next sunrise
-            ComplexZmanimCalendar tomorrow = changeDay(this.czc, 1);
-            terminatorTimes.setTerminator(2, tomorrow.getSunrise().toInstant().atZone(zoneId));
-        }
-        else // now.equals(tempSunset) || now.isAfter(tempSunset); sunset or after
-        {
-            terminatorTimes.setTerminator(0, tempSunset);
-            terminatorTimes.setStartingTerminator(Terminator.SUNSET);
-
-            // second and third terminator times are tomorrow
-            ComplexZmanimCalendar tomorrow = changeDay(this.czc, 1);
-            terminatorTimes.setTerminator(1, tomorrow.getSunrise().toInstant().atZone(zoneId));
-            terminatorTimes.setTerminator(2, tomorrow.getSunset().toInstant().atZone(zoneId));
-        }
-
-        // updateCalculateEqualDayNighView(); TODO?
-    }
-
-    /**
-     * Called at a terminator change, this method advances the terminators to the future times and swaps starting status.
-     */
-    private void updateTerminatorTimes()
-    {
-        // prevent timer from causing time updates
-        lock.lock(); // must occur; demand the lock
-
-        try {
-            // if any terminator time is null, just calculate all to be safe
-            for (int i = 0; i < 3; i++)
-                if (terminatorTimes.getTerminator(i) == null) // if any time is null
-                {
-                    calculateSolarTerminators();
-                    return; // no point in updating since all times now set
-                }
-
-            // get next terminator time to be saved
-            // if current terminator head is SUNRISE, will need next SUNSET; and vice versa
-            ZonedDateTime nextTime;
-            if (terminatorTimes.getStartingTerminator().equals(Terminator.SUNRISE)) // need tomorrow's sunset
-            {
-                ComplexZmanimCalendar future = changeDay(this.czc, 1);
-                nextTime = future.getSunset().toInstant().atZone(zoneId);
-            }
-            else // starting terminator is SUNSET; need aftermorrow's sunrise
-            {
-                ComplexZmanimCalendar future = changeDay(this.czc, 2);
-                nextTime = future.getSunrise().toInstant().atZone(zoneId);
-            }
-
-            terminatorTimes.increment(nextTime);
-            // updateCalculateEqualDayNighView(); TODO?
-        } finally {
-            lock.unlock(); // permit timer and other elements to work on clock
-        }
-    }
-
-    /**
-     * Get the terminator times.  Contains the past terminator and two upcoming terminators. If the current time is in
-     * the middle of a day tekufah, the order will be (1) past sunrise, (2) upcoming sunset, (3) upcoming sunrise.
-     * Should advance upon reaching the first upcoming tekufah, with (2) becoming (1), (3) becoming (2), and the new (3)
-     * being calculated.
-     * @return clock's instance of {@code TerminatorTimes}
-     */
-    public TerminatorTimes getTerminatorTimes()
-    {
-        return terminatorTimes;
-    }
-
-    /**
-     * Method to create the thread that will update the tekufos at the proper time.
-     */
-    private void createTekufahScheduler()  // TODO do away with this method
-    {
-        TimeScheduler tekufahScheduler = new TimeScheduler(virtualClock);
-        tekufahScheduler.scheduleRepeat(
-                LocalTime.from(terminatorTimes.getTerminator(1)),       // first time to occur
-                () -> { // tasks to run at that time
-                    updateTerminatorTimes();
-                    notifyTerminatorObservers();
-                },
-                () -> LocalTime.from(terminatorTimes.getTerminator(1)) // next time supplier for when to run task
-        );
+        return solarTimes;
     }
 
 
@@ -342,31 +236,33 @@ public final class ClockBrain implements ZmanEventObserver
             observer.updateTime(getCurrentDateTime());
     }
 
-    /**
-     * Add a terminator observer to the ClockBrain.
-     * @param observer instance of {@code TerminatorObserver}
-     */
-    public void registerTerminatorObserver(TerminatorObserver observer)
+    public void registerQuarterDayObserver(QuarterDayObserver observer)
     {
-        terminatorObservers.add(observer);
+        quarterDayObservers.add(observer);
     }
 
-    /**
-     * Remove a terminator observer from the ClockBrain.
-     * @param observer instance of {@code TerminatorObserver}
-     */
-    public void unregisterTerminatorObserver(TerminatorObserver observer)
+    public void unregisterQuarterDayObserver(QuarterDayObserver observer)
     {
-        terminatorObservers.remove(observer);
+        quarterDayObservers.remove(observer);
     }
 
-    /**
-     * Notify terminator observers.
-     */
-    private void notifyTerminatorObservers()
+    private void notifyQuarterDayObservers(Zman zman)
     {
-        for (TerminatorObserver observer : terminatorObservers)
-            observer.updateTerminatorCalculations();
+        // only called if valid quarter day
+        QuarterDayMark justOccurred = QuarterDayMark.MIDNIGHT; // necessary initialization
+
+        switch (zman)
+        {
+            case SOLAR_MIDNIGHT -> justOccurred = QuarterDayMark.MIDNIGHT;
+            case SUNRISE -> justOccurred = QuarterDayMark.SUNRISE;
+            case MIDDAY -> justOccurred = QuarterDayMark.MIDDAY;
+            case SUNSET -> justOccurred = QuarterDayMark.SUNSET;
+        }
+
+        for (QuarterDayObserver observer : quarterDayObservers)
+        {
+            observer.updateQuarterDay(justOccurred);
+        }
     }
 
     // as observer -------------------------------------
@@ -374,7 +270,25 @@ public final class ClockBrain implements ZmanEventObserver
     @Override
     public void updateZmanEvent(ClockEvent event)
     {
-        //eventManager = getEventManager(); // TODO proper
+        // At a new zman, attempt to set the new solar times for the day.
+        // Should this only be done at certain zmanim for efficiency?
+        try {
+            solarTimes.setDate(event);
+        } catch (IllegalArgumentException e)
+        {
+            // do nothing; event was of the incorrect type to trigger a rewrite of times
+        }
+
+        // if quarter-day event, trigger
+        // SHOULD THIS ALSO ENCOMPASS SOLARTIMES?
+        List<ClockEvent> all = eventManager.getAllEvents();
+        int next = all.indexOf(event);
+        Zman prev = all.get(next - 1).getZman();
+        // TODO tidy up
+        if (prev == Zman.SOLAR_MIDNIGHT || prev == Zman.SUNRISE || prev == Zman.MIDDAY || prev == Zman.SUNSET)
+        {
+            notifyQuarterDayObservers(prev);
+        }
     }
 
     // ---------------------------------------------------------------------------------------

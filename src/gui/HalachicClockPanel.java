@@ -1,10 +1,11 @@
 package gui;
 
-import interfaces.TerminatorObserver;
+import interfaces.QuarterDayObserver;
 import interfaces.TimeObserver;
 import main.ClockBrain;
 import util.Constants;
-import util.enums.Terminator;
+import util.SolarTimes;
+import util.enums.QuarterDayMark;
 import util.TimeUtil;
 
 import javax.swing.*;
@@ -12,7 +13,7 @@ import java.awt.*;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 
-public class HalachicClockPanel implements TimeObserver, TerminatorObserver
+public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
 {
     private final ClockBrain clock;
     private final JPanel panel;
@@ -22,8 +23,6 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
     private final JLabel[] regularClockComponents = new JLabel[3]; // HH MM SS
 
     // Values for calculations
-    private int hour = -1, min = -1; // hour
-    private Terminator currentTekufah = null;
     private LocalTime tekufahStart = null;
     private long shaahMillis; // length of hour
     private double cheilekFracPerMilli = -1;
@@ -38,7 +37,7 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
 
         // register with ClockBrain as an observer
         clock.registerTimeObserver(this);
-        clock.registerTerminatorObserver(this);
+        clock.registerQuarterDayObserver(this);
     }
 
     private void createHalachicClock()
@@ -58,7 +57,7 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
         for (int i = 0; i < 3; i++)
             regularClockComponents[i] = new JLabel("--"); // standard clock
 
-        updateTerminatorCalculations();
+        updateQuarterDay(QuarterDayMark.SUNRISE); // force-trigger
         updateHalachicClock();
 
         // Lay out clocks
@@ -147,14 +146,19 @@ public class HalachicClockPanel implements TimeObserver, TerminatorObserver
     }
 
     @Override
-    public void updateTerminatorCalculations()
+    public void updateQuarterDay(QuarterDayMark mark)
     {
+        // if sunrise or sunset did not just occur, no need to recalculate
+        if (mark != QuarterDayMark.SUNRISE && mark != QuarterDayMark.SUNSET) return;
+
+        // recalculate the time spans for the current tekufah
+        SolarTimes solarTimes = clock.getSolarTimes();
+        ZonedDateTime current = clock.getCurrentDateTime();
         // reset current tekufah
-        currentTekufah = clock.getTerminatorTimes().getStartingTerminator();
-        tekufahStart = clock.getTerminatorTimes().getTerminator(0).toLocalTime();
+        tekufahStart = solarTimes.getTekufahStart(current).toLocalTime();
+        shaahMillis = solarTimes.getTekufahShaah(current);
 
         // recalculate shaah-hour length
-        shaahMillis = clock.getTerminatorTimes().getTekufahShaah(0);
         cheilekFracPerMilli = (double) Constants.CHALAKIM_PER_SHAAH / shaahMillis;
 
         // Standard-to-Halachic conversion ratio:

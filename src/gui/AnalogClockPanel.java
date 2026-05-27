@@ -1,12 +1,13 @@
 package gui;
 
 import events.ClockEventManager;
-import interfaces.TerminatorObserver;
+import interfaces.QuarterDayObserver;
 import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
 import main.ClockBrain;
 import util.*;
 import util.enums.Circle;
+import util.enums.QuarterDayMark;
 import util.enums.SHAAH_TICK_MARK_STYLE;
 import util.enums.Zman;
 
@@ -24,10 +25,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnalogClockPanel extends JPanel implements TimeObserver, TerminatorObserver, EqualViewOption
+public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewOption, QuarterDayObserver
 {
     private ClockBrain clock; // singleton; provider
-    private LocalTime currentTime; // used for ease of calculations, rather than ZonedDateTime
 
     private ClockEventManager eventManager;
     private SolarTimes solarTimes;
@@ -41,12 +41,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     private double offsetMidday;
     /** Radians for the position of (starting) true midnight on the clock. */
     private double offsetMidnight;
-
-    // range of day and night of circle
-    /** The distance clockwise from the sunrise angle to the sunset angle (e.g. day). */
-    private double angularSpanDay;
-    /** The distance clockwise from the sunset angle to the sunrise angle (e.g. night). */
-    private double angularSpanNight;
 
     /** The distance clockwise from the true midnight angle to the sunrise angle (which contains dawn). */
     private double angularSpanDawnNight;
@@ -84,7 +78,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
 
         // register with ClockBrain as an observer
         clock.registerTimeObserver(this);
-        clock.registerTerminatorObserver(this);
+        clock.registerQuarterDayObserver(this);
 
         // Listen to resize events to recalculate layout of clock components sizes
         this.addComponentListener(new java.awt.event.ComponentAdapter() {
@@ -215,11 +209,11 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // draw line on midnight to close gap of arcs
         g2d.setColor(Settings.NIGHT_COLOR);
         g2d.setStroke(new BasicStroke(1));
-        drawLineAtTime(g2d, centerX, centerY, radius, solarTimes.getMidnight());
+        drawLineAtTime(g2d, centerX, centerY, radius, solarTimes.getMidnight(Settings.ANALOG_MIDPOINT_MODE));
         // draw line on midday to close gap of arcs
         g2d.setColor(Settings.DAY_COLOR);
         g2d.setStroke(new BasicStroke(1));
-        drawLineAtTime(g2d, centerX, centerY, radius, solarTimes.getMidday());
+        drawLineAtTime(g2d, centerX, centerY, radius, solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE));
 
         // Draw static lines with optional labels
         for (StaticLine line : staticLines)
@@ -268,7 +262,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         // input time elements within segments in ccw-order, but colors in correct order
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.ASTRONOMICAL),
-                solarTimes.getMidnight(),
+                solarTimes.getMidnight(Settings.ANALOG_MIDPOINT_MODE),
                 Settings.NIGHT_COLOR, Settings.NIGHT_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.NAUTICAL),
@@ -283,12 +277,12 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                 solarTimes.getTwilight(SolarTimes.Period.DAWN, SolarTimes.Twilight.CIVIL),
                 Settings.NAUTICAL_TWILIGHT_COLOR, Settings.DAY_COLOR));
         list.add(new SolarArcSegment(
-                solarTimes.getMidday(),
+                solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE),
                 solarTimes.getSunrise(),
                 Settings.DAY_COLOR, Settings.DAY_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getSunset(),
-                solarTimes.getMidday(),
+                solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE),
                 Settings.DAY_COLOR, Settings.DAY_COLOR));
         list.add(new SolarArcSegment(
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.CIVIL),
@@ -303,7 +297,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.NAUTICAL),
                 Settings.ASTRONOMICAL_TWILIGHT_COLOR, Settings.NIGHT_COLOR));
         list.add(new SolarArcSegment(
-                solarTimes.getNextMidnight(),
+                solarTimes.getNextMidnight(Settings.ANALOG_MIDPOINT_MODE),
                 solarTimes.getTwilight(SolarTimes.Period.DUSK, SolarTimes.Twilight.ASTRONOMICAL),
                 Settings.NIGHT_COLOR, Settings.NIGHT_COLOR));
 
@@ -428,40 +422,41 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
         double angularSpan; // span used for the quadrant in the calculation
         ZonedDateTime startTimeDemarcation, endTimeDemarcation;
 
-        if (time.isBefore(solarTimes.getMidnight()))
+        if (time.isBefore(solarTimes.getMidnight(Settings.ANALOG_MIDPOINT_MODE)))
             throw new IllegalArgumentException("Element time is too early:\n" +
-                    time + " is before " + solarTimes.getMidnight());
+                    time + " is before " + solarTimes.getMidnight(Settings.ANALOG_MIDPOINT_MODE));
         else if (time.isBefore(solarTimes.getSunrise())) // quadrant 3; earliest section
         {
             offset = offsetMidnight;
             angularSpan = angularSpanDawnNight;
-            startTimeDemarcation = solarTimes.getMidnight();
+            startTimeDemarcation = solarTimes.getMidnight(Settings.ANALOG_MIDPOINT_MODE);
             endTimeDemarcation = solarTimes.getSunrise();
         }
-        else if (time.isBefore(solarTimes.getMidday())) // quadrant 2; first day section
+        else if (time.isBefore(solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE))) // quadrant 2; first day section
         {
             offset = offsetSunrise;
             angularSpan = angularSpanMorning;
             startTimeDemarcation = solarTimes.getSunrise();
-            endTimeDemarcation = solarTimes.getMidday();
+            endTimeDemarcation = solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE);
         }
         else if (time.isBefore(solarTimes.getSunset())) // quadrant 1; second day section
         {
             offset = offsetMidday;
             angularSpan = angularSpanAfternoon;
-            startTimeDemarcation = solarTimes.getMidday();
+            startTimeDemarcation = solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE);
             endTimeDemarcation = solarTimes.getSunset();
         }
-        else if (time.isBefore(solarTimes.getNextMidnight()) || time.isEqual(solarTimes.getNextMidnight())) // quadrant 4; latest section
+        else if (time.isBefore(solarTimes.getNextMidnight(Settings.ANALOG_MIDPOINT_MODE)) ||
+                time.isEqual(solarTimes.getNextMidnight(Settings.ANALOG_MIDPOINT_MODE))) // quadrant 4; latest section
         {
             offset = offsetSunset;
             angularSpan = angularSpanDuskNight;
             startTimeDemarcation = solarTimes.getSunset();
-            endTimeDemarcation = solarTimes.getNextMidnight();
+            endTimeDemarcation = solarTimes.getNextMidnight(Settings.ANALOG_MIDPOINT_MODE);
         }
         else // time is past permissible
             throw new IllegalArgumentException("Element time is too late:\n" +
-                    time + " is after " + solarTimes.getNextMidnight());
+                    time + " is after " + solarTimes.getNextMidnight(Settings.ANALOG_MIDPOINT_MODE));
 
         long totalMillis = Duration.between(startTimeDemarcation, endTimeDemarcation).toMillis();
         long elapsedSeconds = Duration.between(startTimeDemarcation, time).toMillis();
@@ -551,9 +546,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
      */
     public void addTerminatorLines()
     {
-        this.addStaticLine(solarTimes.getMidnight(), "Midnight", 2, Color.GREEN);
+        this.addStaticLine(solarTimes.getMidnight(Settings.ANALOG_MIDPOINT_MODE), "Midnight", 2, Color.GREEN);
         this.addStaticLine(solarTimes.getSunrise(), "Sunrise", 2, Color.GREEN);
-        this.addStaticLine(solarTimes.getMidday(), "Midday", 2, Color.GREEN);
+        this.addStaticLine(solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE), "Midday", 2, Color.GREEN);
         this.addStaticLine(solarTimes.getSunset(), "Sunset", 2, Color.GREEN);
     }
 
@@ -571,8 +566,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
             // calculate sha'ah for time period; will be based on what has been determined as default for midday/night
             int [] hoursOffset = new int[] { 6, 0, 6, 0}; // start from midnight
             ZonedDateTime[] demarcations = new ZonedDateTime[]
-                    { solarTimes.getMidnight(), solarTimes.getSunrise(), solarTimes.getMidday(),
-                    solarTimes.getSunset(), solarTimes.getNextMidnight() }; // include next midnight to give spans
+                    { solarTimes.getMidnight(Settings.ANALOG_MIDPOINT_MODE), solarTimes.getSunrise(),
+                            solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE), solarTimes.getSunset(),
+                            solarTimes.getNextMidnight(Settings.ANALOG_MIDPOINT_MODE) }; // include next midnight to give spans
 
             for (int period = 0; period < hoursOffset.length; period++)
             {
@@ -653,17 +649,21 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, Terminator
     @Override
     public void updateTime(ZonedDateTime time)
     {
-        this.currentTime = time.toLocalTime();
         // TODO find where the current time is added/calculated
         //if (USE_BUFFERED_IMAGE) createStaticImage(); // TODO should be removed when properly draw static image
         repaint(); // will also trigger drawCurrentTime()
     }
 
     @Override
-    public void updateTerminatorCalculations()
+    public void updateQuarterDay(QuarterDayMark mark)
     {
+        if (mark != QuarterDayMark.MIDNIGHT) return; // no need to repaint if not midnight
+
+        solarTimes = clock.getSolarTimes();
+        buildSolarArcSections(); // is this proper?
+
         clearStaticLines();
-        //addHourTickMarks();
+        // addHourTickMarks();
         // TODO reset static lines, etc
         calculateEqualDayNightView();
         repaint();
