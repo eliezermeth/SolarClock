@@ -169,4 +169,21 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         adjustedMinuteLength = 60000 * clockStyleConversionRatio; // 60,000 milliseconds in 1 minute
         adjustedSecondLength = 1000 * clockStyleConversionRatio; // 1,000 milliesconds in 1 second
     }
+
+    public static void main(String[] args)
+    {
+        // Create JFrame
+        JFrame frame = new JFrame("Halachic Clock Testing");
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setSize(600, 200);
+        frame.setLayout(new BorderLayout());
+
+        JPanel childPanel = new JPanel();
+
+        // construct clock panel
+        new HalachicClockPanel(childPanel);
+        frame.add(childPanel, BorderLayout.CENTER);
+
+        frame.setVisible(true);
+    }
 }
