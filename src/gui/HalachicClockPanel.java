@@ -167,7 +167,7 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         double clockStyleConversionRatio = 2.0 - ((60000 * 60) / (double) shaahMillis);
         // results in the number of milliseconds in a halachic-style millisecond for the tekufah
         adjustedMinuteLength = 60000 * clockStyleConversionRatio; // 60,000 milliseconds in 1 minute
-        adjustedSecondLength = 1000 * clockStyleConversionRatio; // 1,000 milliesconds in 1 second
+        adjustedSecondLength = 1000 * clockStyleConversionRatio; // 1,000 milliseconds in 1 second
     }
 
     public static void main(String[] args)
