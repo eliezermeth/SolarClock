@@ -163,7 +163,7 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
 
         // Standard-to-Halachic conversion ratio:
         // (number of millis in a standard hour) divided by (number of millis in halachic hour) and then flipped
-        // over 1 to change it to a multiplication factor (1.1 -> 0.9; 0.9 -> 1.1; etc)
+        // over 1 to change it to a multiplication factor (1.1 -> 0.9; 0.9 -> 1.1; etc.)
         double clockStyleConversionRatio = 2.0 - ((60000 * 60) / (double) shaahMillis);
         // results in the number of milliseconds in a halachic-style millisecond for the tekufah
         adjustedMinuteLength = 60000 * clockStyleConversionRatio; // 60,000 milliseconds in 1 minute
