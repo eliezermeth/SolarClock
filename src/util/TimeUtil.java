@@ -19,8 +19,8 @@ public class TimeUtil
      * <br>
      * Milliseconds deemed a small enough duration for accuracy.  Seconds provide a period too large, and the additional
      * accuracy afforded by microseconds is not considered significant.
-     * @param start LocalTime for beginning of time period.
-     * @param end LocalTime for end of time period.
+     * @param start {@link LocalTime} for beginning of time period.
+     * @param end {@link LocalTime} for end of time period.
      * @return {@code long} milliseconds between time periods.
      */
     public static long calculateMillisBetween(LocalTime start, LocalTime end)
@@ -37,8 +37,8 @@ public class TimeUtil
      * Calculate the milliseconds between a start time and end time.  If the end is before the start, a negative result
      * will be returned.
      *
-     * @param start starting {@code ZonedDateTime}
-     * @param end ending {@code ZonedDateTime}
+     * @param start starting {@link ZonedDateTime}
+     * @param end ending {@link ZonedDateTime}
      * @return {@code long} of milliseconds between them
      */
     public static long calculateMillisBetween(ZonedDateTime start, ZonedDateTime end)
@@ -47,10 +47,10 @@ public class TimeUtil
     }
 
     /**
-     * Transform a {@code Date} to a {@code LocalTime}.
-     * @param d Date
-     * @param c Calendar
-     * @return LocalTime of Date at Calendar location
+     * Transform a {@link Date} to a {@link LocalTime}.
+     * @param d {@link Date}
+     * @param c {@link Calendar}
+     * @return {@link LocalTime} of {@link Date} at {@link Calendar} location
      */
     public static LocalTime dateToLocalTime(Date d, Calendar c)
     {
@@ -58,10 +58,10 @@ public class TimeUtil
     }
 
     /**
-     * Return the midpoint between two {@code ZonedDateTime}s.
-     * @param a starting {@code ZonedDateTime}
-     * @param b ending {@code ZonedDateTime}
-     * @return the {@code ZonedDateTime} between the two
+     * Return the midpoint between two {@link ZonedDateTime}s.
+     * @param a starting {@link ZonedDateTime}
+     * @param b ending {@link ZonedDateTime}
+     * @return the {@link ZonedDateTime} between the two
      */
     public static ZonedDateTime midpoint(ZonedDateTime a, ZonedDateTime b)
     {
@@ -69,10 +69,10 @@ public class TimeUtil
     }
 
     /**
-     * Transform a {@code Date} to a {@code LocalTime}.
-     * @param d Date
-     * @param c ZmanimCalendar
-     * @return LocalTime of Date at ZmanimCalendar's Calendar location
+     * Transform a {@link Date} to a {@link LocalTime}.
+     * @param d {@link Date}
+     * @param c {@link ZmanimCalendar}
+     * @return {@link LocalTime} of {@link Date} at {@link ZmanimCalendar}'s {@link Calendar} location
      */
     public static LocalTime dateToLocalTime(Date d, ZmanimCalendar c)
     {
@@ -80,12 +80,12 @@ public class TimeUtil
     }
 
     /**
-     * Transform a {@code Date} to a {@code LocalTime}.
+     * Transform a {@link Date} to a {@link LocalTime}.
      * <br>
-     * <strong>WARNING:</strong> Returns based on a conversion using the operating system's default <code>TimeZone</code>
-     * (<code>user.timezone</code>) if not set; if it is, that value will be as the default time zone.
-     * @param d Date
-     * @return LocalTime
+     * <strong>WARNING:</strong> Returns based on a conversion using the operating system's default {@link TimeZone}
+     * ({@code user.timezone}) if not set; if it is, that value will be as the default time zone.
+     * @param d {@link Date}
+     * @return {@link LocalTime}
      */
     public static LocalTime dateToLocalTime(Date d)
     {
@@ -93,10 +93,10 @@ public class TimeUtil
     }
 
     /**
-     * Transform a <code>Date</code> to a <code>LocalTime</code> based on a TimeZone ID.
-     * @param d Date
-     * @param z ZoneID
-     * @return LocalTime of Date within Zone
+     * Transform a {@link Date} to a {@link LocalTime} based on a {@link TimeZone} ID.
+     * @param d {@link Date}
+     * @param z {@link TimeZone}
+     * @return {@link LocalTime} of {@link Date} within {@link TimeZone}
      */
     public static LocalTime dateToLocalTime(Date d, ZoneId z)
     {
