@@ -40,6 +40,9 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         clock.registerQuarterDayObserver(this);
     }
 
+    /**
+     * Lay out the GUI components that make up the halachic clock.
+     */
     private void createHalachicClock()
     {
         panel.setLayout(new GridBagLayout());
