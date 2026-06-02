@@ -34,6 +34,19 @@ public class TimeUtil
     }
 
     /**
+     * Calculate the milliseconds between a start time and end time.  If the end is before the start, a negative result
+     * will be returned.
+     *
+     * @param start starting {@code ZonedDateTime}
+     * @param end ending {@code ZonedDateTime}
+     * @return {@code long} of milliseconds between them
+     */
+    public static long calculateMillisBetween(ZonedDateTime start, ZonedDateTime end)
+    {
+        return ChronoUnit.MILLIS.between(start, end);
+    }
+
+    /**
      * Transform a {@code Date} to a {@code LocalTime}.
      * @param d Date
      * @param c Calendar
