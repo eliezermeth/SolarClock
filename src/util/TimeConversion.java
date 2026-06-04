@@ -17,7 +17,7 @@ public class TimeConversion
     private Duration duration;
 
     private Duration halachicHourLength;
-    private Duration cheilekLength;
+    private Duration halachicCheilekLength;
     private Duration halachicMinuteLength;
     private Duration halachicSecondLength;
 
@@ -48,7 +48,7 @@ public class TimeConversion
 
         // calculate halachic lengths
         halachicHourLength = duration.dividedBy(numHours);
-        cheilekLength = halachicHourLength.dividedBy(Constants.CHALAKIM_PER_SHAAH);
+        halachicCheilekLength = halachicHourLength.dividedBy(Constants.CHALAKIM_PER_SHAAH);
         halachicMinuteLength = halachicHourLength.dividedBy(60); // 60 "minutes" per "hour"
         halachicSecondLength = halachicMinuteLength.dividedBy(60); // 60 "seconds" per "minute"
     }
@@ -123,9 +123,9 @@ public class TimeConversion
      * Returns the {@link Duration} of a cheilek, or 1/1080th, of a halachic hour of this period.
      * @return {@link Duration} of cheilek
      */
-    public Duration getCheilekLength()
+    public Duration getHalachicCheilekLength()
     {
-        return cheilekLength;
+        return halachicCheilekLength;
     }
 
     /**
@@ -161,7 +161,7 @@ public class TimeConversion
         printRow("Num hours", tc.getNumHours());
         printRow("Duration", durationToString(tc.getDuration()));
         printRow("Halachic hour", durationToString(tc.getHalachicHourLength()));
-        printRow("Cheilek length", durationToString(tc.getCheilekLength()));
+        printRow("Cheilek length", durationToString(tc.getHalachicCheilekLength()));
         printRow("Hahachic min", durationToString(tc.getHalachicMinuteLength()));
         printRow("Halachic sec", durationToString(tc.getHalachicSecondLength()));
         System.out.println();
@@ -175,7 +175,7 @@ public class TimeConversion
         long rem = elapsedDuration.toNanos();
         long hours = rem / hourLength;
         rem = rem % hourLength;
-        long chalakim = rem / tc.getCheilekLength().toNanos();
+        long chalakim = rem / tc.getHalachicCheilekLength().toNanos();
         long mins = rem / minLength;
         rem = rem % minLength;
         long secs = rem / secLength;
