@@ -325,7 +325,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             //drawLineAtTime(g2d, centerX, centerY, diameter / 2, s.end());
             // TODO paint the small gaps in between the different arcs
         }
-        System.out.println("\n\n");
     }
 
     private void drawLineAtTime(Graphics2D g2d, int centerX, int centerY, int radius, ZonedDateTime time)

@@ -5,12 +5,13 @@ import interfaces.TimeObserver;
 import main.ClockBrain;
 import util.Constants;
 import util.SolarTimes;
+import util.TimeConverter;
 import util.enums.QuarterDayMark;
 import util.TimeUtil;
 
 import javax.swing.*;
 import java.awt.*;
-import java.time.LocalTime;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 
 public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
@@ -22,11 +23,7 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
     private final JLabel[] fracClockComponents = new JLabel[2]; // HH Chalakim
     private final JLabel[] regularClockComponents = new JLabel[3]; // HH MM SS
 
-    // Values for calculations
-    private LocalTime tekufahStart = null;
-    private long shaahMillis; // length of hour
-    private double cheilekFracPerMilli = -1;
-    double adjustedMinuteLength = -1, adjustedSecondLength = -1; // milliseconds in halachic minute/second for tekufah
+    private TimeConverter timeConverter = null;
 
     public HalachicClockPanel(JPanel child)
     {
@@ -112,40 +109,32 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
      */
     public void updateHalachicClock()
     {
-        updateHalachicClock(clock.getCurrentTime());
+        updateHalachicClock(clock.getCurrentDateTime());
     }
 
     /**
      * Update the halachic clock to the current time.
-     * @param currentTime the current {@code LocalTime}
+     * @param currentTime the current {@link ZonedDateTime}
      */
-    public void updateHalachicClock(LocalTime currentTime)
+    public void updateHalachicClock(ZonedDateTime currentTime)
     {
-        // get length from beginning of tekufah until now
-        long millisElapsed = TimeUtil.calculateMillisBetween(tekufahStart, currentTime);
-        long hHours = millisElapsed / shaahMillis; // num of elapsed hours
-        long hRemainder = millisElapsed % shaahMillis; // remaining time; hours deducted
-
-        // calculate chalakim for fractional clock
-        int hChalakim = (int) (hRemainder * cheilekFracPerMilli);
-
-        // calculate minutes : seconds
-        long hcMinutes = (long) (hRemainder / adjustedMinuteLength);
-        long hcSeconds = (long) ((hRemainder % adjustedMinuteLength) / adjustedSecondLength);
+        // convert the time to halachic
+        Duration standardEquivalent = timeConverter.toHalachicStandardTime(currentTime);
+        int[] cheilekTime = timeConverter.toHalachicCheilekTime(currentTime);
 
         // set texts of individual sections
-        fracClockComponents[0].setText(String.format("%02d", hHours)); // hours
-        fracClockComponents[1].setText(String.valueOf(hChalakim)); // chalakim
+        fracClockComponents[0].setText(String.format("%02d", cheilekTime[0])); // hours
+        fracClockComponents[1].setText(String.valueOf(cheilekTime[1])); // chalakim
 
-        regularClockComponents[0].setText(String.format("%02d", hHours)); // hours
-        regularClockComponents[1].setText(String.format("%02d", hcMinutes)); // minutes
-        regularClockComponents[2].setText(String.format("%02d", hcSeconds)); // seconds
+        regularClockComponents[0].setText(String.format("%02d", standardEquivalent.toHoursPart())); // hours
+        regularClockComponents[1].setText(String.format("%02d", standardEquivalent.toMinutesPart())); // minutes
+        regularClockComponents[2].setText(String.format("%02d", standardEquivalent.toSecondsPart())); // seconds
     }
 
     @Override
     public void updateTime(ZonedDateTime time)
     {
-        updateHalachicClock(time.toLocalTime());
+        updateHalachicClock(time);
     }
 
     @Override
@@ -155,22 +144,10 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         if (mark != QuarterDayMark.SUNRISE && mark != QuarterDayMark.SUNSET) return;
 
         // recalculate the time spans for the current tekufah
+        ZonedDateTime now = clock.getCurrentDateTime();
         SolarTimes solarTimes = clock.getSolarTimes();
-        ZonedDateTime current = clock.getCurrentDateTime();
-        // reset current tekufah
-        tekufahStart = solarTimes.getTekufahStart(current).toLocalTime();
-        shaahMillis = solarTimes.getTekufahShaah(current);
-
-        // recalculate shaah-hour length
-        cheilekFracPerMilli = (double) Constants.CHALAKIM_PER_SHAAH / shaahMillis;
-
-        // Standard-to-Halachic conversion ratio:
-        // (number of millis in a standard hour) divided by (number of millis in halachic hour) and then flipped
-        // over 1 to change it to a multiplication factor (1.1 -> 0.9; 0.9 -> 1.1; etc.)
-        double clockStyleConversionRatio = 2.0 - ((60000 * 60) / (double) shaahMillis);
-        // results in the number of milliseconds in a halachic-style millisecond for the tekufah
-        adjustedMinuteLength = 60000 * clockStyleConversionRatio; // 60,000 milliseconds in 1 minute
-        adjustedSecondLength = 1000 * clockStyleConversionRatio; // 1,000 milliseconds in 1 second
+        // as of now, all tekufos are the 12-hour variety; will need to allow change
+        timeConverter = new TimeConverter(solarTimes.getTekufahStart(now), solarTimes.getTekufahEnd(now), 12);
     }
 
     public static void main(String[] args)
