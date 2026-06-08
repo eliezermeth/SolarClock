@@ -19,7 +19,6 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
-import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -487,7 +486,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             as an offset of these times.  It will repaint after it has recalculated positions.
              */
             long dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
-            double percentOfCircle = ((double) dayPeriodTime / Constants.MILLIS_PER_DAY) * 100;
+            double percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
             double newHalfDaySegment = percentOfCircle / 2;
             double newRadianOnePercent = (2 * Math.PI) / 100;
             double sunriseAngle = Circle.TOP.radians + (newHalfDaySegment * newRadianOnePercent);
@@ -579,7 +578,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
                 {
                     // 1. Time
                     ZonedDateTime tickMark = startTime.plusSeconds(
-                            (shaahLength * hour) / Constants.MILLIS_PER_SECOND); // multiply by hours, then millis to seconds
+                            (shaahLength * hour) / Constant.MILLIS_PER_SECOND); // multiply by hours, then millis to seconds
                     // 2. Text
                     String text = (Settings.ANALOG_SHAAH_TIME_MARKINGS) ? tickMark.format(formatter) : "";
                     // Hour number can be gotten via hoursOffset[period] + hour

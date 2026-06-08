@@ -346,7 +346,7 @@ public class SolarTimes
      */
     public long getTekufahShaah(ZonedDateTime time)
     {
-        return getTekufahSpan(time) / Constants.HOURS_PER_TERMINATOR;
+        return getTekufahSpan(time) / Constant.HOURS_PER_TERMINATOR;
     }
 
     /**

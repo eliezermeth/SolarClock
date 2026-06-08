@@ -9,13 +9,11 @@ import interfaces.TimeObserver;
 import interfaces.ZmanEventObserver;
 import util.*;
 import util.enums.QuarterDayMark;
-import util.enums.Terminator;
 import util.enums.Zman;
 
 import javax.swing.Timer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -179,7 +177,7 @@ public final class ClockBrain implements ZmanEventObserver
     private void initializeTimeProgression()
     {
         // timer
-        int timerIterationSpeed = (int) (Constants.MILLIS_PER_SECOND / Settings.clockUpdatesPerSecond); // how often timer activates
+        int timerIterationSpeed = (int) (Constant.MILLIS_PER_SECOND / Settings.clockUpdatesPerSecond); // how often timer activates
         timer = new Timer(timerIterationSpeed, e ->
         {
             // update current time

@@ -3,11 +3,10 @@ package gui;
 import interfaces.QuarterDayObserver;
 import interfaces.TimeObserver;
 import main.ClockBrain;
-import util.Constants;
+import util.Constant;
 import util.SolarTimes;
 import util.TimeConverter;
 import util.enums.QuarterDayMark;
-import util.TimeUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -67,7 +66,7 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         fracPanel.add(new JLabel("hours"));
         fracPanel.add(fracClockComponents[1]); // chalakim elapsed
         fracPanel.add(createTransparentLabel("/"));
-        fracPanel.add(createTransparentLabel(String.valueOf(Constants.CHALAKIM_PER_SHAAH)));
+        fracPanel.add(createTransparentLabel(String.valueOf(Constant.CHALAKIM_PER_SHAAH)));
         fracPanel.add(new JLabel("chalakim"));
         // add to clock
         gbc.gridx = 0; gbc.gridy = 1;

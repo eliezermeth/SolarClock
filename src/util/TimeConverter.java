@@ -52,7 +52,7 @@ public class TimeConverter
 
         // calculate halachic lengths
         halachicHourLength = duration.dividedBy(numHours);
-        halachicCheilekLength = halachicHourLength.dividedBy(Constants.CHALAKIM_PER_SHAAH);
+        halachicCheilekLength = halachicHourLength.dividedBy(Constant.CHALAKIM_PER_SHAAH);
         halachicMinuteLength = halachicHourLength.dividedBy(60); // 60 "minutes" per "hour"
         halachicSecondLength = halachicMinuteLength.dividedBy(60); // 60 "seconds" per "minute"
 
@@ -64,11 +64,11 @@ public class TimeConverter
 
         // calculate the length of halachic times contained within standard units
         standardHourContainsLength =
-                Duration.ofNanos((long) (Constants.HOUR_NANOS * conversionRatioStandardToHalachic));
+                Duration.ofNanos((long) (Constant.HOUR_NANOS * conversionRatioStandardToHalachic));
         standardMinuteContainsLength =
-                Duration.ofNanos((long) (Constants.MINUTE_NANOS * conversionRatioStandardToHalachic));
+                Duration.ofNanos((long) (Constant.MINUTE_NANOS * conversionRatioStandardToHalachic));
         standardSecondContainsLength =
-                Duration.ofNanos((long) (Constants.SECOND_NANOS * conversionRatioStandardToHalachic));
+                Duration.ofNanos((long) (Constant.SECOND_NANOS * conversionRatioStandardToHalachic));
     }
 
     // -------------------------------------------------------------------------------------

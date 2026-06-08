@@ -3,7 +3,7 @@ package util;
 /**
  * Constants that may be used by the rest of the program.
  */
-public class Constants
+public class Constant
 {
     // Halachic
     public static final int SHAOS_PER_TEKUFAH = 12;

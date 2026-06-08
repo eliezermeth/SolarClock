@@ -28,7 +28,7 @@ public class TimeUtil
         long diff = ChronoUnit.MILLIS.between(start, end);
 
         if (diff < 0) // if end is before start, wrap result around day to get true value
-            diff += Constants.MILLIS_PER_DAY;
+            diff += Constant.MILLIS_PER_DAY;
 
         return diff;
     }
