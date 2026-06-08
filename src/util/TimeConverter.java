@@ -8,7 +8,7 @@ import java.time.ZonedDateTime;
 /**
  * Provides calculations for converting between standard time and halachic time.
  */
-public class TimeConversion
+public class TimeConverter
 {
     private final ZonedDateTime start;
     private final ZonedDateTime end;
@@ -38,7 +38,7 @@ public class TimeConversion
      *
      * @throws IllegalArgumentException if {@code end} is not after {@code start}
      */
-    public TimeConversion(ZonedDateTime start, ZonedDateTime end, int numHours)
+    public TimeConverter(ZonedDateTime start, ZonedDateTime end, int numHours)
     {
         if (end.isEqual(start) || end.isBefore(start))
             throw new IllegalArgumentException("A positive non-zero difference in time must exist between the first " +
@@ -349,7 +349,7 @@ public class TimeConversion
         SolarTimes st = clock.getSolarTimes();
         ZonedDateTime now = clock.getCurrentDateTime();
 
-        TimeConversion tc = new TimeConversion(st.getTekufahStart(now), st.getTekufahEnd(now), 12); // sunrise-sunset
+        TimeConverter tc = new TimeConverter(st.getTekufahStart(now), st.getTekufahEnd(now), 12); // sunrise-sunset
 
         printRow("Start", tc.getStart());
         printRow("End", tc.getEnd());
