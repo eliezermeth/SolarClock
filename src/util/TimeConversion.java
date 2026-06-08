@@ -1,7 +1,6 @@
 package util;
 
 import main.ClockBrain;
-import static util.Constants.*;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -65,11 +64,11 @@ public class TimeConversion
 
         // calculate the length of halachic times contained within standard units
         standardHourContainsLength =
-                Duration.ofNanos((long) (HOUR_NANOS * conversionRatioStandardToHalachic));
+                Duration.ofNanos((long) (Constants.HOUR_NANOS * conversionRatioStandardToHalachic));
         standardMinuteContainsLength =
-                Duration.ofNanos((long) (MINUTE_NANOS * conversionRatioStandardToHalachic));
+                Duration.ofNanos((long) (Constants.MINUTE_NANOS * conversionRatioStandardToHalachic));
         standardSecondContainsLength =
-                Duration.ofNanos((long) (SECOND_NANOS * conversionRatioStandardToHalachic));
+                Duration.ofNanos((long) (Constants.SECOND_NANOS * conversionRatioStandardToHalachic));
     }
 
     // -------------------------------------------------------------------------------------
