@@ -43,7 +43,7 @@ public class ConicalGradientArc
         if (w == 0 || h == 0) // should this worry about xy coordinates off the pane?
             throw new IllegalArgumentException("Arc must have height and width.");
 
-        Graphics2D g2d = (Graphics2D) g;
+        Graphics2D g2d = (Graphics2D) g.create(); // create a clone to avoid messing with the original
         setRenderingHints(g2d);
 
         int numSlices = calculateSteps(Math.abs(spanDegrees), steps);
