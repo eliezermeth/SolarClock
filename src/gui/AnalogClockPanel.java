@@ -307,6 +307,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     /**
      * Draw the gradient arcs for the different solar sections (days, nights, and twilights), and cover the gaps between
      * the different arc sections.
+     * <p>
+     * Note: The arcs do not draw perfectly against each other; they leave a white gap between each arc.  The arcs are
+     * therefore fudged by 1 degree to force an overlap.
      *
      * @param g2d the {@link Graphics2D} object to draw with
      */
@@ -316,28 +319,21 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         gradientArc.setArc2DDoubleDimensions(centerX - radius, centerY - radius, diameter, diameter);
         gradientArc.setClockwiseDraw(true);
 
-        // clone for painting lines in gaps between ars
-        Graphics2D gapG2D = (Graphics2D) g2d.create();
-        gapG2D.setStroke(new BasicStroke(2.5f)); // TODO make a better system that does not have gaps
-
         for (SolarArcSegment s : cachedSolarSegments)
         {
             // calculate proper distance between start and end
-            double start = Math.toDegrees(calculateAngle(s.start())); // actually farther clock-wise
+            // fudge the starting degree by 1 to force overlap of arcs
+            double start = Math.toDegrees(calculateAngle(s.start())) - 1; // actually farther clock-wise
             double end = Math.toDegrees(calculateAngle(s.end())); // actually earlier clock-wise
             int diff = (int) ((360 + end - start) % 360); // may wrap around circle
 
             // draw arc
             gradientArc.drawGradientArc(g2d, s.startingColor(), s.endingColor(), start, diff, -1);
 
+            // The below comment is no longer used; however, it may be helpful if the repair method is changed.
             // The start-angle is actually further along clock-wise than the end-angle; however, the ending-color is
             // further along clock-wise than the starting-color.  To repair the gaps, take the start-angle and print
             // a line with the end-color.
-
-            // draw line between arcs to cover up gaps
-            // draw 2 lines, one on each side, to be sure
-            gapG2D.setColor(s.endingColor());
-            drawLineAtTime(gapG2D, centerX, centerY, radius, s.start());
         }
     }
 
