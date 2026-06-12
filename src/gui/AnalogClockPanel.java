@@ -62,7 +62,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     // Cached static image
     private BufferedImage staticImage;
     private int imageScale = 2;
-    private final boolean USE_BUFFERED_IMAGE = false; // will need to search for all uses when completed
+    private final boolean USE_BUFFERED_IMAGE = true; // will need to search for all uses when completed
 
     public AnalogClockPanel()
     {
@@ -197,7 +197,10 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // smoother edges
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY); // prioritize quality over speed
+        g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE); // more accurate stroke rendering
         drawClock(g2d);
     }
 
@@ -519,7 +522,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         angularSpanMorning = (offsetMidday - offsetSunrise + (2 * Math.PI)) % (2 * Math.PI);
         angularSpanAfternoon = (offsetSunset - offsetMidday + (2 * Math.PI)) % (2 * Math.PI);
         angularSpanDuskNight = (offsetMidnight - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
-
+        // TODO which of these sections to keep
         angularSpanDawnNight = smallestAngularSpan(offsetMidnight, offsetSunrise);
         angularSpanMorning = smallestAngularSpan(offsetSunrise, offsetMidday);
         angularSpanAfternoon = smallestAngularSpan(offsetMidday, offsetSunset);
