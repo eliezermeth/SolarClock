@@ -117,12 +117,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         // Draw static image
         if (staticImage != null)
         {
-            AffineTransform originalTransform = g2d.getTransform(); // save current g2d settings
-
-            g2d.scale(1.0d / imageScale, 1.0d / imageScale); // change for bufferedImage
-            g2d.drawImage(staticImage, 0, 0, null);
-
-            g2d.setTransform(originalTransform); // return to original settings
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g2d.drawImage(staticImage,0, 0, getWidth(), getHeight(), null);
         }
 
         // Draw dynamic current time hand
