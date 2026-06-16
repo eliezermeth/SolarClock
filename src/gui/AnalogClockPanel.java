@@ -18,6 +18,7 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -203,15 +204,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     private void drawClock(Graphics2D g2d) // normal draw OPTION 2 - part 2
     {
         drawSolarArcSections(g2d);
-
-        // draw line on midnight to close gap of arcs
-        g2d.setColor(Settings.NIGHT_COLOR);
-        g2d.setStroke(new BasicStroke(1));
-        drawLineAtTime(g2d, centerX, centerY, radius, solarTimes.getMidnight(Settings.ANALOG_MIDPOINT_MODE));
-        // draw line on midday to close gap of arcs
-        g2d.setColor(Settings.DAY_COLOR);
-        g2d.setStroke(new BasicStroke(1));
-        drawLineAtTime(g2d, centerX, centerY, radius, solarTimes.getMidday(Settings.ANALOG_MIDPOINT_MODE));
 
         // Draw static lines with optional labels
         for (StaticLine line : staticLines)
