@@ -144,21 +144,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE); // more accurate stroke rendering
         g2d.scale(imageScale, imageScale); // scale down when drawing
 
-        // Draw the top half of the circle
-        Arc2D.Double dayArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
-                Math.toDegrees(offsetSunset),
-                Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
-                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(Settings.DAY_COLOR); // Light yellow
-        g2d.fill(dayArc);
-
-        // Draw the bottom half of the circle
-        Arc2D.Double nightArc = new Arc2D.Double(centerX - radius, centerY - radius, diameter, diameter,
-                Math.toDegrees(offsetSunrise),
-                360 - Math.toDegrees((offsetSunrise - offsetSunset + (2 * Math.PI)) % (2 * Math.PI)),
-                Arc2D.PIE); // pie slice (filled); more accurate than fillArc()
-        g2d.setColor(Settings.NIGHT_COLOR); // Light deep blue
-        g2d.fill(nightArc);
+        drawSolarArcSections(g2d);
 
         // Draw static lines with optional labels
         for (StaticLine line : staticLines)
