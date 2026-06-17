@@ -145,30 +145,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         g2d.scale(imageScale, imageScale); // scale down when drawing
 
         drawSolarArcSections(g2d);
-
-        // Draw static lines with optional labels
-        for (StaticLine line : staticLines)
-        {
-            // draw line if thickness is greater than 0
-            if (line.thickness > 0)
-            {
-                Graphics2D tempG2D = (Graphics2D) g2d.create(); // instance to be modified for line
-                if (line.isDotted)
-                    tempG2D.setStroke(line.stroke); // pull full stroke style from line
-                else
-                    tempG2D.setStroke(new BasicStroke(line.thickness)); // only change line thickness
-
-                tempG2D.setColor(line.color);
-                drawLineAtTime(tempG2D, centerX, centerY, radius, line.time);
-
-                tempG2D.dispose();
-            }
-
-            if (line.label != null)
-            {
-                drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
-            }
-        }
+        drawStaticLines(g2d);
 
         // Draw circle outline
         drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
@@ -190,30 +167,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     private void drawClock(Graphics2D g2d) // normal draw OPTION 2 - part 2
     {
         drawSolarArcSections(g2d);
-
-        // Draw static lines with optional labels
-        for (StaticLine line : staticLines)
-        {
-            // draw line if thickness is greater than 0
-            if (line.thickness > 0)
-            {
-                Graphics2D tempG2D = (Graphics2D) g2d.create(); // instance to be modified for line
-                if (line.isDotted)
-                    tempG2D.setStroke(line.stroke); // pull full stroke style from line
-                else
-                    tempG2D.setStroke(new BasicStroke(line.thickness)); // only change line thickness
-
-                tempG2D.setColor(line.color);
-                drawLineAtTime(tempG2D, centerX, centerY, radius, line.time);
-
-                tempG2D.dispose();
-            }
-
-            if (line.label != null)
-            {
-                drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
-            }
-        }
+        drawStaticLines(g2d);
 
         // Draw the dynamic current time hand
         if (clock.getCurrentTime() != null)
@@ -311,6 +265,39 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             // The start-angle is actually further along clock-wise than the end-angle; however, the ending-color is
             // further along clock-wise than the starting-color.  To repair the gaps, take the start-angle and print
             // a line with the end-color.
+        }
+    }
+
+    /**
+     * Draw all static lines contained within {@code staticLines}.  Lines will be drawn according to their thickness,
+     * dotted/dashed status, color, and proper position.  Labels, if present, may also be drawn.
+     *
+     * @param g2d the {@link Graphics2D} object to draw with
+     */
+    private void drawStaticLines(Graphics2D g2d)
+    {
+        // Draw static lines with optional labels
+        for (StaticLine line : staticLines)
+        {
+            // draw line if thickness is greater than 0
+            if (line.thickness > 0)
+            {
+                Graphics2D tempG2D = (Graphics2D) g2d.create(); // instance to be modified for line
+                if (line.isDotted)
+                    tempG2D.setStroke(line.stroke); // pull full stroke style from line
+                else
+                    tempG2D.setStroke(new BasicStroke(line.thickness)); // only change line thickness
+
+                tempG2D.setColor(line.color);
+                drawLineAtTime(tempG2D, centerX, centerY, radius, line.time);
+
+                tempG2D.dispose();
+            }
+
+            if (line.label != null)
+            {
+                drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
+            }
         }
     }
 
