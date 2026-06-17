@@ -129,6 +129,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             g2d.setStroke(new BasicStroke(1));
             drawLineAtTime(g2d, centerX, centerY, radius, clock.getCurrentDateTime());
         }
+
+        // Draw circle outline
+        drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
     }
 
     private void createStaticImage() // BufferedImage OPTION 1 - part 2
@@ -146,9 +149,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
 
         drawSolarArcSections(g2d);
         drawStaticLines(g2d);
-
-        // Draw circle outline
-        drawBoundingOutline(g2d, centerX - radius, centerY - radius, diameter, diameter);
 
         g2d.dispose();
     }
