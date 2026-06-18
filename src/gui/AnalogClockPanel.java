@@ -51,6 +51,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     /** The distance clockwise from the sunset angle to the true midnight angle (which contains dusk). */
     private double angularSpanDuskNight;
 
+    /** Arcs containing the two day sections, two night sections, and six twilight sections. */
     private List<SolarArcSegment> cachedSolarSegments;
 
     // Cached layout; recalculated based on window size whenever changed
@@ -122,6 +123,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             g2d.drawImage(staticImage,0, 0, getWidth(), getHeight(), null);
         }
 
+        // draw text outside buffered image to preserve quality
+        drawStaticLines(g2d, false, true);
+
         // Draw dynamic current time hand
         if (clock.getCurrentTime() != null)
         {
@@ -148,7 +152,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         g2d.scale(imageScale, imageScale); // scale down when drawing
 
         drawSolarArcSections(g2d);
-        drawStaticLines(g2d);
+        drawStaticLines(g2d, true, false);
 
         g2d.dispose();
     }
@@ -157,7 +161,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
-        //g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // smoother edges
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY); // prioritize quality over speed
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE); // more accurate stroke rendering
@@ -167,7 +170,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     private void drawClock(Graphics2D g2d) // normal draw OPTION 2 - part 2
     {
         drawSolarArcSections(g2d);
-        drawStaticLines(g2d);
+        drawStaticLines(g2d, true, true);
 
         // Draw the dynamic current time hand
         if (clock.getCurrentTime() != null)
@@ -269,18 +272,19 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     }
 
     /**
-     * Draw all static lines contained within {@code staticLines}.  Lines will be drawn according to their thickness,
+     * Draw all static lines contained within {@code staticLines}.  Lines may be drawn according to their thickness,
      * dotted/dashed status, color, and proper position.  Labels, if present, may also be drawn.
      *
      * @param g2d the {@link Graphics2D} object to draw with
+     * @param drawLine if the line of the static line should be drawn
+     * @param drawText if the text of the static line should be drawn
      */
-    private void drawStaticLines(Graphics2D g2d)
+    private void drawStaticLines(Graphics2D g2d, boolean drawLine, boolean drawText)
     {
-        // Draw static lines with optional labels
         for (StaticLine line : staticLines)
         {
-            // draw line if thickness is greater than 0
-            if (line.thickness > 0)
+            // determine if line should be drawn
+            if (drawLine && line.thickness > 0)
             {
                 Graphics2D tempG2D = (Graphics2D) g2d.create(); // instance to be modified for line
                 if (line.isDotted)
@@ -294,7 +298,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
                 tempG2D.dispose();
             }
 
-            if (line.label != null)
+            // determine if text should be drawn
+            if (drawText && line.label != null)
             {
                 drawLabel(g2d, centerX, centerY, radius, line.time, line.label);
             }
@@ -310,8 +315,15 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     }
 
     /**
-     * Draw the circle outline; drawn last to place it over other elements that may overlap.
-     * TODO change for different viewmodes?
+     * Draw the bounding outline for the analog clock; drawn last to place it over other elements that may overlap.
+     * Outline changes depending on the clock type; it may be a full circle or half-circle.
+     * TODO change for different view modes
+     *
+     * @param g2d {@link Graphics2D} object upon which to draw
+     * @param upperLeftX top-left x-coordinate of bounding rectangle
+     * @param upperLeftY top-left y-coordinate of bounding rectangle
+     * @param width width of bounding outline; also width of bounding rectangle
+     * @param height height of bounding outline; also height of bounding rectangle
      */
     private void drawBoundingOutline(Graphics2D g2d, int upperLeftX, int upperLeftY, int width, int height)
     {
@@ -321,6 +333,18 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         g2d.setStroke(new BasicStroke(1.0f)); // reset stroke
     }
 
+    /**
+     * Draw a label for the clock at a specific time.  The label is placed outside the clock, and buffered so that it
+     * appears a short distance from the clock and does not overlap with it.
+     * TODO decrease gap on left-right while remaining same on top-bottom
+     *
+     * @param g2d {@link Graphics2D} object upon which to draw
+     * @param centerX center x-coordinate of circle
+     * @param centerY center y-coordinate of circle
+     * @param radius distance to outside of circle
+     * @param time {@link ZonedDateTime} of where the label is to be displayed on the clock
+     * @param label text to be displayed
+     */
     private void drawLabel(Graphics2D g2d, int centerX, int centerY, int radius, ZonedDateTime time, String label)
     {
         // short-circuit if no text
@@ -592,9 +616,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
 
     /**
      * Add a custom static line to the analog clock.
-     * @param time <code>ZonedDateTime</code> for the position of the line.
+     * @param time {@link ZonedDateTime} for the position of the line.
      * @param label Text for the label; if text is blank, the text portion should not be displayed.
-     * @param thickness Thickness of the line; if width is <code>0</code>, the line portion should not be displayed.
+     * @param thickness Thickness of the line; if width is {@code 0}, the line portion should not be displayed.
      * @param color Color of the line.
      *
      * @return The <code>StaticLine</code> that was added to the <code>ArrayList</code>.
