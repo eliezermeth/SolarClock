@@ -1,15 +1,12 @@
 package sandbox;
 
-import com.kosherjava.zmanim.AstronomicalCalendar;
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter;
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar;
 import main.ClockBrain;
+import org.shredzone.commons.suncalc.MoonIllumination;
 
-import java.lang.reflect.Method;
 import java.time.*;
-import java.time.chrono.ChronoLocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 public class SandboxOne
@@ -65,10 +62,28 @@ public class SandboxOne
         System.out.println("End Astronomical: " + czc.getEndAstronomicalTwilight());
     }
 
+    public void getMoonInfo()
+    {
+        ClockBrain clock = ClockBrain.getInstance();
+        Date d = Date.from(clock.getCurrentDateTime().toInstant());
+
+        // for the moon illumination
+        MoonIllumination illum = MoonIllumination.compute().on(d).execute();
+        // fraction of moon that illuminated
+        double fraction = illum.getFraction(); // how much of the disk is lit - 0.0 new moon; 1.0 full moon
+        // position in lunar cycle
+        double phase = illum.getPhase(); // -180 new moon waxing; 0 full moon, 180 new moon waning
+
+        System.out.println("Fraction: " + fraction);
+        System.out.println("Phase: " + phase);
+
+    }
+
     public static void main(String[] args)
     {
         SandboxOne s1 = new SandboxOne();
         //s1.hebrewDate();
-        s1.multipleTwilights();
+        //s1.multipleTwilights();
+        s1.getMoonInfo();
     }
 }

@@ -8,5 +8,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="kosherjava.zmanim" level="project" />
+    <orderEntry type="library" name="shredzone.commons.suncalc" level="project" />
   </component>
 </module>
