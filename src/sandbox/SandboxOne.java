@@ -3,11 +3,19 @@ package sandbox;
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter;
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar;
+import gui.Moon;
 import main.ClockBrain;
-import org.shredzone.commons.suncalc.MoonIllumination;
+import org.shredzone.commons.suncalc.MoonPosition;
+import org.shredzone.commons.suncalc.MoonTimes;
+import util.GeoData;
+import util.Regions;
 
 import java.time.*;
+import java.time.temporal.TemporalAmount;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 public class SandboxOne
 {
@@ -65,18 +73,79 @@ public class SandboxOne
     public void getMoonInfo()
     {
         ClockBrain clock = ClockBrain.getInstance();
-        Date d = Date.from(clock.getCurrentDateTime().toInstant());
+        ZonedDateTime now = clock.getCurrentDateTime();
+        Date d = Date.from(now.toInstant());
 
-        // for the moon illumination
-        MoonIllumination illum = MoonIllumination.compute().on(d).execute();
-        // fraction of moon that illuminated
-        double fraction = illum.getFraction(); // how much of the disk is lit - 0.0 new moon; 1.0 full moon
-        // position in lunar cycle
-        double phase = illum.getPhase(); // -180 new moon waxing; 0 full moon, 180 new moon waning
+        GeoData location = Regions.getLocation("Pikesville");
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
 
-        System.out.println("Fraction: " + fraction);
-        System.out.println("Phase: " + phase);
+        MoonPosition position = MoonPosition.compute().on(d).at(latitude, longitude).execute();
+        System.out.println("Altitude: " + position.getAltitude()); // elevation above/below the horizon (degrees)
+        System.out.println("ParallacticAngle: " + position.getParallacticAngle()); // tilt of moon
+        System.out.println();
+        // note: use rise-set times for dial, as altitude does not go to 90
 
+        List<MoonEvent> events = getLunarTimes(now, latitude, longitude);
+
+        MoonEvent previous = null, upcoming = null, after = null;
+
+        // find what event is after
+        for (int i = 0; i < events.size(); i++)
+        {
+            if (events.get(i).time().isAfter(now))
+            {
+                previous = events.get(i - 1);
+                upcoming = events.get(i);
+                after = events.get(i + 1);
+                break; // don't search further
+            }
+        }
+
+        System.out.println(previous);
+        System.out.println("Current moon status: " + (previous.rise() ? "up" : "down"));
+        System.out.println(upcoming);
+        System.out.println(after);
+        System.out.println();
+    }
+
+    private List<MoonEvent> getLunarTimes(ZonedDateTime now, double latitude, double longitude)
+    {
+        List<MoonTimes> timesBySolarDay = new ArrayList<>();
+        List<MoonEvent> events = new ArrayList<>();
+
+        int dayOffset = 0;
+
+        // add current day before entering loop
+        timesBySolarDay.add(MoonTimes.compute().on(Date.from(now.toInstant())).at(latitude, longitude).execute());
+
+        // enter loop; require at least 3 lunar events, where second event is before (or) now, and
+        // second-to-last is after (or) now
+        do {
+            dayOffset++; // increase tested day by 1
+
+            // add lunar event times on a solar day
+            timesBySolarDay.add(MoonTimes.compute().on(Date.from(now.minusDays(dayOffset).toInstant()))
+                    .at(latitude, longitude).execute());
+            timesBySolarDay.add(MoonTimes.compute().on(Date.from(now.plusDays(dayOffset).toInstant()))
+                    .at(latitude, longitude).execute());
+
+            // add to events list
+            for (MoonTimes mt : timesBySolarDay)
+            {
+                if (mt.getRise() != null)
+                    events.add(new MoonEvent(mt.getRise(), true));
+                if (mt.getSet() != null)
+                    events.add(new MoonEvent(mt.getSet(), false));
+            }
+            timesBySolarDay.clear(); // remove days in case required to loop again
+            events.sort(Comparator.comparing(MoonEvent::time)); // sort chronologically
+
+            // require second to be before now, and second-to-last after
+        } while (events.size() < 3 && !events.get(1).time().isBefore(now) &&
+                !events.get(events.size() - 2).time().isAfter(now));
+
+        return events;
     }
 
     public static void main(String[] args)
@@ -87,3 +156,5 @@ public class SandboxOne
         s1.getMoonInfo();
     }
 }
+
+record MoonEvent(ZonedDateTime time, boolean rise) { }
