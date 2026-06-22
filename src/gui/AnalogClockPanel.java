@@ -243,7 +243,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
      * the different arc sections.
      * <p>
      * Note: The arcs do not draw perfectly against each other; they leave a white gap between each arc.  The arcs are
-     * therefore fudged by 1 degree to force an overlap.
+     * therefore fudged by 0.5 degrees to force an overlap.
      *
      * @param g2d the {@link Graphics2D} object to draw with
      */
@@ -256,8 +256,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         for (SolarArcSegment s : cachedSolarSegments)
         {
             // calculate proper distance between start and end
-            // fudge the starting degree by 1 to force overlap of arcs
-            double start = Math.toDegrees(calculateAngle(s.start())) - 1; // actually farther clock-wise
+            // fudge the starting degree to force overlap of arcs
+            double start = Math.toDegrees(calculateAngle(s.start())) - 0.5; // actually farther clock-wise
             double end = Math.toDegrees(calculateAngle(s.end())); // actually earlier clock-wise
             int diff = (int) ((360 + end - start) % 360); // may wrap around circle
 
