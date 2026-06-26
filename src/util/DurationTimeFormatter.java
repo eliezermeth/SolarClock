@@ -227,3 +227,4 @@ public class DurationTimeFormatter
         }
     }
 }
+// TODO add - by fraction to allow less
