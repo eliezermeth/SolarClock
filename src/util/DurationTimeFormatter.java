@@ -45,89 +45,65 @@ public class DurationTimeFormatter
 
         StringBuffer result = new StringBuffer();
 
-        /*
-        // verify all are valid characters
-        List<Character> characterList = new ArrayList<>();
-        for (char c : pattern.toCharArray())
-            characterList.add(c);
-        for (char c : validChars)
-            characterList.remove(c);
-        if (!characterList.isEmpty())
-            throw new IllegalArgumentException("Invalid characters in pattern.");
+        Context context = new Context(duration, pattern);
 
-        // test number of colons
-        int numColons = pattern.length() - pattern.replace(":", "").length();
-        if (numColons > 3)
-            throw new IllegalArgumentException("Too many colons in pattern format.");
-
-        // determine fractions-of-second
-        int decimalIndex = pattern.indexOf(".");
-        int patternLength = pattern.length();
-        if (decimalIndex != -1) // decmial exists
-        {
-            if (decimalIndex == patternLength - 1) // last character
-            {
-                // do nothing; valid
-            }
-            else if (decimalIndex == patternLength - 2) // second-to-last
-            {
-                // must be .n
-                if (!Character.isDigit(pattern.charAt(patternLength - 1))) // if not n
-                    throw new IllegalArgumentException("Invalid pattern format; see fractions-of-second.");
-            }
-            else if (decimalIndex == patternLength - 3) // third-to-last
-            {
-                // must be .n+
-                if (!Character.isDigit(pattern.charAt(patternLength - 1)) || // if not n
-                    pattern.charAt(patternLength - 1) != '+') // or last not +
-                {
-                    throw new IllegalArgumentException("Invalid pattern format; see fractions-of-second.");
-                }
-            }
-            else
-            {
-                throw new IllegalArgumentException("Invalid pattern format; check decimal placement.")
-            }
-        }
-
-        // determine if letters are valid and properly separated
-        TimeUnit firstUnit = null;
-
-        // determine letter, colon, decmimal separator, and fraction-of-second options
-        char[] exploded = pattern.toCharArray();
-
-        boolean optionalSection = false;
-        for (int i = 0; i < exploded.length; i++)
-        {
-            if (exploded[i] == '[')
-            {
-                optionalSection = true;
-                continue;
-            }
-            else if (exploded[i] == ']')
-            {
-                optionalSection = false;
-                continue;
-            }
-        }
-         */
+        validateAndParse(context);
 
         return null;
     }
 
-    private static boolean validate(String patten)
+    private static void validateAndParse(Context context)
     {
-        boolean status = true;
+        // only valid characters
+        if (!testOnlyPermittedChars(context.format))
+            throw new IllegalArgumentException("Invalid characters present in formatting String " + context.format);
 
-        // verify all characters are permitted
-        if (!CHARS.matcher(patten).matches())
+        // split groups of formatting string
+        Matcher split = SPLIT.matcher(context.format);
+        if (split.matches())
         {
-            // System.out.println("\tIllegal characters present in formatting sequence: " + patten);
-            // throw new IllegalArgumentException("Illegal characters present in formatting sequence.");
-            status = false;
+            context.gTime = split.group(1);
+            context.gFraction = split.group(2);
         }
 
-        return status;
+        // validate general order of time segments
+        if (!testGeneralTimeOrder(context.gTime))
+            throw new IllegalArgumentException("Invalid time order");
+
+        // split time format based on semicolons
+        context.aTimeParts = context.gTime.split(":", -1); // as many groups as possible
+
+        // determine starting time unit; may throw error
+        findStartingUnit(context);
+
+        // ensure 3+ characters can only be in first slot
+        for (int i = 1; i < context.aTimeParts.length; i++)
+            if (context.aTimeParts[i].length() > 2)
+                System.out.println("Cannot have more than two characters in slot " + context.aTimeParts[i]);
+
+        // test fractional section
+        if (!testFractionalSection(context.gFraction))
+            throw new IllegalArgumentException("Fractional section invalid.");
+    }
+
+    /**
+     * Verify all characters present in string are permitted.
+     * @param patten
+     * @return
+     */
+    private static boolean testOnlyPermittedChars(String patten)
+    {
+        return CHARS.matcher(patten).matches();
+    }
+
+    /**
+     * Test that the general order of the time segment is valid.
+     * @param time
+     * @return
+     */
+    private static boolean testGeneralTimeOrder(String time)
+    {
+        return ORDER.matcher(time).matches();
     }
 
     private static boolean allSameChar(String s)
@@ -139,18 +115,19 @@ public class DurationTimeFormatter
         return true;
     }
 
-    private static boolean findStartingUnit(String[] parts, boolean fractionalExists)
+    private static TimeUnit findStartingUnit(Context context)
     {
-        char lowestUnit = findLowestUnit(parts, fractionalExists);
+        int lowestUnit = findLowestUnit(context.aTimeParts, (context.gFraction != null));
 
         // ensure proper incremental order of time segments
         TimeUnit starting = null;
 
         // work backward on the time array
-        for (int i = 1; i < parts.length + 1; i++)
+        for (int i = 1; i < context.aTimeParts.length + 1; i++)
         {
-            String part = parts[parts.length - i];
-            char expectedChar = SECTIONS[SECTIONS.length - i]; // TODO wrong
+            String part = context.aTimeParts[context.aTimeParts.length - i];
+            char expectedChar = SECTIONS[lowestUnit - i + 1]; // add 1 to offset the starting 1
+
 
             if (!part.isEmpty()) // text exists in segment
             {
@@ -159,33 +136,36 @@ public class DurationTimeFormatter
                 if (first != expectedChar)
                     throw new IllegalArgumentException("Time segment " + part + " is incorrect.");
                 // must all be the same character
-                for (int j = 1; j < part.length(); j++)
-                    if (part.charAt(j) != first)
-                        throw new IllegalArgumentException("Time segments may only be composed of a single type of unit");
+                if (!allSameChar(part))
+                    throw new IllegalArgumentException("Time segments may only be composed of a single type of unit");
             }
 
-            starting = UNITS[UNITS.length - i];
+            starting = UNITS[lowestUnit - i + 1];
         }
+
+        context.startingUnit = starting;
+        return starting;
     }
 
     /**
-     * Find the lowest unit in the time unit section, be it days, hours, minutes, or seconds.  Does not complete
-     * correctly if the parts section is formatted incorrectly.
-     * @param parts
+     * Find the lowest unit in the time unit section, be it days, hours, minutes, or seconds.  This is returned via the
+     * index of the unit in the {@code SECTIONS} array.  Does not complete correctly if the parts section is formatted
+     * incorrectly.
+     * @param aTimeParts
      * @param fractionalExists
      * @return
      */
-    private static char findLowestUnit(String[] parts, boolean fractionalExists)
+    private static int findLowestUnit(String[] aTimeParts, boolean fractionalExists)
     {
-        if (fractionalExists)
+        if (fractionalExists) // fractional exists
         {
-            return SECTIONS[SECTIONS.length - 1]; // 's'
+            return SECTIONS.length - 1; // 's'
         }
 
         // else; fractional does not exist
-        for (int i = 1; i < parts.length + 1; i++) // traverse backward
+        for (int i = 1; i < aTimeParts.length + 1; i++) // traverse backward
         {
-            String part = parts[parts.length - i];
+            String part = aTimeParts[aTimeParts.length - i];
 
             if (!part.isEmpty()) // section is not empty
             {
@@ -203,15 +183,96 @@ public class DurationTimeFormatter
                 if (potentialIndex >= SECTIONS.length)
                     throw new IllegalArgumentException("Time section " + part + " is in an invalid location.");
 
-                return SECTIONS[potentialIndex]; // lowest unit
+                return potentialIndex; // lowest unit
             }
         }
 
         // no populated section found
-        if (parts.length == SECTIONS.length)
-            return SECTIONS[SECTIONS.length - 1];
+        if (aTimeParts.length == SECTIONS.length)
+            return SECTIONS.length - 1; // 's'
         else // less than max extent
             throw new IllegalArgumentException("Not enough context in time section.");
+    }
+
+    private static String createUnitTimePortion(Context context)
+    {
+        // the first section may be more than two long
+        int minWidth = context.aTimeParts[0].length();
+
+        TimeUnit starting = context.startingUnit;
+
+
+        // TODO
+        return null;
+    }
+
+    /**
+     * Returns the number of {@link TimeUnit} within the {@link Duration}.
+     * @param d
+     * @param unit
+     * @return
+     */
+    private static long to(Duration d, TimeUnit unit)
+    {
+        return switch (unit)
+        {
+            case DAYS           -> d.toDays();
+            case HOURS          -> d.toHours();
+            case MINUTES        -> d.toMinutes();
+            case SECONDS        -> d.toSeconds();
+            case MILLISECONDS   -> d.toMillis(); // should never be called
+            case MICROSECONDS   -> d.toNanos() / 1000; // should never be called
+            case NANOSECONDS    -> d.toNanos();
+        };
+    }
+
+    /**
+     * Returns the number of {@link TimeUnit} within the {@link Duration}, discounting any that complete a higher
+     * {@link TimeUnit}.
+     * @param d
+     * @param unit
+     * @return
+     */
+    private static long toPart(Duration d, TimeUnit unit)
+    {
+        return switch (unit)
+        {
+            case DAYS           -> d.toDaysPart();
+            case HOURS          -> d.toHoursPart();
+            case MINUTES        -> d.toMinutesPart();
+            case SECONDS        -> d.toSecondsPart();
+            case MILLISECONDS   -> d.toMillisPart(); // should never be called
+            case MICROSECONDS   -> d.toNanosPart() / 1000; // should never be called
+            case NANOSECONDS    -> d.toNanosPart();
+        };
+    }
+
+    private static boolean testFractionalSection(String gFraction)
+    {
+        if (gFraction != null)
+            return FRACTION.matcher(gFraction).matches();
+        return true; // if there is no fraction
+    }
+
+    /**
+     * Helper class.
+     */
+    private static class Context
+    {
+        final Duration time;
+        final String format;
+
+        String gTime;
+        String[] aTimeParts;
+        TimeUnit startingUnit;
+
+        String gFraction;
+
+        Context(Duration time, String format)
+        {
+            this.time = time;
+            this.format = format;
+        }
     }
 
     public static void main(String[] args)
@@ -224,105 +285,23 @@ public class DurationTimeFormatter
         for (String t : tests)
         {
             System.out.println("Test pattern: " + t);
+            Context context = new Context(d, t);
 
-            // only valid char
-            boolean onlyValidChars = CHARS.matcher(t).matches();
-            if (!onlyValidChars)
+            try
             {
-                System.out.println("\tInvalid characters");
-                continue;
-            }
+                validateAndParse(context);
 
-            // split groups of string
-            String gTime = null, gFraction = null;
-            Matcher split = SPLIT.matcher(t);
-            if (split.matches())
+                System.out.println("\t" + context.gTime + " (" + context.aTimeParts.length + " groups):");
+                System.out.println("\tStarting unit: " + context.startingUnit);
+                System.out.println("\t" + context.gFraction + " (fractional): ");
+
+            } catch (IllegalArgumentException e)
             {
-                gTime = split.group(1);
-                gFraction = split.group(2);
-            }
-
-            // validate general order of time segments
-            boolean order = ORDER.matcher(gTime).matches();
-            if (!order)
-            {
-                System.out.println("\tInvalid time order");
-                continue;
-            }
-
-            // split based on semicolons
-            String[] parts = gTime.split(":", -1); // as many groups as possible
-            System.out.println("\t" + gTime + " (" + parts.length + " groups):");
-
-            // ensure incremental order of time segments
-            TimeUnit starting = null;
-            if (gFraction != null) // lowest must be seconds, etc.
-            {
-                boolean stillValid = true;
-
-                // work backward on the time array
-                for (int i = 1; i < parts.length + 1 && stillValid; i++)
-                {
-                    String part = parts[parts.length - i];
-                    char expected = SECTIONS[SECTIONS.length - i];
-
-                    if (!part.isEmpty())
-                    {
-                        char first = part.charAt(0);
-                        // must match expected character
-                        if (first != expected)
-                        {
-                            stillValid = false;
-                            System.out.println("\tExisting character is not expected in slot " + expected);
-                        }
-
-                        // must all be same character
-                        for (int j = 1; j < part.length() && stillValid; j++)
-                            if (part.charAt(j) != first)
-                            {
-                                stillValid = false;
-                                System.out.println("\tAll characters must be same in slot " + expected);
-                                break;
-                            }
-                    }
-                    starting = UNITS[UNITS.length - i];
-                }
-                System.out.println("\tStarting unit: " + starting);
-            }
-            else // no fractional portion; don't know what the lowest is yet
-            {
-                int passed;
-                char found;
-                boolean noCharFound = true;
-
-                // traverse backward (so that can be integrated with with-fractional code
-                for (int i = 1; i < parts.length + 1 && noCharFound; i++)
-                {
-                    if (!parts[parts.length - i].isEmpty()) // section is not empty
-                    {
-                        // pull out first character as proper unit
-                        int validCharIndex = -1;
-                        char pos = parts[parts.length - i].charAt(0);
-                        for (int j = 0; j < SECTIONS.length; j++)
-                            if (pos == SECTIONS[j])
-                            {
-                                validCharIndex = j;
-                                break;
-                            }
-                    }
-                }
-            }
-            // ensure 3+ characters can only be in first slot
-            for (int i = 1; i < parts.length; i++)
-                if (parts[i].length() > 2)
-                    System.out.println("\tCannot have more than two characters in slot " + parts[i]);
-
-            // validate fractional characters
-            if (gFraction != null)
-            {
-                System.out.println("\t" + gFraction + " (fractional): " + FRACTION.matcher(gFraction).matches());
+                System.out.println("\t" + e);
             }
         }
     }
 }
+
+
 // TODO add - by fraction to allow less
