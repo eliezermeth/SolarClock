@@ -115,12 +115,12 @@ public class DurationTimeFormatter
         return true;
     }
 
-    private static TimeUnit findStartingUnit(Context context)
+    private static int findStartingUnit(Context context)
     {
         int lowestUnit = findLowestUnit(context.aTimeParts, (context.gFraction != null));
 
         // ensure proper incremental order of time segments
-        TimeUnit starting = null;
+        int starting = -1;
 
         // work backward on the time array
         for (int i = 1; i < context.aTimeParts.length + 1; i++)
@@ -140,10 +140,10 @@ public class DurationTimeFormatter
                     throw new IllegalArgumentException("Time segments may only be composed of a single type of unit");
             }
 
-            starting = UNITS[lowestUnit - i + 1];
+            starting = lowestUnit - i + 1;
         }
 
-        context.startingUnit = starting;
+        context.startingUnitIndex = starting;
         return starting;
     }
 
@@ -196,14 +196,42 @@ public class DurationTimeFormatter
 
     private static String createUnitTimePortion(Context context)
     {
-        // the first section may be more than two long
-        int minWidth = context.aTimeParts[0].length();
+        StringBuilder sb = new StringBuilder();
+        int minFieldWidth = context.aTimeParts[0].length();
 
-        TimeUnit starting = context.startingUnit;
+        for (int i = 0; i < context.aTimeParts.length; i++)
+        {
+            // determine the resultant number for the section
+            long drawnNumber;
+            if (sb.isEmpty()) // no text exists yet
+                drawnNumber = to(context.time, UNITS[context.startingUnitIndex + i]);
+            else
+                drawnNumber = toPart(context.time, UNITS[context.startingUnitIndex + i]);
 
+            if (minFieldWidth == 0) // attempt to change minimum field width if non-existent
+                minFieldWidth = context.aTimeParts[i].length();
 
-        // TODO
-        return null;
+            if (minFieldWidth == 0) // section not required
+            {
+                if (drawnNumber > 0)
+                {
+                    sb.append(drawnNumber).append(":");
+                    minFieldWidth = 2;
+                }
+                // else, do nothing
+            }
+            else // field required
+            {
+                sb.append(String.format("%0" + minFieldWidth + "d", drawnNumber)).append(":");
+                minFieldWidth = 2;
+            }
+        }
+
+        // remove trailing ":"
+        if (!sb.isEmpty() && sb.charAt(sb.length() - 1) == ':')
+            sb.deleteCharAt(sb.length() - 1);
+
+        return sb.toString();
     }
 
     /**
@@ -264,7 +292,7 @@ public class DurationTimeFormatter
 
         String gTime;
         String[] aTimeParts;
-        TimeUnit startingUnit;
+        int startingUnitIndex;
 
         String gFraction;
 
@@ -292,7 +320,7 @@ public class DurationTimeFormatter
                 validateAndParse(context);
 
                 System.out.println("\t" + context.gTime + " (" + context.aTimeParts.length + " groups):");
-                System.out.println("\tStarting unit: " + context.startingUnit);
+                System.out.println("\tStarting unit: " + UNITS[context.startingUnitIndex]);
                 System.out.println("\t" + context.gFraction + " (fractional): ");
 
             } catch (IllegalArgumentException e)
