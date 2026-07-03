@@ -32,7 +32,7 @@ public class DurationTimeFormatter
     private static final Pattern SPLIT =
             Pattern.compile("^([^.]*)(?:\\.(.*))?$"); // split time portion from (optional) fractional portion
     private static final Pattern FRACTION =
-            Pattern.compile("^\\d?\\+?-?$"); // if decimal point exists, validate what follows it
+            Pattern.compile("^0?[1-9]?\\+?-?$"); // if decimal point exists, validate what follows it
     private static final Pattern TOKEN =
             Pattern.compile("(d+|H+|m+|s+|:)"); // extract labeled fields
     private static final Pattern ORDER =
@@ -84,6 +84,11 @@ public class DurationTimeFormatter
         // test fractional section
         if (!testFractionalSection(context.gFraction))
             throw new IllegalArgumentException("Fractional section invalid.");
+
+        // create time portion
+
+        // create fractional portion
+        if (context.gFraction != null); // TODO
     }
 
     /**
@@ -280,6 +285,75 @@ public class DurationTimeFormatter
         if (gFraction != null)
             return FRACTION.matcher(gFraction).matches();
         return true; // if there is no fraction
+    }
+
+    private static String createFractionalPortion(Context context)
+    {
+        long totalNanos = context.time.toNanosPart(); // get total number of fractional units; max size
+
+        boolean requireDecimal = context.gFraction.contains("0");
+        boolean allowExpansion = context.gFraction.contains("+");
+        boolean allowCollapse = context.gFraction.contains("-");
+        // isolate if there is a non-zero numeral, and if so, what
+        int numPlaces = -1; // initialize
+        for (char ch : context.gFraction.toCharArray()) // find if non-zero character
+            if (ch >= '1' && ch <= '9')
+            {
+                numPlaces = ch - '0';
+                break;
+            }
+
+        // begin work with 9-digit fractional string
+        String fraction = String.format("%09d", totalNanos);
+
+        // find last non-zero digit
+        int lastNonZero = -1;
+        for (int i = 8; i >= 0; i--)
+        {
+            if (fraction.charAt(i) != '0')
+            {
+                lastNonZero = i;
+                break;
+            }
+        }
+
+        // if user didn't specify precision, use the significant length
+        if (numPlaces < 0)
+            numPlaces = lastNonZero + 1;
+
+        // initial length
+        int length = numPlaces;
+
+        // expansion
+        if (allowExpansion && lastNonZero >= 0)
+            length = Math.max(length, lastNonZero + 1);
+
+        length = Math.min(length, 9);
+
+        String result = fraction.substring(0, length);
+
+        // collapse
+        if (allowCollapse)
+        {
+            if (lastNonZero < 0)
+                result = "";
+            else
+            {
+                int minLength = allowExpansion ? lastNonZero + 1 : 0;
+
+                int end = result.length();
+                while (end > minLength && result.charAt(end - 1) == '0')
+                    end--;
+
+                result = result.substring(0, end);
+            }
+        }
+
+        // decimal point
+        if (!result.isEmpty())
+            return "." + result;
+        // else
+        return requireDecimal ? "." : "";
     }
 
     /**
