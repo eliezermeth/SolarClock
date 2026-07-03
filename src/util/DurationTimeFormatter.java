@@ -308,7 +308,7 @@ public class DurationTimeFormatter
         String[] tests = new String[] {"HH:mm:ss.1", "m:ss", "::s", ":::", "mmmm:.", ":H::ss.3+",
                 "test", "HHHH", "sss.3", ".11", "H:dd", "H:s", "::::", "mm:ss.1-", ":ss.1+-"};
         // last gives wrong error message (gives invalid time order), but acceptable
-        Duration d = Duration.ofHours(3);
+        Duration d = Duration.ofHours(3).plusMinutes(15);
 
         for (String t : tests)
         {
@@ -322,6 +322,7 @@ public class DurationTimeFormatter
                 System.out.println("\t" + context.gTime + " (" + context.aTimeParts.length + " groups):");
                 System.out.println("\tStarting unit: " + UNITS[context.startingUnitIndex]);
                 System.out.println("\t" + context.gFraction + " (fractional): ");
+                System.out.println("\t" + createUnitTimePortion(context));
 
             } catch (IllegalArgumentException e)
             {
