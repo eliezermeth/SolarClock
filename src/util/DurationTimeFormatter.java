@@ -49,7 +49,7 @@ public class DurationTimeFormatter
 
         validateAndParse(context);
 
-        return null;
+        return createUnitTimePortion(context) + createFractionalPortion(context);
     }
 
     private static void validateAndParse(Context context)
@@ -289,6 +289,10 @@ public class DurationTimeFormatter
 
     private static String createFractionalPortion(Context context)
     {
+        // ensure valid fractional
+        if (context.gFraction == null)
+            return "";
+
         long totalNanos = context.time.toNanosPart(); // get total number of fractional units; max size
 
         boolean requireDecimal = context.gFraction.contains("0");
@@ -382,7 +386,7 @@ public class DurationTimeFormatter
         String[] tests = new String[] {"HH:mm:ss.1", "m:ss", "::s", ":::", "mmmm:.", ":H::ss.3+",
                 "test", "HHHH", "sss.3", ".11", "H:dd", "H:s", "::::", "mm:ss.1-", ":ss.1+-"};
         // last gives wrong error message (gives invalid time order), but acceptable
-        Duration d = Duration.ofHours(3).plusMinutes(15);
+        Duration d = Duration.ofHours(3).plusMinutes(15).plusSeconds(2).plusNanos(123456789);
 
         for (String t : tests)
         {
@@ -395,8 +399,9 @@ public class DurationTimeFormatter
 
                 System.out.println("\t" + context.gTime + " (" + context.aTimeParts.length + " groups):");
                 System.out.println("\tStarting unit: " + UNITS[context.startingUnitIndex]);
-                System.out.println("\t" + context.gFraction + " (fractional): ");
                 System.out.println("\t" + createUnitTimePortion(context));
+                System.out.println("\t" + context.gFraction + " (fractional): " + createFractionalPortion(context));
+                System.out.println("\tResult: " + format(d, t));
 
             } catch (IllegalArgumentException e)
             {
