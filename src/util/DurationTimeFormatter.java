@@ -5,10 +5,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * A formatting class for {@link Duration}, in a similar style to how {@link java.time.format.DateTimeFormatter}
+ * operates.  Exact rules for how this formatter functions can be found at the method
+ * {@link DurationTimeFormatter#format(Duration, String)}.
+ */
 public class DurationTimeFormatter
 {
     /**
-     * Constructor made privete to prevent its use.
+     * Constructor made private to prevent its use.
      */
     private DurationTimeFormatter() {}
 
@@ -50,6 +55,7 @@ public class DurationTimeFormatter
      *     if it is a non-zero number (and no higher section is displaying).</li>
      *     <li>The next section is minutes ({@code m}).  The same rules apply as for hours.</li>
      *     <li>The last section is seconds ({@code s}).  The same rules apply as for hours.</li>
+     * </ol>
      * If all three {@code :} are present, no units need be specified, as all units will be used.  If the decimal is
      * specified, then units need not be specified (even if less than three {@code :}), as they will be calculated using
      * seconds in the rightmost full-unit slot and calculated from there.
