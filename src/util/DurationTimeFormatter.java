@@ -7,22 +7,10 @@ import java.util.regex.Pattern;
 
 public class DurationTimeFormatter
 {
+    /**
+     * Constructor made privete to prevent its use.
+     */
     private DurationTimeFormatter() {}
-
-    // date field
-    // y = year
-    // M = month
-    // d = day
-
-    // time
-    // H = hour
-    // m = minute
-    // s = second
-    // S = fraction-of-second
-
-    // .matches() = whether entire input matches the pattern
-    // .find() = finds next occurrence of pattern; get by printing materh.group()
-    // .group() = returns the text that matched
 
     private static final char[] SECTIONS = {'d', 'H', 'm', 's'}; // in order
     private static final TimeUnit[] UNITS = {TimeUnit.DAYS, TimeUnit.HOURS, TimeUnit.MINUTES, TimeUnit.SECONDS};
@@ -33,139 +21,177 @@ public class DurationTimeFormatter
             Pattern.compile("^([^.]*)(?:\\.(.*))?$"); // split time portion from (optional) fractional portion
     private static final Pattern FRACTION =
             Pattern.compile("^0?[1-9]?\\+?-?$"); // if decimal point exists, validate what follows it
-    private static final Pattern TOKEN =
-            Pattern.compile("(d+|H+|m+|s+|:)"); // extract labeled fields
     private static final Pattern ORDER =
             Pattern.compile("^d*:?H*:?m*:?s*$"); // require them to be in proper order
 
-    public static String format(Duration duration,String pattern)
+    /**
+     * Formats a {@link Duration} into a {@link String} of a more human-readable format.  The formatting can work with
+     * the following segments: Days, minutes, hours, seconds, and fractions of seconds.  An example of the requested
+     * format is {@code H:MM:SS.3+}.  The highest unit displayed (be it days, hours, minutes, or seconds) can have any
+     * number of units; after that, the display will standardize to two units for each of the remainder to be displayed.
+     *   The fractional units (after the decmial point) is different; its exact rules are explained below.
+     * <p>
+     * Sections (between days, hours, minutes, and seconds) must always be separated by a semicolon ({@code :}).  The
+     * separation between seconds and fractional parts is delineated by a decmial point ({@code .}).  The highest time
+     * section it will print is to the left of the first semicolon; after that, the remaining sections will proceed
+     * linearly.
+     * <p>
+     * <ol>
+     *     <li>The highest section it can print is days.  The number of {@code d}s is the minimum field width used for
+     *     the display; as such, {@code dd} will cause a minimum field width of two (which may cause sub-ten day counts
+     *     to be displayed as {@code 03:...}).  However, if this section should only display if there is at least one
+     *     unit, then {@code :} should be used.  If there do exist units, then it will be formatted with no leading
+     *     zeros.</li>
+     *     <li>The next highest section it can print is hours.  This follows the same rules as does hours; however, if
+     *     hours are a certain display ({code d:} used), then this section will always display with a field width of
+     *     two.  If hours are an uncertain display ({@code :} used), then there are three options: {@code HH} if there
+     *     should be two digits used as a certain display for digits, {@code H} if this may be the highest display (and
+     *     should display) and will use a variable-width minimum field length, or {@code :} if this should only display
+     *     if it is a non-zero number (and no higher section is displaying).</li>
+     *     <li>The next section is minutes ({@code m}).  The same rules apply as for hours.</li>
+     *     <li>The last section is seconds ({@code s}).  The same rules apply as for hours.</li>
+     * If all three {@code :} are present, no units need be specified, as all units will be used.  If the decimal is
+     * specified, then units need not be specified (even if less than three {@code :}), as they will be calculated using
+     * seconds in the rightmost full-unit slot and calculated from there.
+     * <p>
+     * The decimal point ({@code .}) is not required after seconds; however, if it was used, remaining fractional units
+     * may be displayed.  Fractional parts operate on a different set of rules:
+     * {@code [force decimal display][precision][expansion][collapse]}
+     * <ol>
+     *     <li>The option {@code 0} may only appear in the first slot.  If present, it will force the decimal point to
+     *     always display, regardless of later options that may change the formatting.</li>
+     *     <li>The optional precision {@code 1 - 9} specifies how precise the result should be.  {@code 1} will
+     *     return one-tenth seconds, {@code 2} one-one hundredths, up to {@code 9}, resulting in nanoseconds, the max
+     *     precision available to {@link Duration}.  If this is not specified, it will default to the most precise value
+     *     available within the given {@link Duration}, without the trailing zeros.</li>
+     *     <li>The option {@code +} allows the precision to expand beyond the specified number to the most precise
+     *     value available within the given {@link Duration} without the trailing zeros.  If both precision and
+     *     expansion are specified (and not collapse), precision represents be the lower bound of units returned.</li>
+     *     <li>The option {@code -} allows the precision to collapse beyond the specified number by removing any
+     *     trailing zeros within the specified precision.  If both precision and collapse are specified (and not
+     *     expansion), precision represents the upper bound of units returned.</li>
+     * </ol>
+     * Both {@code +} and {@code -} may be present within the same pattern.  If the decimal is not forced and it
+     * collapses because of no significant return value, the decimal portion (along with the decimal) of the number will
+     * not be displayed.
+     *
+     * @param duration {@link Duration} to be printed in the specified {@code pattern}
+     * @param pattern {@link String} specifying the pattern based on the above rules
+     * @return {@link Duration} in the format specified by the {@code pattern}
+     */
+    public static String format(Duration duration, String pattern)
     {
-        long totalSeconds = duration.getSeconds();
-        // for first item, can use TimeUnit.DAYS, etc.
-
-        StringBuffer result = new StringBuffer();
-
-        Context context = new Context(duration, pattern);
-
-        validateAndParse(context);
-
-        return createUnitTimePortion(context) + createFractionalPortion(context);
-    }
-
-    private static void validateAndParse(Context context)
-    {
-        // only valid characters
-        if (!testOnlyPermittedChars(context.format))
-            throw new IllegalArgumentException("Invalid characters present in formatting String " + context.format);
-
-        // split groups of formatting string
-        Matcher split = SPLIT.matcher(context.format);
-        if (split.matches())
-        {
-            context.gTime = split.group(1);
-            context.gFraction = split.group(2);
-        }
-
-        // validate general order of time segments
-        if (!testGeneralTimeOrder(context.gTime))
-            throw new IllegalArgumentException("Invalid time order");
+        validateOnlyPermittedChars(pattern);
+        String[] aTimeAndFractionSegments = splitFormattingString(pattern);
+        validateGeneralTimeOrder(aTimeAndFractionSegments[0]);
 
         // split time format based on semicolons
-        context.aTimeParts = context.gTime.split(":", -1); // as many groups as possible
+        String[] aTimeParts = aTimeAndFractionSegments[0].split(":", -1); // as many groups as possible
 
-        // determine starting time unit; may throw error
-        findStartingUnit(context);
+        // find starting unit index
+        int startingUnitIndex = findStartingUnit(aTimeParts, aTimeAndFractionSegments[1]);
 
-        // ensure 3+ characters can only be in first slot
-        for (int i = 1; i < context.aTimeParts.length; i++)
-            if (context.aTimeParts[i].length() > 2)
-                System.out.println("Cannot have more than two characters in slot " + context.aTimeParts[i]);
+        validateOnlyFirstSlotExpanded(aTimeParts);
+        validateFractionalSection(aTimeAndFractionSegments[1]);
 
-        // test fractional section
-        if (!testFractionalSection(context.gFraction))
-            throw new IllegalArgumentException("Fractional section invalid.");
-
-        // create time portion
-
-        // create fractional portion
-        if (context.gFraction != null); // TODO
+        return createUnitTimePortion(duration, aTimeParts, startingUnitIndex) +
+                createFractionalPortion(duration, aTimeAndFractionSegments[1]);
     }
+
+    // ----------------------------------------------------------------------------------------------
+    // Validation methods
+    // ----------------------------------------------------------------------------------------------
 
     /**
      * Verify all characters present in string are permitted.
-     * @param patten
-     * @return
+     * @param patten formatting pattern for {@link Duration}
+     *
+     * @throws IllegalArgumentException if invalid characters are present
      */
-    private static boolean testOnlyPermittedChars(String patten)
+    private static void validateOnlyPermittedChars(String patten)
     {
-        return CHARS.matcher(patten).matches();
+        if (!CHARS.matcher(patten).matches())
+            throw new IllegalArgumentException("Invalid characters present in formatting String " + patten);
     }
 
     /**
      * Test that the general order of the time segment is valid.
-     * @param time
-     * @return
+     * @param timeSegment the section of the time portion with the lowest possible unit of seconds
+     *
+     * @throws IllegalArgumentException if order is invalid
      */
-    private static boolean testGeneralTimeOrder(String time)
+    private static void validateGeneralTimeOrder(String timeSegment)
     {
-        return ORDER.matcher(time).matches();
+        if (!ORDER.matcher(timeSegment).matches())
+            throw new IllegalArgumentException("Invalid time order");
     }
 
-    private static boolean allSameChar(String s)
+
+    /**
+     * Ensure that the only slot that can have 3+ characters is the first slot.
+     *
+     * @param aTimeParts {@link String} array of all full time parts
+     *
+     * @throws IllegalArgumentException if any slot except the leftmost contains greater than two characters
+     */
+    private static void validateOnlyFirstSlotExpanded(String[] aTimeParts)
     {
-        char c = s.charAt(0);
-        for (int i = 1; i < s.length(); i++)
-            if (s.charAt(i) != c)
-                return false;
-        return true;
+        for (int i = 1; i < aTimeParts.length; i++)
+            if (aTimeParts[i].length() > 2)
+                throw new IllegalArgumentException("Cannot have more than two characters in slot " + aTimeParts[i]);
     }
 
-    private static int findStartingUnit(Context context)
+    /**
+     * Ensure the fractional section is valid.
+     *
+     * @param fractional the portion of the format after the decimal point
+     *
+     * @throws IllegalArgumentException if the portion exists but does not match valid character orders
+     */
+    private static void validateFractionalSection(String fractional)
     {
-        int lowestUnit = findLowestUnit(context.aTimeParts, (context.gFraction != null));
+        if (fractional != null && !FRACTION.matcher(fractional).matches())
+            throw new IllegalArgumentException("Fractional section invalid.");
+    }
 
-        // ensure proper incremental order of time segments
-        int starting = -1;
+    // ----------------------------------------------------------------------------------------------
+    // Utility methods
+    // ----------------------------------------------------------------------------------------------
 
-        // work backward on the time array
-        for (int i = 1; i < context.aTimeParts.length + 1; i++)
+    /**
+     * Split the formatting {@code pattern} into its time (days:hours:minutes:seconds) and fractional (.mmm+) segments.
+     *
+     * @param pattern the formatting pattern for the {@link Duration} time that was given by the user
+     * @return a {@link String} array containing the [time portion, fractional portion] in that order
+     */
+    private static String[] splitFormattingString(String pattern)
+    {
+        String[] aTimeAndFractionSegments = new String[2];
+        Matcher split = SPLIT.matcher(pattern);
+        if (split.matches())
         {
-            String part = context.aTimeParts[context.aTimeParts.length - i];
-            char expectedChar = SECTIONS[lowestUnit - i + 1]; // add 1 to offset the starting 1
-
-
-            if (!part.isEmpty()) // text exists in segment
-            {
-                char first = part.charAt(0);
-                // must match expected character
-                if (first != expectedChar)
-                    throw new IllegalArgumentException("Time segment " + part + " is incorrect.");
-                // must all be the same character
-                if (!allSameChar(part))
-                    throw new IllegalArgumentException("Time segments may only be composed of a single type of unit");
-            }
-
-            starting = lowestUnit - i + 1;
+            aTimeAndFractionSegments[0] = split.group(1);
+            aTimeAndFractionSegments[1] = split.group(2);
         }
-
-        context.startingUnitIndex = starting;
-        return starting;
+        return aTimeAndFractionSegments;
     }
 
     /**
      * Find the lowest unit in the time unit section, be it days, hours, minutes, or seconds.  This is returned via the
      * index of the unit in the {@code SECTIONS} array.  Does not complete correctly if the parts section is formatted
      * incorrectly.
-     * @param aTimeParts
-     * @param fractionalExists
-     * @return
+     *
+     * @param aTimeParts the {@link String} array containing all parts of the full time units
+     * @param fractionalExists if there is a fractional section requested for the pattern
+     * @return the {@code SECTIONS} index of the rightmost unit within {@code aTimeParts}
+     *
+     * @throws IllegalArgumentException if time units are in invalid locations or not enough context is available to
+     *                                  determine the leftmost unit
      */
     private static int findLowestUnit(String[] aTimeParts, boolean fractionalExists)
     {
         if (fractionalExists) // fractional exists
-        {
             return SECTIONS.length - 1; // 's'
-        }
 
         // else; fractional does not exist
         for (int i = 1; i < aTimeParts.length + 1; i++) // traverse backward
@@ -199,22 +225,138 @@ public class DurationTimeFormatter
             throw new IllegalArgumentException("Not enough context in time section.");
     }
 
-    private static String createUnitTimePortion(Context context)
+    /**
+     * Find the rightmost (starting) unit within the pattern requested.
+     *
+     * @param aTimeParts the {@link String} array containing all parts of the full time units
+     * @param fractionalPart the fractional part of the requested pattern
+     *
+     * @return the {@code SECTIONS} index of the leftmost unit within {@code aTimeParts}
+     *
+     * @throws IllegalArgumentException if time units are in invalid locations or multiple units compose a single segment
+     */
+    private static int findStartingUnit(String[] aTimeParts, String fractionalPart)
+    {
+        int lowestUnit = findLowestUnit(aTimeParts, (fractionalPart != null));
+
+        // ensure proper incremental order of time segments
+        int starting = -1;
+
+        // work backward on the time array
+        for (int i = 1; i < aTimeParts.length + 1; i++)
+        {
+            String part = aTimeParts[aTimeParts.length - i];
+            char expectedChar = SECTIONS[lowestUnit - i + 1]; // add 1 to offset the starting 1
+
+
+            if (!part.isEmpty()) // text exists in segment
+            {
+                char first = part.charAt(0);
+                // must match expected character
+                if (first != expectedChar)
+                    throw new IllegalArgumentException("Time segment " + part + " is incorrect.");
+                // must all be the same character
+                if (!allSameChar(part))
+                    throw new IllegalArgumentException("Time segments may only be composed of a single type of unit");
+            }
+
+            starting = lowestUnit - i + 1;
+        }
+
+        return starting;
+    }
+
+    /**
+     * Test if a {@link String} is composed of a unique character.
+     *
+     * @param s the {@link String} to test
+     * @return {@code true} if only one character; otherwise {@code false}
+     */
+    private static boolean allSameChar(String s)
+    {
+        char c = s.charAt(0);
+        for (int i = 1; i < s.length(); i++)
+            if (s.charAt(i) != c)
+                return false;
+        return true;
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // Time conversion methods
+    // ----------------------------------------------------------------------------------------------
+
+    /**
+     * Returns the number of {@link TimeUnit} within the {@link Duration}.
+     *
+     * @param d {@link Duration}
+     * @param unit the {@link TimeUnit} to have its total extracted from the {@link Duration}
+     * @return the number of {@link TimeUnit}s in {@link Duration}
+     */
+    private static long to(Duration d, TimeUnit unit)
+    {
+        return switch (unit)
+        {
+            case DAYS           -> d.toDays();
+            case HOURS          -> d.toHours();
+            case MINUTES        -> d.toMinutes();
+            case SECONDS        -> d.toSeconds();
+            case MILLISECONDS   -> d.toMillis(); // should never be called
+            case MICROSECONDS   -> d.toNanos() / 1000; // should never be called
+            case NANOSECONDS    -> d.toNanos();
+        };
+    }
+
+    /**
+     * Returns the number of {@link TimeUnit} within the {@link Duration}, discounting any that complete a higher
+     * {@link TimeUnit}.
+     *
+     * @param d {@link Duration}
+     * @param unit the {@link TimeUnit} to have its total extracted from the {@link Duration}
+     * @return the number of {@link TimeUnit}s in {@link Duration} below the next highest {@link TimeUnit}
+     */
+    private static long toPart(Duration d, TimeUnit unit)
+    {
+        return switch (unit)
+        {
+            case DAYS           -> d.toDaysPart();
+            case HOURS          -> d.toHoursPart();
+            case MINUTES        -> d.toMinutesPart();
+            case SECONDS        -> d.toSecondsPart();
+            case MILLISECONDS   -> d.toMillisPart(); // should never be called
+            case MICROSECONDS   -> d.toNanosPart() / 1000; // should never be called
+            case NANOSECONDS    -> d.toNanosPart();
+        };
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // String creation methods
+    // ----------------------------------------------------------------------------------------------
+
+    /**
+     * Change the {@link Duration} into its {@link String} within the full-unit section (lowest unit seconds) based on
+     * the format given in {@code timeFormatArray}.
+     *
+     * @param time {@link Duration}
+     * @param timeFormatArray {@link String} array containing the formatting for the {@link Duration}
+     * @param startingUnitIndex the index of the leftmost unit requested by the pattern, in the {@code UNITS} array
+     * @return the {@link String} of the full time units in the requested pattern
+     */
+    private static String createUnitTimePortion(Duration time, String[] timeFormatArray, int startingUnitIndex)
     {
         StringBuilder sb = new StringBuilder();
-        int minFieldWidth = context.aTimeParts[0].length();
+        int minFieldWidth = timeFormatArray[0].length();
 
-        for (int i = 0; i < context.aTimeParts.length; i++)
+        for (int i = 0; i < timeFormatArray.length; i++)
         {
             // determine the resultant number for the section
             long drawnNumber;
             if (sb.isEmpty()) // no text exists yet
-                drawnNumber = to(context.time, UNITS[context.startingUnitIndex + i]);
+                drawnNumber = to(time, UNITS[startingUnitIndex + i]);
             else
-                drawnNumber = toPart(context.time, UNITS[context.startingUnitIndex + i]);
+                drawnNumber = toPart(time, UNITS[startingUnitIndex + i]);
 
             if (minFieldWidth == 0) // attempt to change minimum field width if non-existent
-                minFieldWidth = context.aTimeParts[i].length();
+                minFieldWidth = timeFormatArray[i].length();
 
             if (minFieldWidth == 0) // section not required
             {
@@ -240,67 +382,26 @@ public class DurationTimeFormatter
     }
 
     /**
-     * Returns the number of {@link TimeUnit} within the {@link Duration}.
-     * @param d
-     * @param unit
-     * @return
+     * Change the fractional (less than a second) portion of the {@link Duration} into its {@link String} within the
+     * fractional section of the format given iby {@code fractionPortion}
+     * @param time {@link Duration}
+     * @param fractionPortion the pattern for the fractional section
+     * @return the {link String} of the fractional units in the requested pattern
      */
-    private static long to(Duration d, TimeUnit unit)
-    {
-        return switch (unit)
-        {
-            case DAYS           -> d.toDays();
-            case HOURS          -> d.toHours();
-            case MINUTES        -> d.toMinutes();
-            case SECONDS        -> d.toSeconds();
-            case MILLISECONDS   -> d.toMillis(); // should never be called
-            case MICROSECONDS   -> d.toNanos() / 1000; // should never be called
-            case NANOSECONDS    -> d.toNanos();
-        };
-    }
-
-    /**
-     * Returns the number of {@link TimeUnit} within the {@link Duration}, discounting any that complete a higher
-     * {@link TimeUnit}.
-     * @param d
-     * @param unit
-     * @return
-     */
-    private static long toPart(Duration d, TimeUnit unit)
-    {
-        return switch (unit)
-        {
-            case DAYS           -> d.toDaysPart();
-            case HOURS          -> d.toHoursPart();
-            case MINUTES        -> d.toMinutesPart();
-            case SECONDS        -> d.toSecondsPart();
-            case MILLISECONDS   -> d.toMillisPart(); // should never be called
-            case MICROSECONDS   -> d.toNanosPart() / 1000; // should never be called
-            case NANOSECONDS    -> d.toNanosPart();
-        };
-    }
-
-    private static boolean testFractionalSection(String gFraction)
-    {
-        if (gFraction != null)
-            return FRACTION.matcher(gFraction).matches();
-        return true; // if there is no fraction
-    }
-
-    private static String createFractionalPortion(Context context)
+    private static String createFractionalPortion(Duration time, String fractionPortion)
     {
         // ensure valid fractional
-        if (context.gFraction == null)
+        if (fractionPortion == null)
             return "";
 
-        long totalNanos = context.time.toNanosPart(); // get total number of fractional units; max size
+        long totalNanos = time.toNanosPart(); // get total number of fractional units; max size
 
-        boolean requireDecimal = context.gFraction.contains("0");
-        boolean allowExpansion = context.gFraction.contains("+");
-        boolean allowCollapse = context.gFraction.contains("-");
+        boolean requireDecimal = fractionPortion.contains("0");
+        boolean allowExpansion = fractionPortion.contains("+");
+        boolean allowCollapse = fractionPortion.contains("-");
         // isolate if there is a non-zero numeral, and if so, what
         int numPlaces = -1; // initialize
-        for (char ch : context.gFraction.toCharArray()) // find if non-zero character
+        for (char ch : fractionPortion.toCharArray()) // find if non-zero character
             if (ch >= '1' && ch <= '9')
             {
                 numPlaces = ch - '0';
@@ -360,26 +461,7 @@ public class DurationTimeFormatter
         return requireDecimal ? "." : "";
     }
 
-    /**
-     * Helper class.
-     */
-    private static class Context
-    {
-        final Duration time;
-        final String format;
-
-        String gTime;
-        String[] aTimeParts;
-        int startingUnitIndex;
-
-        String gFraction;
-
-        Context(Duration time, String format)
-        {
-            this.time = time;
-            this.format = format;
-        }
-    }
+    // ----------------------------------------------------------------------------------------------
 
     public static void main(String[] args)
     {
@@ -391,16 +473,9 @@ public class DurationTimeFormatter
         for (String t : tests)
         {
             System.out.println("Test pattern: " + t);
-            Context context = new Context(d, t);
 
             try
             {
-                validateAndParse(context);
-
-                System.out.println("\t" + context.gTime + " (" + context.aTimeParts.length + " groups):");
-                System.out.println("\tStarting unit: " + UNITS[context.startingUnitIndex]);
-                System.out.println("\t" + createUnitTimePortion(context));
-                System.out.println("\t" + context.gFraction + " (fractional): " + createFractionalPortion(context));
                 System.out.println("\tResult: " + format(d, t));
 
             } catch (IllegalArgumentException e)
@@ -410,6 +485,3 @@ public class DurationTimeFormatter
         }
     }
 }
-
-
-// TODO add - by fraction to allow less
