@@ -34,10 +34,10 @@ public class DurationTimeFormatter
      * the following segments: Days, minutes, hours, seconds, and fractions of seconds.  An example of the requested
      * format is {@code H:MM:SS.3+}.  The highest unit displayed (be it days, hours, minutes, or seconds) can have any
      * number of units; after that, the display will standardize to two units for each of the remainder to be displayed.
-     *   The fractional units (after the decmial point) is different; its exact rules are explained below.
+     *   The fractional units (after the decimal point) is different; its exact rules are explained below.
      * <p>
      * Sections (between days, hours, minutes, and seconds) must always be separated by a semicolon ({@code :}).  The
-     * separation between seconds and fractional parts is delineated by a decmial point ({@code .}).  The highest time
+     * separation between seconds and fractional parts is delineated by a decimal point ({@code .}).  The highest time
      * section it will print is to the left of the first semicolon; after that, the remaining sections will proceed
      * linearly.
      * <p>
