@@ -1,19 +1,18 @@
 package gui;
 
+import interfaces.QuarterDayObserver;
 import main.ClockBrain;
+import util.DurationTimeFormatter;
 import util.SolarTimes;
 import util.TimeConverter;
+import util.enums.QuarterDayMark;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
-public class ConversionPanel
+public class ConversionPanel implements QuarterDayObserver
 {
     private final JPanel panel;
 
@@ -24,12 +23,7 @@ public class ConversionPanel
     {
         this.panel = panel;
 
-        ClockBrain clock = ClockBrain.getInstance();
-        ZonedDateTime now = clock.getCurrentDateTime();
-        SolarTimes solarTimes = clock.getSolarTimes();
-        // as of now, all tekufos are the 12-hour variety; will need to allow change
-        timeConverter = new TimeConverter(solarTimes.getTekufahStart(now), solarTimes.getTekufahEnd(now), 12);
-        // TODO refresh converter quarterly
+        refreshTimeConverter();
 
         panel.setLayout(new GridLayout(6, 2)); // but layout already set?
 
@@ -46,8 +40,15 @@ public class ConversionPanel
         }
 
         setHalachicTimeOnLeft();
+
+        // register with ClockBrain as an observer
+        ClockBrain clock = ClockBrain.getInstance();
+        clock.registerQuarterDayObserver(this);
     }
 
+    /**
+     * Set the standard-clock times on the left, so that the halachic durations vary to match the standard times.
+     */
     public void setStandardTimeOnLeft()
     {
         clearLabels();
@@ -55,22 +56,25 @@ public class ConversionPanel
         table[0][0].setText("Standard");
         table[0][1].setText("Halachic");
 
-        table[1][0].setText("");
-        table[1][1].setText("");
+        table[1][0].setText(DurationTimeFormatter.format(timeConverter.getDuration(), "H:mm:ss.3"));
+        table[1][1].setText("Tekufah");
 
         table[2][0].setText("1 hour");
-        table[2][1].setText("");
+        table[2][1].setText(DurationTimeFormatter.format(timeConverter.getStandardHourContainsLength(), "H:mm:ss.3"));
 
         table[3][0].setText("1 minute");
-        table[3][1].setText("");
+        table[3][1].setText(DurationTimeFormatter.format(timeConverter.getStandardMinuteContainsLength(), "m:ss.3"));
 
         table[4][0].setText("1 second");
-        table[4][1].setText("");
+        table[4][1].setText(DurationTimeFormatter.format(timeConverter.getStandardSecondContainsLength(), "s.3"));
 
         table[5][0].setText("");
         table[5][1].setText("");
     }
 
+    /**
+     * Set the halachic-clock times on the left, so that the standard durations vary to match the halachic times.
+     */
     public void setHalachicTimeOnLeft()
     {
         clearLabels();
@@ -79,19 +83,19 @@ public class ConversionPanel
         table[0][1].setText("Standard");
 
         table[1][0].setText("Tekufah");
-        table[1][1].setText(timeConverter.getDuration().toString());
+        table[1][1].setText(DurationTimeFormatter.format(timeConverter.getDuration(), "H:mm:ss.3"));
 
         table[2][0].setText("1 hour");
-        table[2][1].setText(timeConverter.getHalachicHourLength().toString());
+        table[2][1].setText(DurationTimeFormatter.format(timeConverter.getHalachicHourLength(), "H:mm:ss.3"));
 
         table[3][0].setText("1 minute");
-        table[3][1].setText(timeConverter.getHalachicMinuteLength().toString());
+        table[3][1].setText(DurationTimeFormatter.format(timeConverter.getHalachicMinuteLength(), "m:ss.3"));
 
         table[4][0].setText("1 second");
-        table[4][1].setText(timeConverter.getHalachicSecondLength().toString());
+        table[4][1].setText(DurationTimeFormatter.format(timeConverter.getHalachicSecondLength(), "s.3"));
 
         table[5][0].setText("1 cheilek");
-        table[5][1].setText(timeConverter.getHalachicCheilekLength().toString());
+        table[5][1].setText(DurationTimeFormatter.format(timeConverter.getHalachicCheilekLength(), "s.3"));
     }
 
     /**
@@ -105,55 +109,27 @@ public class ConversionPanel
     }
 
     /**
-     * Changes a {@link Duration} into a {@link String} of a more human-readable format.  The formatting can work with
-     * the following segments: Hours, minutes, seconds, and fractions of seconds. An example of the requested format is
-     * {@code H:MM:SS.n}.  The highest unit displayed (be it hours, minutes, or seconds) can have any number of units;
-     * after that, the display will standardize to two units for each of the remainder to be displayed.  The fractional
-     * units ({@code n}) is different; the exact rule is explained below.
-     * <p>
-     * Sections (between hours, minutes, and seconds) must always be separated by a semicolon ({@code :}).  The
-     * separation between seconds and fractional parts is delineated by a dot/period ({@code .}).  The highest time
-     * section it will print is to the left of the first semicolon; after that, all remaining sections must be fully
-     * specified.
-     * <p>
-     * The highest section it can print is hours.  The number of {@code H}s is the minimum field width used for the
-     * display; as such, {@code HH:} will cause a minimum field width of two (which may cause sub-ten hours to be
-     * displayed as {@code 03:...}).  However, if this section should only display if there is at least one unit, then
-     * {@code :} should be used.  If there do exist units, then it will be formatted with no leading zeros.
-     * <p>
-     * The next possible section is minutes.  This follows the same rules as does hours; however, if hours are a certain
-     * display ({@code H:} used), then there must be two units for minutes {@code MM:}).  If hours are an uncertain
-     * display ({@code :} was used), then there are three options: {@code MM} if there should be two digits used for
-     * minutes, {@code M} if this may be the highest displayed (and should display) and will use a variable-width
-     * minimum field length, or {@code :} if it should only display if it is a non-zero number.
-     * <p>
-     * The next possible section is seconds ({@code S}); the same rules apply as for minutes.
-     * <p>
-     * The decimal point ({@code .}) is not required after seconds; however, if it was used, remaining fractional points
-     * may be displayed.  Fractional parts ({@code n}) operate on a different rule.  The character {@code n} is not
-     * input; rather, a {@code 1} will specify that one decimal place should always be displayed, {@code 2} will
-     * display the hundredths, up to the maximum {@code 9}, for nanoseconds, the smallest unit stored by
-     * {@link Duration}.  A {@code +} may be appended after the {@code n} to allow the field to increase to include all
-     * units stored, up to nanoseconds.  If the decimal point ({@code .}) is used but no {@code n} is entered, it will
-     * only display the dot if fractional points exist, and will use the value stored as the entire field (with no
-     * leading zeros; thus, {@code .100 = .1}).  A {@code 0} may be used to force the dot to display without a number;
-     * {@code 0+} forces the display and shows existing fractional points.
-     * <p>
-     * If the {@code format} leads with {@code :}, it must then specify the next unit (minutes or seconds) to be
-     * displayed (e.g. {@code :MM}, use {@code ::} (which covers all fields of hours, minutes, and seconds), or
-     * {@code :.}, where the decimal point determines the {@code :} to be {@code minutes:seconds}.
-     *
-     * @param duration the {@link Duration} to be formatted to a {@link String}
-     * @param format the format for {@link Duration}, following the above rules
-     * @return {@link String}-formatted {@link Duration}
+     * Refresh the {@code timeConverter} to use the current span.
      */
-    private String prettyDuration(Duration duration, String format)
+    private void refreshTimeConverter()
     {
-        Instant instant = Instant.EPOCH.plus(duration);
-        ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
-        String formatted = DateTimeFormatter.ofPattern(format).format(zdt);
+        ClockBrain clock = ClockBrain.getInstance();
+        ZonedDateTime now = clock.getCurrentDateTime();
+        SolarTimes solarTimes = clock.getSolarTimes();
+        // as of now, all tekufos are the 12-hour variety; will need to allow change
+        timeConverter = new TimeConverter(solarTimes.getTekufahStart(now), solarTimes.getTekufahEnd(now), 12);
+    }
 
-        return null;
+    /**
+     * Called when a quarter-day point (midnight, sunrise, midday, or sunset) has just occurred.
+     *
+     * @param mark the period that has just occurred
+     */
+    @Override
+    public void updateQuarterDay(QuarterDayMark mark)
+    {
+        refreshTimeConverter();
+        // how to repaint?
     }
 
     public static void main(String[] args)
