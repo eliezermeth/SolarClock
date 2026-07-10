@@ -27,15 +27,15 @@ public class DigitalClockPanel extends GridRegionPanel
      */
     public DigitalClockPanel()
     {
-        super(10, 15);
+        super(20, 30);
 
         // add clock regions
-        addRegion(1, 1, 3, 2, standardClockPanel);
-        addRegion(11, 1, 3, 2, halachicClockPanel);
+        addRegion(2, 2, 6, 4, standardClockPanel);
+        addRegion(22, 2, 6, 4, halachicClockPanel);
 
         // taller regions
-        addRegion(1, 5, 3, 4, conversionTablePanel); // conversionTablePanel
-        addRegion(11, 5, 3, 4, upcomingTimesPanel); // upcomingTimesPanel
+        addRegion(2, 10, 5, 8, conversionTablePanel); // conversionTablePanel
+        addRegion(23, 10, 5, 8, upcomingTimesPanel); // upcomingTimesPanel
     }
 
     /// --------------------------------------------------------------
