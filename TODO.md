@@ -45,3 +45,18 @@ uniform periods within segments (that is, it calculates midday at the
 middle time between sunrise and sunset), and not the astronomical times. 
 Perhaps split into UNIFORM_SUNDIAL and ASTRONOMICAL_SUNDIAL (where the sun 
 being at its zenith is at the top of the clock).
+
+- A time offset to the next [day? / period?] causes the following error:
+```
+Exception in thread "main" java.util.NoSuchElementException
+  at java.base/java.util.ArrayList.getFirst(ArrayList.java:439)
+  at events.IndexedSet.peek(IndexedSet.java:47)
+  at events.ClockEventManager.initialize(ClockEventManager.java:83)
+  at events.ClockEventManager.<init>(ClockEventManager.java:39)
+  at main.ClockBrain.<init>(ClockBrain.java:64)
+  at main.ClockBrain.getInstance(ClockBrain.java:78)
+  at gui.AnalogClockPanel.<init>(AnalogClockPanel.java:71)
+  at main.Main.main(Main.java:52)
+```
+Likely due to the `ClockEventManager` not having a properly modified date.
+Need to follow the offset and creation.

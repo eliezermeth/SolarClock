@@ -16,7 +16,7 @@ public class Settings
     // Analog clock settings
     // ------------------------------------------------------------------
     // View mode is the clock type - sundial, full day, etc
-    public static ViewMode viewMode = ViewMode.SUNDIAL;
+    public static ViewMode viewMode = ViewMode.FULL_DAY;
 
     // Analog clock colors
     /** Color for the day segment of the analog clock. */

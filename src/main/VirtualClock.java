@@ -29,6 +29,8 @@ public class VirtualClock
             if (DebugTimeModifications.SPEED.enabled)
                 setSpeed(DebugTimeModifications.SPEED.speed);
         }
+
+        System.out.println(now()); // for testing
     }
 
     /**
