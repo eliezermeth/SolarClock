@@ -57,6 +57,7 @@ public final class ClockBrain implements ZmanEventObserver
         // get and initialize time
         zoneId = this.czc.getGeoLocation().getTimeZone().toZoneId();
         virtualClock = new VirtualClock(zoneId);
+        syncCalendarDate();
         solarTimes = new SolarTimes(getComplexZmanimCalendar());
         initializeTimeProgression();
 
@@ -104,6 +105,7 @@ public final class ClockBrain implements ZmanEventObserver
      */
     public ComplexZmanimCalendar getComplexZmanimCalendar()
     {
+        syncCalendarDate();
         return (ComplexZmanimCalendar) czc.clone();
     }
 
