@@ -60,3 +60,17 @@ Exception in thread "main" java.util.NoSuchElementException
 ```
 Likely due to the `ClockEventManager` not having a properly modified date.
 Need to follow the offset and creation.
+
+
+
+gui.ZmanClockGUI:
+- Class Javadoc:
+    - update terms used
+    - update description
+- Make labels no longer overlap other elements
+- make current time hand (and all others) no longer overlap other elements (i.e. bounding circle)
+- currently uses getSunrise/Sunset for delineations; change?
+    - higher-order functions?
+    - other time for delineation?
+- when the colored sections (and zmanim) rotate
+- all: when repaint triggers; for one or all
