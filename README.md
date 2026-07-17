@@ -1,4 +1,8 @@
 
+Analog
+Switches at middle of night
+midday options
+
 ## Terms:
 Given the potential for confusion for the same term used to refer to multiple items, a standardized set of terms is
 intended to be used throughout the program.  Terms are occasionally used interchangeably, but the meaning should be
