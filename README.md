@@ -1,7 +1,20 @@
 
 Analog
-Switches at middle of night
-midday options
+
+The term "midday" (or "midnight") by itself is not, in the context of this program, precise.  There are, in fact, two 
+middays: astronomical noon, when the sun is at its zenith, and median noon, when midpoint between sunrise and sunset.  
+As such, whenever "noon" or "midday" is used, it can be traced back to its origin point, which should be defined as 
+the astronomical point or the median point.
+
+Thus, each period - day and night - can itself be considered to be composed of two separate periods, separated by the 
+midpoint.  For day, the segments may be called "dawn day" to make it clear that it is the section of day that borders on 
+dawn, and "dusk day", bordering on dusk.  The same applies to night.
+
+The analog clock has its main graphical update execute at midnight.  This is not the 12:00 (0:00 Zulu time) midnight, 
+but rather a true midnight, which will either be defined as astronomical or median midnight.  Because of this, the clock 
+is not locked to a normal 24 hours - rather, time periods may be compressed or expanded depending on the season.  At 
+update, the analog circle (if a full-day circle) displays the dawn-night, both halves of the day, and the 
+<i>following</i> dusk-night.
 
 ## Terms:
 Given the potential for confusion for the same term used to refer to multiple items, a standardized set of terms is
