@@ -62,6 +62,7 @@ Likely due to the `ClockEventManager` not having a properly modified date.
 Need to follow the offset and creation.
 
 Settings - DISTINCT_TWILIGHT
+  - modify build(?) arc; change gradient method to static for return of middle color
 
 
 gui.ZmanClockGUI:

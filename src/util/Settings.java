@@ -46,6 +46,8 @@ public class Settings
     public static MidpointMode ANALOG_MIDPOINT_MODE = MidpointMode.ASTRONOMICAL;
     /** If it should use the user's current elevation, or sea level. */
     public static Elevation ANALOG_ELEVATION = Elevation.ACTUAL;
+    /** If the twilights should be distinct color sections, or have a continuous gradient to appear as one period. */
+    public static boolean DISTINCT_TWILIGHT = false;
 
     // ------------------------------------------------------------------
     // Other (should later be segmented)
