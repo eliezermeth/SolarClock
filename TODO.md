@@ -61,8 +61,8 @@ Exception in thread "main" java.util.NoSuchElementException
 Likely due to the `ClockEventManager` not having a properly modified date.
 Need to follow the offset and creation.
 
-Settings - DISTINCT_TWILIGHT
-  - modify build(?) arc; change gradient method to static for return of middle color
+Settings.DISTINCT_TWILIGHT in AnalogClockPanel
+  - Fudging to cover gaps causes visible difference between distinct twilights and sha'ah hour marks
 
 
 gui.ZmanClockGUI:
