@@ -128,7 +128,7 @@ public class ConicalGradientArc
      * @param t Blend amount between {@code 0.0} and {@code 1.0} ({@code 0.0} = {@code c1}, {@code 1.0} = {@code c2})
      * @return blended {@link Color}
      */
-    private Color interpolate(Color c1, Color c2, double t)
+    public static Color interpolate(Color c1, Color c2, double t)
     {
         int r = (int) (c1.getRed() * (1 - t) + c2.getRed() * t);
         int g = (int) (c1.getGreen() * (1 - t) + c2.getGreen() * t);
