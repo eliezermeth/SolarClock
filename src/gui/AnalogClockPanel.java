@@ -261,8 +261,19 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             double end = Math.toDegrees(calculateAngle(s.end())); // actually earlier clock-wise
             int diff = (int) ((360 + end - start) % 360); // may wrap around circle
 
-            // draw arc
-            gradientArc.drawGradientArc(g2d, s.startingColor(), s.endingColor(), start, diff, -1);
+            // pull out colors
+            Color startingColor = s.startingColor();
+            Color endingColor = s.endingColor();
+
+            if (Settings.DISTINCT_TWILIGHT) // arcs should be solid, not gradient
+            {
+                Color middleColor = ConicalGradientArc.interpolate(s.startingColor(), s.endingColor(), 0.5);
+                startingColor = middleColor;
+                endingColor = middleColor;
+            }
+
+            // draw arcs
+            gradientArc.drawGradientArc(g2d, startingColor, endingColor, start, diff, -1);
 
             // The below comment is no longer used; however, it may be helpful if the repair method is changed.
             // The start-angle is actually further along clock-wise than the end-angle; however, the ending-color is
