@@ -52,7 +52,7 @@ terms.
     daytime sha'ah will be shorter than a standard hour, and a nighttime sha'ah longer than a standard hour.
   </li>
     <li>
-        cheilek
+        <b>cheilek (<i>Heb, portion</i>)</b> - 1/1080th of a halachic hour.l
     </li>
 </ul>
 

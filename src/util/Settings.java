@@ -16,7 +16,7 @@ public class Settings
     // Analog clock settings
     // ------------------------------------------------------------------
     // View mode is the clock type - sundial, full day, etc
-    public static ViewMode viewMode = ViewMode.FULL_DAY;
+    public static ViewMode viewMode = ViewMode.SUNDIAL;
 
     // Analog clock colors
     /** Color for the day segment of the analog clock. */
@@ -47,7 +47,7 @@ public class Settings
     /** If it should use the user's current elevation, or sea level. */
     public static Elevation ANALOG_ELEVATION = Elevation.ACTUAL;
     /** If the twilights should be distinct color sections, or have a continuous gradient to appear as one period. */
-    public static boolean DISTINCT_TWILIGHT = false;
+    public static boolean DISTINCT_TWILIGHT = true;
 
     // ------------------------------------------------------------------
     // Other (should later be segmented)
