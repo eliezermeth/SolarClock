@@ -1,20 +1,12 @@
 
-Analog
-
-The term "midday" (or "midnight") by itself is not, in the context of this program, precise.  There are, in fact, two 
-middays: astronomical noon, when the sun is at its zenith, and median noon, when midpoint between sunrise and sunset.  
-As such, whenever "noon" or "midday" is used, it can be traced back to its origin point, which should be defined as 
-the astronomical point or the median point.
-
-Thus, each period - day and night - can itself be considered to be composed of two separate periods, separated by the 
-midpoint.  For day, the segments may be called "dawn day" to make it clear that it is the section of day that borders on 
-dawn, and "dusk day", bordering on dusk.  The same applies to night.
-
+Sundial
 The analog clock has its main graphical update execute at midnight.  This is not the 12:00 (0:00 Zulu time) midnight, 
 but rather a true midnight, which will either be defined as astronomical or median midnight.  Because of this, the clock 
 is not locked to a normal 24 hours - rather, time periods may be compressed or expanded depending on the season.  At 
 update, the analog circle (if a full-day circle) displays the dawn-night, both halves of the day, and the 
 <i>following</i> dusk-night.
+
+Proportional
 
 ## Terms:
 Given the potential for confusion for the same term used to refer to multiple items, a standardized set of terms is
@@ -51,9 +43,18 @@ terms.
     standard minutes, and a nighttime sha'ah will be shorter than 60 standard minutes.  Conversely, in the winter, a 
     daytime sha'ah will be shorter than a standard hour, and a nighttime sha'ah longer than a standard hour.
   </li>
-    <li>
-        <b>cheilek (<i>Heb, portion</i>)</b> - 1/1080th of a halachic hour.l
-    </li>
+  <li>
+    <b>cheilek (<i>Heb, portion</i>)</b> - 1/1080th of a halachic hour.
+  </li>
+  <li>
+    <b>midday</b> - The term "midday" (or "midnight") by itself is not, in the context of this program, precise.  There 
+    are, in fact, two middays: astronomical noon, when the sun is at its zenith, and median noon, when midpoint between 
+    sunrise and sunset.  As such, whenever "noon" or "midday" is used, it can be traced back to its origin point, which 
+    should be defined as the astronomical point or the median point.  Thus, each period - day and night - can itself be 
+    considered to be composed of two separate periods, separated by the midpoint.  For day, the segments may be called 
+    "dawn day" to make it clear that it is the section of day that borders on dawn, and "dusk day", bordering on dusk.  
+    The same applies to night.
+  </li>
 </ul>
 
 
@@ -62,10 +63,17 @@ The analog view has a few different modes:
 - ### Sundial
   <p>The circle of the clock is divided into two equal halves.  The top half is day, and the bottom is night.  The 
   horizontal line is composed of the sunrise-sunset horizon.  The view functions like a sundial; the line 
-  representing the current time show where the shadow cast by the sundial would fall (and the sun's y-axis-reflected 
-  position in the sky).  Despite the sun casting no shadow at night, the current-time line shows the sun's position 
-  below the horizon.  The current-time hand will move at different speeds in the two sections, as the length of the 
-  current period is compressed or expanded to fit the standard 12-hour section.</p>
+  representing the current time shows where the shadow cast by the sundial's gnomon would fall (and the sun's 
+  y-axis-reflected position in the sky).  Despite the sun casting no shadow at night, the current-time line shows where 
+  the reversed-shadow of the sun's position below horizon would fall.  The current-time hand will move at different 
+  speeds in the two sections, as the length of the current period is compressed or expanded to fit the standard 12-hour 
+  section.</p>
+  <p>The analog clock has its main graphical update execute at midnight.  This is not the 12:00 (0:00 Zulu time) 
+  midnight, but rather a true midnight, which will either be defined as astronomical or median midnight.  Because of 
+  this, the clock is not locked to a normal 24 hours - rather, night time periods may be compressed or expanded 
+  depending on the season.  At update, the analog circle (if it is a full-day circle) displays the dawn-night, both 
+  halves of the day, and the <i>following</i> dusk-night, creating a continuous time progression from one midnight to 
+  the next.</p>
 - ### Proportional
   <p>The circle of the clock represents (approximately) a 24-hour period.  The circle shows the percentage of that 
   period that is day (centered on the top) and night (bottom).  The current time hand will move at a constant speed 
