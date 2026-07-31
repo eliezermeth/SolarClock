@@ -74,6 +74,8 @@ The analog view has a few different modes:
   period that is day (centered on the top) and night (bottom).  The current time hand will move at a constant speed 
   through both sections, as the clock mimics a standard 24-hour clock.</p>
   <p>This mode uses the True Midnight refresh style.</p>
+  
+  ### Planned
 
 ## Refresh style:
   - ### True Midnight
