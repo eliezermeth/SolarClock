@@ -68,16 +68,21 @@ The analog view has a few different modes:
   the reversed-shadow of the sun's position below horizon would fall.  The current-time hand will move at different 
   speeds in the two sections, as the length of the current period is compressed or expanded to fit the standard 12-hour 
   section.</p>
-  <p>The analog clock has its main graphical update execute at midnight.  This is not the 12:00 (0:00 Zulu time) 
-  midnight, but rather a true midnight, which will either be defined as astronomical or median midnight.  Because of 
-  this, the clock is not locked to a normal 24 hours - rather, night time periods may be compressed or expanded 
-  depending on the season.  At update, the analog circle (if it is a full-day circle) displays the dawn-night, both 
-  halves of the day, and the <i>following</i> dusk-night, creating a continuous time progression from one midnight to 
-  the next.</p>
+  <p>This mode uses the True Midnight refresh style.</p>
 - ### Proportional
   <p>The circle of the clock represents (approximately) a 24-hour period.  The circle shows the percentage of that 
   period that is day (centered on the top) and night (bottom).  The current time hand will move at a constant speed 
-  through  both sections, as the clock mimics a standard 24-hour clock.</p>
+  through both sections, as the clock mimics a standard 24-hour clock.</p>
+  <p>This mode uses the True Midnight refresh style.</p>
+
+## Refresh style:
+  - ### True Midnight
+  <p>The analog clock has its main graphical update execute at midnight.  This is not the 12:00 (0:00 Zulu time) 
+  midnight, but rather a true midnight, which will either be defined as astronomical or median midnight.  Because of 
+  this, the clock is not locked to a normal 24 hours - rather, night time periods may be expanded or compressed 
+  depending on the season and clock mode.  At update, the analog circle (if it is a full-day circle) displays the 
+  dawn-night, both halves of the day, and the <i>following</i> dusk-night, creating a continuous time progression from 
+  one midnight to the next.</p>
 
 ## Modes:
   - ### Sundial view:
