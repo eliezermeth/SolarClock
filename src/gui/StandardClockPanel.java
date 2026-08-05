@@ -5,7 +5,7 @@ import main.ClockBrain;
 
 import javax.swing.*;
 import java.awt.*;
-import java.time.LocalTime;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -16,7 +16,9 @@ public class StandardClockPanel implements TimeObserver
 
     // Moving parts
     private final JLabel[] components = new JLabel[3]; // HH MM SS
+
     private final JLabel dayDate = new JLabel();
+    private LocalDate lastDate = null;
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, MMM d");
     // EEE = abbreviated day; EEEE = full day of week
@@ -52,8 +54,6 @@ public class StandardClockPanel implements TimeObserver
             components[i] = new JLabel("--");
         }
 
-        updateStandardClock();
-
         // Lay out clock
         JPanel clockPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 1, 0));
         clockPanel.add(components[0]); // hours
@@ -71,12 +71,8 @@ public class StandardClockPanel implements TimeObserver
 
         // add day / date
         gbc.gridx = 0; gbc.gridy = 2;
-        dayDate.setText("dayOfWeek, Month dayOfMonth");
         panel.add(dayDate, gbc);
-    }
 
-    public void updateStandardClock()
-    {
         updateStandardClock(clock.getCurrentDateTime());
     }
 
@@ -86,7 +82,12 @@ public class StandardClockPanel implements TimeObserver
         components[1].setText(String.format("%02d", time.getMinute()));
         components[2].setText(String.format("%02d", time.getSecond()));
 
-        dayDate.setText(time.format(formatter)); // TODO make more efficient; don't need to refresh each time
+        // set the day of week and day portion
+        if (!time.toLocalDate().equals(lastDate)) // only update if changed
+        {
+            lastDate = time.toLocalDate();
+            dayDate.setText(time.format(formatter));
+        }
     }
 
     @Override
