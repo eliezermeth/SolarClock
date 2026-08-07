@@ -6,10 +6,7 @@ import interfaces.TimeObserver;
 import interfaces.EqualViewOption;
 import main.ClockBrain;
 import util.*;
-import util.enums.Circle;
-import util.enums.QuarterDayMark;
-import util.enums.SHAAH_TICK_MARK_STYLE;
-import util.enums.Zman;
+import util.enums.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -519,6 +516,57 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         angularSpanAfternoon = (offsetSunset - offsetMidday + (2 * Math.PI)) % (2 * Math.PI);
         angularSpanDuskNight = (offsetMidnight - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
         // TODO which of these sections to keep
+        angularSpanDawnNight = smallestAngularSpan(offsetMidnight, offsetSunrise);
+        angularSpanMorning = smallestAngularSpan(offsetSunrise, offsetMidday);
+        angularSpanAfternoon = smallestAngularSpan(offsetMidday, offsetSunset);
+        angularSpanDuskNight = smallestAngularSpan(offsetSunset, offsetMidnight);
+
+        if (USE_BUFFERED_IMAGE)
+            createStaticImage();
+    }
+
+    public void calculateViewModeAngles()
+    {
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // When the code is implemented to allow astronomical vs. time-bound features, members such
+        // as offsetMidday and offsetMidnight will need to be changed.  Currently, they are set to
+        // astronomical.
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        switch (Settings.viewMode)
+        {
+            case ViewMode.SUNDIAL:
+                offsetSunrise = Circle.LEFT.radians; // where 9 o'clock would be on a normal 12-hour clock
+                offsetSunset = Circle.RIGHT.radians; // where 3 o'clock would be on a normal 12-hour clock
+                offsetMidday = Circle.TOP.radians; // 12 o'clock
+                offsetMidnight = Circle.BOTTOM.radians; // 6 o'clock
+                break;
+
+            case ViewMode.PROPORTIONAL:
+                // Center daylight-percentage portion on the top of the circle.
+                long dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
+                double percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
+                double halfDaySegment = percentOfCircle / 2;
+                double radianOnePercent = (2 * Math.PI) / 100;
+                offsetSunrise = Circle.TOP.radians + (halfDaySegment * radianOnePercent);
+                offsetSunset = ((Circle.TOP.radians - (halfDaySegment * radianOnePercent)) +
+                        Circle.RIGHT.radians) % (2 * Math.PI); // force it to be a positive number
+                offsetMidday = Circle.TOP.radians;
+                offsetMidnight = Circle.BOTTOM.radians;
+                break;
+
+            case ViewMode.DIAL:
+                // get size of day portion of circle
+                dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
+                percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
+
+                // calculate where in period the target time is
+                //ZonedDateTime targetTime =
+
+            default:
+                throw new IllegalArgumentException("View mode not supported");
+        }
+
+        // calculate the distance clockwise for each of the four sections
         angularSpanDawnNight = smallestAngularSpan(offsetMidnight, offsetSunrise);
         angularSpanMorning = smallestAngularSpan(offsetSunrise, offsetMidday);
         angularSpanAfternoon = smallestAngularSpan(offsetMidday, offsetSunset);

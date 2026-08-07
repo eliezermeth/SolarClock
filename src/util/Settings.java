@@ -7,6 +7,7 @@ import util.enums.ViewMode;
 
 import java.awt.*;
 import java.nio.file.Path;
+import java.time.LocalTime;
 
 public class Settings
 {
@@ -17,6 +18,7 @@ public class Settings
     // ------------------------------------------------------------------
     // View mode is the clock type - sundial, full day, etc
     public static ViewMode viewMode = ViewMode.SUNDIAL;
+    public static LocalTime dialModeTop = LocalTime.of(9, 0, 0);
 
     // Analog clock colors
     /** Color for the day segment of the analog clock. */
