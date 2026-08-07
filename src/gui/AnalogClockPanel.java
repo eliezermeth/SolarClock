@@ -560,7 +560,9 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
                 percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
 
                 // calculate where in period the target time is
-                //ZonedDateTime targetTime =
+                // TODO: This does not properly display midday (astronomical vs median); will need to redo with 6-hour
+                ZonedDateTime[] thresholdTimes = new ZonedDateTime[5];
+
 
             default:
                 throw new IllegalArgumentException("View mode not supported");
