@@ -17,6 +17,7 @@ import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.time.Duration;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -576,6 +577,30 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
 
         if (USE_BUFFERED_IMAGE)
             createStaticImage();
+    }
+
+    private void craftFullClockOffsets(LocalTime target, boolean standard)
+    {
+        // get the size of the day half of the circle
+        Duration dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset());
+        double percentOfCircle = ((double) dayPeriodTime.toNanos() / Constant.DAY_NANOS);
+
+        // determine which quarter/period the target time is in
+        // start with standard = true
+
+        // always assumes there is positive daytime; may be problem in extreme latitudes
+        // TODO possible problem: always makes target on same date as daytime; what if midnight is after true midnight?
+        ZonedDateTime targetTime = solarTimes.getSunrise().with(target); // change LocalTime to ZonedDateTime
+        Duration targetRanging = Duration.between(solarTimes.getSunrise(), targetTime);
+        // if negative, dawn night
+        // if positive and less than dayPeriodTime, during day
+        // if greater than dayPeriodTime, dusk night
+        if (targetRanging.isNegative()) // target is during dawn night
+        {
+            // get duration of dawn night
+            Duration dawnNightDuration = Duration.between(solarTimes.getMidnight(), solarTimes.getSunrise());
+            Duration untilTarget = Duration.between(solarTimes.getMidnight(), targetTime);
+        }
     }
 
     private double smallestAngularSpan(double a, double b)

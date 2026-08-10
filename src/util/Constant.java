@@ -14,6 +14,8 @@ public class Constant
     public static final long MILLIS_PER_DAY = 86_400_000L;
 
     // Nanosecond timings
+    /** The number of nanoseconds in a standard day; {@code 8,400,000,000,000}. */
+    public static final long DAY_NANOS = 86_400_000_000_000L;
     /** The number of nanoseconds in a standard hour; {@code 3,600,000,000,000}. */
     public static final long HOUR_NANOS = 3_600_000_000_000L;
     /** The number of nanoseconds in a standard minute; {@code 60,000,000,000}. */
