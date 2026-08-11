@@ -495,10 +495,10 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             long dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
             double percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
             double newHalfDaySegment = percentOfCircle / 2;
-            double newRadianOnePercent = (2 * Math.PI) / 100;
+            double newRadianOnePercent = Constant.TWO_PI / 100;
             double sunriseAngle = Circle.TOP.radians + (newHalfDaySegment * newRadianOnePercent);
             double sunsetAngle = ((Circle.TOP.radians - (newHalfDaySegment * newRadianOnePercent)) +
-                    Circle.RIGHT.radians) % (2 * Math.PI); // force it to be a positive number
+                    Circle.RIGHT.radians) % Constant.TWO_PI; // force it to be a positive number
 
             offsetSunrise = sunriseAngle;
             offsetSunset = sunsetAngle;
@@ -583,7 +583,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     {
         // get the size of the day half of the circle
         Duration dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset());
-        double percentOfCircle = ((double) dayPeriodTime.toNanos() / Constant.DAY_NANOS);
+        double dayCirclePortion = ((double) dayPeriodTime.toNanos() / Constant.DAY_NANOS);
 
         // determine which quarter/period the target time is in
         // start with standard = true
@@ -600,6 +600,25 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             // get duration of dawn night
             Duration dawnNightDuration = Duration.between(solarTimes.getMidnight(), solarTimes.getSunrise());
             Duration untilTarget = Duration.between(solarTimes.getMidnight(), targetTime);
+            double percentThroughQuarter = (double) untilTarget.toNanos() / dawnNightDuration.toNanos();
+
+            // get proportion of circle for night
+            double dawnNightPercent = (1.0 - dayCirclePortion) / 2; // night segment is divided in half
+            double dawnNightAngle = dawnNightPercent * Constant.TWO_PI; // change?
+            double targetAngle = Circle.TOP.radians;
+            // calculate angles and normalize over circle
+            double midnightAngle = (targetAngle - percentThroughQuarter * dawnNightAngle + 2 * Math.PI) % Constant.TWO_PI;
+            double sunriseAngle = (targetAngle + (1.0 - percentThroughQuarter) * dawnNightAngle) % Constant.TWO_PI;
+
+            double middayAngle = (midnightAngle + Math.PI) % Constant.TWO_PI;
+            double dayAngle = dayCirclePortion * Constant.TWO_PI;
+            double sunsetAngle = (sunriseAngle + dayAngle) % Constant.TWO_PI;
+
+            // offsets
+            offsetSunrise = sunriseAngle;
+            offsetSunset = sunsetAngle;
+            offsetMidday = middayAngle;
+            offsetMidday = middayAngle;
         }
     }
 

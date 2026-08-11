@@ -24,4 +24,7 @@ public class Constant
     public static final long SECOND_NANOS = 1_000_000_000L;
 
     public static final long HOURS_PER_TERMINATOR = 12;
+
+    /** 2π */
+    public static final double TWO_PI = 2.0 * Math.PI;
 }
