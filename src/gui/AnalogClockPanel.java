@@ -584,6 +584,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         // get the size of the day half of the circle
         Duration dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset());
         double dayCirclePortion = ((double) dayPeriodTime.toNanos() / Constant.DAY_NANOS);
+        double dayPeriodAngle = dayCirclePortion * Constant.TWO_PI;
 
         // determine which quarter/period the target time is in
         // start with standard = true
@@ -595,6 +596,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         // if negative, dawn night
         // if positive and less than dayPeriodTime, during day
         // if greater than dayPeriodTime, dusk night
+
         if (targetRanging.isNegative()) // target is during dawn night
         {
             // get duration of dawn night
@@ -607,19 +609,49 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             double dawnNightAngle = dawnNightPercent * Constant.TWO_PI; // change?
             double targetAngle = Circle.TOP.radians;
             // calculate angles and normalize over circle
-            double midnightAngle = (targetAngle - percentThroughQuarter * dawnNightAngle + 2 * Math.PI) % Constant.TWO_PI;
-            double sunriseAngle = (targetAngle + (1.0 - percentThroughQuarter) * dawnNightAngle) % Constant.TWO_PI;
+            double midnightAngle = (targetAngle + percentThroughQuarter * dawnNightAngle + Constant.TWO_PI) % Constant.TWO_PI;
+            double sunriseAngle = (targetAngle - (1.0 - percentThroughQuarter) * dawnNightAngle) % Constant.TWO_PI;
 
             double middayAngle = (midnightAngle + Math.PI) % Constant.TWO_PI;
-            double dayAngle = dayCirclePortion * Constant.TWO_PI;
-            double sunsetAngle = (sunriseAngle + dayAngle) % Constant.TWO_PI;
+            double sunsetAngle = (sunriseAngle - dayPeriodAngle + Constant.TWO_PI) % Constant.TWO_PI;
 
             // offsets
             offsetSunrise = sunriseAngle;
             offsetSunset = sunsetAngle;
             offsetMidday = middayAngle;
-            offsetMidday = middayAngle;
+            offsetMidnight = midnightAngle;
         }
+        else if (targetRanging.toNanos() < dayPeriodTime.toNanos()) // during day period
+        {
+            // using less precise method of calculating where it is during day half and gettimg mids from there
+
+            Duration untilTarget = Duration.between(solarTimes.getSunrise(), targetTime);
+            double percentThroughHalf = (double) untilTarget.toNanos() / dayPeriodTime.toNanos();
+        }
+
+        // calculate the distance clockwise for each of the four sections
+        angularSpanDawnNight = smallestAngularSpan(offsetMidnight, offsetSunrise);
+        angularSpanMorning = smallestAngularSpan(offsetSunrise, offsetMidday);
+        angularSpanAfternoon = smallestAngularSpan(offsetMidday, offsetSunset);
+        angularSpanDuskNight = smallestAngularSpan(offsetSunset, offsetMidnight);
+    }
+
+    /**
+     * Calculate the {@code ZonedDateTime} for a given standard-time target {@code LocalTime} during the active day.
+     * Will match the first possible time in the event two such {@code LocalTime}s exist in the day.
+     *
+     * @param target the {@code LocalTime} that should be found for the day
+     * @return the {@code LocalTime} converted to the proper {@code ZonedDateTime}
+     */
+    private ZonedDateTime determineStandardRequestedTime(LocalTime target)
+    {
+        ZonedDateTime testZdt = solarTimes.getMidnight().minusDays(1); // prep as the day before
+        testZdt = testZdt.with(target);
+
+        while (Duration.between(solarTimes.getMidnight(), testZdt).isNegative()) // while test if before starting
+            testZdt = testZdt.plusDays(1); // increment day
+
+        return testZdt;
     }
 
     private double smallestAngularSpan(double a, double b)
