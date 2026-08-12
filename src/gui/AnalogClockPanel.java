@@ -648,7 +648,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         ZonedDateTime testZdt = solarTimes.getMidnight().minusDays(1); // prep as the day before
         testZdt = testZdt.with(target);
 
-        while (Duration.between(solarTimes.getMidnight(), testZdt).isNegative()) // while test if before starting
+        while (testZdt.isBefore(solarTimes.getMidnight())) // crafted date is too early
             testZdt = testZdt.plusDays(1); // increment day
 
         return testZdt;
