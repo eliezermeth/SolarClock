@@ -636,6 +636,71 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         angularSpanDuskNight = smallestAngularSpan(offsetSunset, offsetMidnight);
     }
 
+    // deals with day as independent quarters (midday not reliant of median day)
+    private void craftFullClockOffsets2(LocalTime target, boolean standard)
+    {
+        // get size of the day half of the circle
+        Duration dayPeriodDuration = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset());
+        double dayPercentOfCircle = ((double) dayPeriodDuration.toNanos()) / Constant.DAY_NANOS;
+        double dayPortionAngle = dayPercentOfCircle * Constant.TWO_PI;
+
+        // both dawnNight and duskNight have the same angular span as night is divided evenly
+        double nightQuarterAngle = (1.0 - dayPortionAngle) / 2 * Constant.TWO_PI;
+
+        // determine and calculate positions
+        // start with standard = true
+
+        ZonedDateTime targetTime = determineStandardRequestedTime(target);
+        double targetAngle = Circle.TOP.radians; // target is on top of circle
+
+        if (targetTime.equals(solarTimes.getMidnight()))
+        {
+            offsetMidnight = targetAngle;
+            offsetSunrise = normalizeOverCircle(offsetMidnight - nightQuarterAngle);
+            offsetSunset = normalizeOverCircle(offsetMidnight + nightQuarterAngle);
+            offsetMidday = normalizeOverCircle(calculateMiddayOffset(dayPeriodDuration, dayPortionAngle));
+        }
+        else if (targetTime.isBefore(solarTimes.getSunrise())) // between midnight and sunrise
+        {
+            Duration dawnNightDuration = Duration.between(solarTimes.getMidnight(), solarTimes.getSunrise());
+            Duration untilTarget = Duration.between(solarTimes.getMidnight(), targetTime);
+            double percentThroughQuarter = (double) untilTarget.toNanos() / dawnNightDuration.toNanos();
+            // calculate angles and normalize over circle
+            offsetMidnight = normalizeOverCircle(targetAngle + (percentThroughQuarter * nightQuarterAngle));
+            // subtract percentThroughQuarter from 1.0 to get remainder
+            offsetSunrise = normalizeOverCircle(targetAngle -
+                    (1.0 - percentThroughQuarter) * nightQuarterAngle);
+
+            offsetSunset = normalizeOverCircle(offsetSunrise - dayPortionAngle);
+            offsetMidday = normalizeOverCircle(calculateMiddayOffset(dayPeriodDuration, dayPortionAngle));
+        }
+        else if (targetTime.equals(solarTimes.getSunrise()))
+        {
+            offsetSunrise = targetAngle;
+            offsetSunset = normalizeOverCircle(offsetSunrise - dayPortionAngle);
+
+            offsetMidday = normalizeOverCircle(calculateMiddayOffset(dayPeriodDuration, dayPortionAngle));
+            offsetMidnight = normalizeOverCircle(offsetSunrise + nightQuarterAngle);
+        }
+        // TODO
+        // change so that only calculates sunrise/sunset, then calls util method to populate the rest
+    }
+
+    /**
+     * Calculate the midday offset from sunrise.  As this calculates midday based on sunrise, sunrise should be set
+     * before this method is called.  The result is not normalized.
+     *
+     * @param dayPeriodDuration {@link Duration} of the entire day (sunrise-sunset)
+     * @param dayPortionAngle the total radians occupied by the day period
+     * @return the radian offset of midday, non-normalized
+     */
+    private double calculateMiddayOffset(Duration dayPeriodDuration, double dayPortionAngle)
+    {
+        Duration morningQuarterDurationX = Duration.between(solarTimes.getSunrise(), solarTimes.getMidday());
+        double morningPercentOfDay = (double) morningQuarterDurationX.toNanos() / dayPeriodDuration.toNanos();
+        return offsetSunrise - (dayPortionAngle * morningPercentOfDay);
+    }
+
     /**
      * Calculate the {@code ZonedDateTime} for a given standard-time target {@code LocalTime} during the active day.
      * Will match the first possible time in the event two such {@code LocalTime}s exist in the day.
@@ -652,6 +717,17 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             testZdt = testZdt.plusDays(1); // increment day
 
         return testZdt;
+    }
+
+    /**
+     * Normalize a radian to within a circle; that is, ensure within range [0, 2π).
+     *
+     * @param initialValue input radians
+     * @return the value normalized to within a circle
+     */
+    private double normalizeOverCircle(double initialValue)
+    {
+        return ((initialValue % Constant.TWO_PI) + Constant.TWO_PI) % Constant.TWO_PI;
     }
 
     private double smallestAngularSpan(double a, double b)
