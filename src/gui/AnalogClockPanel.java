@@ -22,6 +22,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewOption, QuarterDayObserver
 {
@@ -559,6 +560,28 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
                 // split full craft method int craft(LocalTime) and craft(ZonedDateTime)
 
                 // if halachic, convert into standard using TimeConverter
+                if (Settings.dialModeStandard)
+                    craftDialClockOffsets(determineStandardRequestedTime(Settings.dialModeTop));
+                else // halachic; hours start from sunrise = 0
+                {
+                    if (Settings.dialModeTop.isBefore(LocalTime.of(6, 0, 0))) // morning
+                    {
+
+                    }
+                    else if (Settings.dialModeTop.isBefore(LocalTime.of(12, 0, 0))) // afternoon
+                    {
+
+                    }
+                    else if (Settings.dialModeTop.isBefore(LocalTime.of(18, 0, 0))) // duskNight
+                    {
+
+                    }
+                    else // dawnNight
+                    {
+
+                    }
+                }
+
                 // for both, run craft
 
 
@@ -577,7 +600,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     }
 
     // deals with day as independent quarters (midday not reliant on median day)
-    private void craftDialClockOffsets(LocalTime target)
+    private void craftDialClockOffsets(ZonedDateTime target)
     {
         // get quarter-day times to avoid repeated calling
         ZonedDateTime midnight = solarTimes.getMidnight(),
@@ -599,33 +622,32 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         // both dawnNight and duskNight have the same angular span as night is divided evenly
         double nightQuarterAngle = (1.0 - dayPortionAngle) / 2 * Constant.TWO_PI;
 
-        ZonedDateTime targetTime = determineStandardRequestedTime(target);
         double targetAngle = Circle.TOP.radians; // target is on top of circle
         QuarterDayMark setValue; // which value is changed
 
         // always try to determine sunrise/sunset; the rest can be calculated off of that
-        if (targetTime.isBefore(midnight) || targetTime.isAfter(nextMidnight))
+        if (target.isBefore(midnight) || target.isAfter(nextMidnight))
         {
             throw new IllegalArgumentException("Invalid time selected for standard dial.");
         }
-        else if (targetTime.isBefore(solarTimes.getSunrise())) // [midnight, sunrise)
+        else if (target.isBefore(solarTimes.getSunrise())) // [midnight, sunrise)
         {
-            double percentThroughQuarter = percentElapsed(midnight, sunrise, targetTime);
+            double percentThroughQuarter = percentElapsed(midnight, sunrise, target);
             // calculate angle and normalize over circle; subtract 1.0 to get remainder; go forward
             offsetSunrise = normalizeOverCircle(targetAngle -
                     (1.0 - percentThroughQuarter) * nightQuarterAngle);
             setValue = QuarterDayMark.SUNRISE;
         }
-        else if (!targetTime.isAfter(solarTimes.getMidday())) // [sunrise, midday]
+        else if (!target.isAfter(solarTimes.getMidday())) // [sunrise, midday]
         {
-            double percentThroughQuarter = percentElapsed(sunrise, midday, targetTime);
+            double percentThroughQuarter = percentElapsed(sunrise, midday, target);
             // calculate angle and normalize over circle; go backward
             offsetSunrise = normalizeOverCircle(targetAngle + percentThroughQuarter * morningQuarterAngle);
             setValue = QuarterDayMark.SUNRISE;
         }
-        else if (targetTime.isBefore(solarTimes.getSunset())) // (midday, sunset)
+        else if (target.isBefore(solarTimes.getSunset())) // (midday, sunset)
         {
-            double percentThroughQuarter = percentElapsed(midday, sunset, targetTime);
+            double percentThroughQuarter = percentElapsed(midday, sunset, target);
             // calculate angle and normalize over circle; subtract 1.0 to get remainder; go forward
             offsetSunset = normalizeOverCircle(targetAngle -
                     (1.0 - percentThroughQuarter) * afternoonQuarterAngle);
@@ -633,7 +655,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         }
         else // [sunset, next midnight]
         {
-            double percentThroughQuarter = percentElapsed(sunset, nextMidnight, targetTime);
+            double percentThroughQuarter = percentElapsed(sunset, nextMidnight, target);
             // calculate angle and normalize over circle; go backward
             offsetSunset = normalizeOverCircle(targetAngle + percentThroughQuarter * nightQuarterAngle);
             setValue = QuarterDayMark.SUNSET;
@@ -661,21 +683,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         Duration total = Duration.between(start, end);
         Duration elapsed = Duration.between(start, target);
         return elapsed.toNanos() / (double) total.toNanos();
-    }
-
-    /**
-     * Calculate the midday offset from sunrise.  As this calculates midday based on sunrise, sunrise should be set
-     * before this method is called.  The result is not normalized.
-     *
-     * @param dayPeriodDuration {@link Duration} of the entire day (sunrise-sunset)
-     * @param dayPortionAngle the total radians occupied by the day period
-     * @return the radian offset of midday, non-normalized
-     */
-    private double calculateMiddayOffset(Duration dayPeriodDuration, double dayPortionAngle)
-    {
-        Duration morningQuarterDurationX = Duration.between(solarTimes.getSunrise(), solarTimes.getMidday());
-        double morningPercentOfDay = (double) morningQuarterDurationX.toNanos() / dayPeriodDuration.toNanos();
-        return offsetSunrise - (dayPortionAngle * morningPercentOfDay);
     }
 
     /**
