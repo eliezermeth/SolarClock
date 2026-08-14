@@ -556,13 +556,10 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
                 break;
 
             case ViewMode.DIAL:
-                // get size of day portion of circle
-                dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
-                percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
+                // split full craft method int craft(LocalTime) and craft(ZonedDateTime)
 
-                // calculate where in period the target time is
-                // TODO: This does not properly display midday (astronomical vs median); will need to redo with 6-hour
-                ZonedDateTime[] thresholdTimes = new ZonedDateTime[5];
+                // if halachic, convert into standard using TimeConverter
+                // for both, run craft
 
 
             default:
@@ -579,111 +576,91 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             createStaticImage();
     }
 
-    private void craftFullClockOffsets(LocalTime target, boolean standard)
+    // deals with day as independent quarters (midday not reliant on median day)
+    private void craftDialClockOffsets(LocalTime target)
     {
-        // get the size of the day half of the circle
-        Duration dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset());
-        double dayCirclePortion = ((double) dayPeriodTime.toNanos() / Constant.DAY_NANOS);
-        double dayPeriodAngle = dayCirclePortion * Constant.TWO_PI;
+        // get quarter-day times to avoid repeated calling
+        ZonedDateTime midnight = solarTimes.getMidnight(),
+                sunrise = solarTimes.getSunrise(),
+                midday = solarTimes.getMidday(),
+                sunset = solarTimes.getSunset(),
+                nextMidnight = solarTimes.getNextMidnight();
 
-        // determine which quarter/period the target time is in
-        // start with standard = true
-
-        // always assumes there is positive daytime; may be problem in extreme latitudes
-        // TODO possible problem: always makes target on same date as daytime; what if midnight is after true midnight?
-        ZonedDateTime targetTime = solarTimes.getSunrise().with(target); // change LocalTime to ZonedDateTime
-        Duration targetRanging = Duration.between(solarTimes.getSunrise(), targetTime);
-        // if negative, dawn night
-        // if positive and less than dayPeriodTime, during day
-        // if greater than dayPeriodTime, dusk night
-
-        if (targetRanging.isNegative()) // target is during dawn night
-        {
-            // get duration of dawn night
-            Duration dawnNightDuration = Duration.between(solarTimes.getMidnight(), solarTimes.getSunrise());
-            Duration untilTarget = Duration.between(solarTimes.getMidnight(), targetTime);
-            double percentThroughQuarter = (double) untilTarget.toNanos() / dawnNightDuration.toNanos();
-
-            // get proportion of circle for night
-            double dawnNightPercent = (1.0 - dayCirclePortion) / 2; // night segment is divided in half
-            double dawnNightAngle = dawnNightPercent * Constant.TWO_PI; // change?
-            double targetAngle = Circle.TOP.radians;
-            // calculate angles and normalize over circle
-            double midnightAngle = (targetAngle + percentThroughQuarter * dawnNightAngle + Constant.TWO_PI) % Constant.TWO_PI;
-            double sunriseAngle = (targetAngle - (1.0 - percentThroughQuarter) * dawnNightAngle) % Constant.TWO_PI;
-
-            double middayAngle = (midnightAngle + Math.PI) % Constant.TWO_PI;
-            double sunsetAngle = (sunriseAngle - dayPeriodAngle + Constant.TWO_PI) % Constant.TWO_PI;
-
-            // offsets
-            offsetSunrise = sunriseAngle;
-            offsetSunset = sunsetAngle;
-            offsetMidday = middayAngle;
-            offsetMidnight = midnightAngle;
-        }
-        else if (targetRanging.toNanos() < dayPeriodTime.toNanos()) // during day period
-        {
-            // using less precise method of calculating where it is during day half and gettimg mids from there
-
-            Duration untilTarget = Duration.between(solarTimes.getSunrise(), targetTime);
-            double percentThroughHalf = (double) untilTarget.toNanos() / dayPeriodTime.toNanos();
-        }
-
-        // calculate the distance clockwise for each of the four sections
-        angularSpanDawnNight = smallestAngularSpan(offsetMidnight, offsetSunrise);
-        angularSpanMorning = smallestAngularSpan(offsetSunrise, offsetMidday);
-        angularSpanAfternoon = smallestAngularSpan(offsetMidday, offsetSunset);
-        angularSpanDuskNight = smallestAngularSpan(offsetSunset, offsetMidnight);
-    }
-
-    // deals with day as independent quarters (midday not reliant of median day)
-    private void craftFullClockOffsets2(LocalTime target, boolean standard)
-    {
         // get size of the day half of the circle
-        Duration dayPeriodDuration = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset());
+        Duration dayPeriodDuration = Duration.between(sunrise, sunset);
         double dayPercentOfCircle = ((double) dayPeriodDuration.toNanos()) / Constant.DAY_NANOS;
         double dayPortionAngle = dayPercentOfCircle * Constant.TWO_PI;
 
+        // calculate morning angle; afternoon angle can be calculated via that and dayPortionAngle
+        Duration morningPeriodDuration = Duration.between(sunrise, midday);
+        double morningPercentOfDay = ((double) morningPeriodDuration.toNanos()) / dayPeriodDuration.toNanos();
+        double morningQuarterAngle = dayPortionAngle * morningPercentOfDay;
+        double afternoonQuarterAngle = dayPortionAngle - morningQuarterAngle;
         // both dawnNight and duskNight have the same angular span as night is divided evenly
         double nightQuarterAngle = (1.0 - dayPortionAngle) / 2 * Constant.TWO_PI;
 
-        // determine and calculate positions
-        // start with standard = true
-
         ZonedDateTime targetTime = determineStandardRequestedTime(target);
         double targetAngle = Circle.TOP.radians; // target is on top of circle
+        QuarterDayMark setValue; // which value is changed
 
-        if (targetTime.equals(solarTimes.getMidnight()))
+        // always try to determine sunrise/sunset; the rest can be calculated off of that
+        if (targetTime.isBefore(midnight) || targetTime.isAfter(nextMidnight))
         {
-            offsetMidnight = targetAngle;
-            offsetSunrise = normalizeOverCircle(offsetMidnight - nightQuarterAngle);
-            offsetSunset = normalizeOverCircle(offsetMidnight + nightQuarterAngle);
-            offsetMidday = normalizeOverCircle(calculateMiddayOffset(dayPeriodDuration, dayPortionAngle));
+            throw new IllegalArgumentException("Invalid time selected for standard dial.");
         }
-        else if (targetTime.isBefore(solarTimes.getSunrise())) // between midnight and sunrise
+        else if (targetTime.isBefore(solarTimes.getSunrise())) // [midnight, sunrise)
         {
-            Duration dawnNightDuration = Duration.between(solarTimes.getMidnight(), solarTimes.getSunrise());
-            Duration untilTarget = Duration.between(solarTimes.getMidnight(), targetTime);
-            double percentThroughQuarter = (double) untilTarget.toNanos() / dawnNightDuration.toNanos();
-            // calculate angles and normalize over circle
-            offsetMidnight = normalizeOverCircle(targetAngle + (percentThroughQuarter * nightQuarterAngle));
-            // subtract percentThroughQuarter from 1.0 to get remainder
+            double percentThroughQuarter = percentElapsed(midnight, sunrise, targetTime);
+            // calculate angle and normalize over circle; subtract 1.0 to get remainder; go forward
             offsetSunrise = normalizeOverCircle(targetAngle -
                     (1.0 - percentThroughQuarter) * nightQuarterAngle);
-
-            offsetSunset = normalizeOverCircle(offsetSunrise - dayPortionAngle);
-            offsetMidday = normalizeOverCircle(calculateMiddayOffset(dayPeriodDuration, dayPortionAngle));
+            setValue = QuarterDayMark.SUNRISE;
         }
-        else if (targetTime.equals(solarTimes.getSunrise()))
+        else if (!targetTime.isAfter(solarTimes.getMidday())) // [sunrise, midday]
         {
-            offsetSunrise = targetAngle;
-            offsetSunset = normalizeOverCircle(offsetSunrise - dayPortionAngle);
-
-            offsetMidday = normalizeOverCircle(calculateMiddayOffset(dayPeriodDuration, dayPortionAngle));
-            offsetMidnight = normalizeOverCircle(offsetSunrise + nightQuarterAngle);
+            double percentThroughQuarter = percentElapsed(sunrise, midday, targetTime);
+            // calculate angle and normalize over circle; go backward
+            offsetSunrise = normalizeOverCircle(targetAngle + percentThroughQuarter * morningQuarterAngle);
+            setValue = QuarterDayMark.SUNRISE;
         }
-        // TODO
-        // change so that only calculates sunrise/sunset, then calls util method to populate the rest
+        else if (targetTime.isBefore(solarTimes.getSunset())) // (midday, sunset)
+        {
+            double percentThroughQuarter = percentElapsed(midday, sunset, targetTime);
+            // calculate angle and normalize over circle; subtract 1.0 to get remainder; go forward
+            offsetSunset = normalizeOverCircle(targetAngle -
+                    (1.0 - percentThroughQuarter) * afternoonQuarterAngle);
+            setValue = QuarterDayMark.SUNSET;
+        }
+        else // [sunset, next midnight]
+        {
+            double percentThroughQuarter = percentElapsed(sunset, nextMidnight, targetTime);
+            // calculate angle and normalize over circle; go backward
+            offsetSunset = normalizeOverCircle(targetAngle + percentThroughQuarter * nightQuarterAngle);
+            setValue = QuarterDayMark.SUNSET;
+        }
+
+        // calculate remaining offsets
+        if (setValue == QuarterDayMark.SUNRISE)
+            offsetSunset = normalizeOverCircle(offsetSunrise - dayPortionAngle);
+        else // sunset was set, now need to set sunrise
+            offsetSunrise = normalizeOverCircle(offsetSunset + dayPortionAngle);
+        offsetMidday = normalizeOverCircle(offsetSunrise - morningQuarterAngle);
+        offsetMidnight = normalizeOverCircle(offsetSunrise + nightQuarterAngle);
+    }
+
+    /**
+     * Calculate how much of a period has elapsed.
+     *
+     * @param start the starting time of the period
+     * @param end the ending time of the period
+     * @param target the targeted time; the time between the two points
+     * @return percent that {@code target} has moved from {@code start} to {@code end}
+     */
+    private double percentElapsed(ZonedDateTime start, ZonedDateTime end, ZonedDateTime target)
+    {
+        Duration total = Duration.between(start, end);
+        Duration elapsed = Duration.between(start, target);
+        return elapsed.toNanos() / (double) total.toNanos();
     }
 
     /**
