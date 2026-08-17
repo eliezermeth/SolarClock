@@ -71,8 +71,24 @@ The analog view has a few different modes:
   <p>This mode uses the True Midnight refresh style.</p>
 - ### Proportional
   <p>The circle of the clock represents (approximately) a 24-hour period.  The circle shows the percentage of that 
-  period that is day (centered on the top) and night (bottom).  The current time hand will move at a constant speed 
-  through both sections, as the clock mimics a standard 24-hour clock.</p>
+  period that is day (exact; centered on the top) and night (remainder of circke; bottom).  The current time hand will 
+  move at a constant speed  through both sections, as the clock mimics a standard 24-hour clock.  (This is, in essence, 
+  Dial mode with midday at top.</p>
+  <p>This mode uses the True Midnight refresh style.</p>
+- ### Dial
+  <p>The circle of the clock represents (approximately) a 24-hour period.  The circle shows the percentage of that 
+  period that is day (exact) and night (remainder of circle).
+  An arbitrary time can be selected by the user, from 00:00 to 23:59.  That time will be placed at the topmost position 
+  of the circle (12 o'clock on a standard clock), and times will be displayed based on that.  There are two different 
+  options within this mode: standard and halachic.</p>
+  <p>In standard Dial mode, the user-selected time is rendered as a standard time.  Thus, if 15:00 (3:00 PM) is selected, 
+  the leftmost point on the circle will be 9:00 (9:00 AM; top - 6 hours), the rightmost 21:00 (9:00 PM; top + 6 hours), 
+  and the bottom 3:00 (3:00 AM).  In the event that two standard user-selected times appear on the clock face, the first 
+  instance will be selected as the top.</p>
+  <p>In halachic Dial mode, the user-selected time is rendered as a halachic time.  0:00 is the beginning of the day 
+  portion, 6:00 midday, 12:00 the end of day portion, 18:00 the end of the dusk-night portion (bordering on midnight), 
+  and 23:59 the end of the dawn-night portion (bordering on day).  Despite the 12:00 - 17:59 section seeming to occur 
+  before the 18:00 - 23:59 section, chronologcally speaking, dawn-night occurs before dusk-night.</p>
   <p>This mode uses the True Midnight refresh style.</p>
   
   ### Planned
@@ -102,11 +118,6 @@ The analog view has a few different modes:
   - ### Half-sundail view:
     <p>Similar to the Sundial view, but only shows the current day or night period.  Day will always be the top half of 
     a circle, and night the bottom.<br>Suitable for landscape screens.</p>
-  - ### Dial view:
-    <p>An arbitrary time can be selected, from 00:00 to 23:59.  That time will be placed at the topmost position on the 
-    circle (12 o'clock on a standard clock).  Times will be displayed from there.  The colored circles will be drawn at 
-    the proper points.<br>Example: If 15:00 (3:00 PM) is selected, the leftmost side will be 9:00 (9:00 AM; top - 6),
-    the rightmost 21:00 (9:00 PM; top + 6), and the bottom 3:00 (3:00 AM).</p>
   - ### Standard clock view:
     <p>Displays as a standard 12-hour clock.  The colored sections will only be drawn for the currently visible 12-hour 
     period.</p>
