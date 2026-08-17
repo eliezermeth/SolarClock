@@ -2,7 +2,7 @@ package util.enums;
 
 /**
  * Different view modes for analog clock.<br>
- * <b>ONLY SUNDIAL AND FULL_DAY CURRENTLY IMPLEMENTED.</b><br>
+ * <b>ONLY SUNDIAL, PROPORTIONAL, AND DIAL ARE CURRENTLY IMPLEMENTED.</b><br>
  * {@link #SUNDIAL} - Full circle; top half is day and bottom half is night.<br>
  * {@link #PROPORTIONAL} - Full circle; day and night get their true percentage of the 24-hour period.<br>
  * {@link #HALF_SUNDIAL} - Half circle; only shows the current day or night period.<br>
