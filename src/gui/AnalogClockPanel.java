@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -92,7 +93,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         calculateLayoutDimensionPositions();
 
         // calculate proper angles for sunrise and sunset; recalculated when terminators changed / ViewMode changed
-        calculateEqualDayNightView();
+        calculateViewModeAngles();
 
         if (USE_BUFFERED_IMAGE)
             createStaticImage();
@@ -472,61 +473,10 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         return offset - spanToAdd; // subtract to have clockwise motion
     }
 
-    // TODO update to accommodate ViewModes
     /**
-     * Sets proper values for offsets of sunrise and sunset.
+     * Calculates the proper values for offsets for various {@link ViewMode}s.  Should only need to be triggered at
+     * clock update time (true midnight / displayed time is exhausted) or {@link ViewMode} change.
      */
-    public void calculateEqualDayNightView()  // ---------------------- For clock only
-    {
-        // TODO should only need to be triggered once per tekufah, or whenever equalDayNight is changed
-
-        if (Settings.viewMode.equalDayNightView) // TODO how best to change this
-        {
-            offsetSunrise = Circle.LEFT.radians; // where 9 o'clock would be on a normal clock
-            offsetSunset = Circle.RIGHT.radians; // where 3 o'clock would be on a normal clock; use instead of 0 for further calculations
-        }
-        else
-        {
-            /*
-            By setting to this, the day and night arcs must now be modified. They can no longer be 50/50, but must
-            calculate the percentage of the 24-hour period is contained by each.  Day should be centered with chatzos
-            at the top, and night corresponding.  It will recalculate at true midnight, and all calculations must happen
-            as an offset of these times.  It will repaint after it has recalculated positions.
-             */
-            long dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
-            double percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
-            double newHalfDaySegment = percentOfCircle / 2;
-            double newRadianOnePercent = Constant.TWO_PI / 100;
-            double sunriseAngle = Circle.TOP.radians + (newHalfDaySegment * newRadianOnePercent);
-            double sunsetAngle = ((Circle.TOP.radians - (newHalfDaySegment * newRadianOnePercent)) +
-                    Circle.RIGHT.radians) % Constant.TWO_PI; // force it to be a positive number
-
-            offsetSunrise = sunriseAngle;
-            offsetSunset = sunsetAngle;
-        }
-
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // This will need to be changed when astronomical vs. time-bound features are implemented.
-        // At this point, it is set to astronomical.
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        offsetMidday = Circle.TOP.radians;
-        offsetMidnight = Circle.BOTTOM.radians;
-
-        // calculate the distance clockwise from for each of the four sections
-        angularSpanDawnNight = (offsetSunrise - offsetMidnight + (2 * Math.PI)) % (2 * Math.PI);
-        angularSpanMorning = (offsetMidday - offsetSunrise + (2 * Math.PI)) % (2 * Math.PI);
-        angularSpanAfternoon = (offsetSunset - offsetMidday + (2 * Math.PI)) % (2 * Math.PI);
-        angularSpanDuskNight = (offsetMidnight - offsetSunset + (2 * Math.PI)) % (2 * Math.PI);
-        // TODO which of these sections to keep
-        angularSpanDawnNight = smallestAngularSpan(offsetMidnight, offsetSunrise);
-        angularSpanMorning = smallestAngularSpan(offsetSunrise, offsetMidday);
-        angularSpanAfternoon = smallestAngularSpan(offsetMidday, offsetSunset);
-        angularSpanDuskNight = smallestAngularSpan(offsetSunset, offsetMidnight);
-
-        if (USE_BUFFERED_IMAGE)
-            createStaticImage();
-    }
-
     public void calculateViewModeAngles()
     {
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -545,45 +495,18 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
 
             case ViewMode.PROPORTIONAL:
                 // Center daylight-percentage portion on the top of the circle.
-                long dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
-                double percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
-                double halfDaySegment = percentOfCircle / 2;
-                double radianOnePercent = (2 * Math.PI) / 100;
-                offsetSunrise = Circle.TOP.radians + (halfDaySegment * radianOnePercent);
-                offsetSunset = ((Circle.TOP.radians - (halfDaySegment * radianOnePercent)) +
-                        Circle.RIGHT.radians) % (2 * Math.PI); // force it to be a positive number
-                offsetMidday = Circle.TOP.radians;
-                offsetMidnight = Circle.BOTTOM.radians;
+                craftDialClockOffsets(convertHalachicToStandardTimeOverDay(LocalTime.of(6, 0, 0)));
                 break;
 
             case ViewMode.DIAL:
-                // split full craft method int craft(LocalTime) and craft(ZonedDateTime)
-
-                // if halachic, convert into standard using TimeConverter
+                ZonedDateTime adjustedTime;
                 if (Settings.dialModeStandard)
-                    craftDialClockOffsets(determineStandardRequestedTime(Settings.dialModeTop));
+                    adjustedTime = determineStandardRequestedTime(Settings.dialModeTop);
                 else // halachic; hours start from sunrise = 0
-                {
-                    if (Settings.dialModeTop.isBefore(LocalTime.of(6, 0, 0))) // morning
-                    {
+                    adjustedTime = convertHalachicToStandardTimeOverDay(Settings.dialModeTop);
+                craftDialClockOffsets(adjustedTime);
 
-                    }
-                    else if (Settings.dialModeTop.isBefore(LocalTime.of(12, 0, 0))) // afternoon
-                    {
-
-                    }
-                    else if (Settings.dialModeTop.isBefore(LocalTime.of(18, 0, 0))) // duskNight
-                    {
-
-                    }
-                    else // dawnNight
-                    {
-
-                    }
-                }
-
-                // for both, run craft
-
+            // TODO update to include other ViewModes
 
             default:
                 throw new IllegalArgumentException("View mode not supported");
@@ -600,6 +523,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     }
 
     // deals with day as independent quarters (midday not reliant on median day)
+    // TODO javadoc
     private void craftDialClockOffsets(ZonedDateTime target)
     {
         // get quarter-day times to avoid repeated calling
@@ -686,11 +610,11 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     }
 
     /**
-     * Calculate the {@code ZonedDateTime} for a given standard-time target {@code LocalTime} during the active day.
-     * Will match the first possible time in the event two such {@code LocalTime}s exist in the day.
+     * Calculate the {@link ZonedDateTime} for a given standard-time target {@link LocalTime} during the active day.
+     * Will match the first possible time in the event two such {@link LocalTime}s exist in the day.
      *
-     * @param target the {@code LocalTime} that should be found for the day
-     * @return the {@code LocalTime} converted to the proper {@code ZonedDateTime}
+     * @param target the {@link LocalTime} that should be found for the day
+     * @return the {@link LocalTime} converted to the proper {@link ZonedDateTime}
      */
     private ZonedDateTime determineStandardRequestedTime(LocalTime target)
     {
@@ -701,6 +625,45 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             testZdt = testZdt.plusDays(1); // increment day
 
         return testZdt;
+    }
+
+    /**
+     * Calculate the {@link ZonedDateTime} for a given halachic-time target {@link LocalTime} during the active day.
+     * This considers the start of the day ({@code 0:00}) to be at the begininning of the daylight period; thus, the
+     * dusk-night period occupies the time slot {@code 12:00} - {@code 17:59}.  The dawn-night period is from
+     * {@code 18:00} - {@code 23:59}, and although appearing after dusk-night in this timing scheme, it occurs
+     * chronologically before that period.  This is because rendering uses true midnight as the switching point.
+     *
+     * @param target the halachic time (per above schema) that should be found for the day
+     * @return the {@link LocalTime} converted to the proper {@link ZonedDateTime}
+     */
+    private ZonedDateTime convertHalachicToStandardTimeOverDay(LocalTime target)
+    {
+        TimeConverter tc;
+        Duration adjusted = Duration.between(LocalTime.MIDNIGHT, target); // will hold actual duration within quarter
+
+        if (target.isBefore(LocalTime.of(6, 0, 0))) // morning
+        {
+            tc = new TimeConverter(solarTimes.getSunrise(), solarTimes.getMidday(), 6);
+            // adjusted is accurate
+        }
+        else if (target.isBefore(LocalTime.of(12, 0, 0))) // afternoon
+        {
+            tc = new TimeConverter(solarTimes.getMidday(), solarTimes.getSunset(), 6);
+            adjusted = adjusted.minusHours(6);
+        }
+        else if (target.isBefore(LocalTime.of(18, 0, 0))) // duskNight
+        {
+            tc = new TimeConverter(solarTimes.getSunset(), solarTimes.getNextMidnight(), 6);
+            adjusted = adjusted.minusHours(12);
+        }
+        else // dawnNight
+        {
+            tc = new TimeConverter(solarTimes.getMidnight(), solarTimes.getSunrise(), 6);
+            adjusted = adjusted.minusHours(18);
+        }
+
+        return tc.getStart().plus(tc.toStandardTime(adjusted));
     }
 
     /**
@@ -858,14 +821,15 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         clearStaticLines();
         // addHourTickMarks();
         // TODO reset static lines, etc
-        calculateEqualDayNightView();
+        calculateViewModeAngles();
         repaint();
     }
 
+    // TODO should this be removed?
     @Override
     public void updateEqualView()
     {
-        this.calculateEqualDayNightView();
+        this.calculateViewModeAngles();
     }
 
     /**
