@@ -522,8 +522,13 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             createStaticImage();
     }
 
-    // deals with day as independent quarters (midday not reliant on median day)
-    // TODO javadoc
+    /**
+     * Calculate the four threshold offsets for the {@link ViewMode#DIAL} clock based on the specific time to be set on
+     * the top.  Deals with each day as independent quarters, so that midday is not reliant on median day, but is
+     * configurable via the {@link Settings}.
+     *
+     * @param target the {@link ZonedDateTime} to appear at the top of the clock
+     */
     private void craftDialClockOffsets(ZonedDateTime target)
     {
         // get quarter-day times to avoid repeated calling
@@ -595,21 +600,6 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     }
 
     /**
-     * Calculate how much of a period has elapsed.
-     *
-     * @param start the starting time of the period
-     * @param end the ending time of the period
-     * @param target the targeted time; the time between the two points
-     * @return percent that {@code target} has moved from {@code start} to {@code end}
-     */
-    private double percentElapsed(ZonedDateTime start, ZonedDateTime end, ZonedDateTime target)
-    {
-        Duration total = Duration.between(start, end);
-        Duration elapsed = Duration.between(start, target);
-        return elapsed.toNanos() / (double) total.toNanos();
-    }
-
-    /**
      * Calculate the {@link ZonedDateTime} for a given standard-time target {@link LocalTime} during the active day.
      * Will match the first possible time in the event two such {@link LocalTime}s exist in the day.
      *
@@ -667,6 +657,21 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     }
 
     /**
+     * Calculate how much of a period has elapsed.
+     *
+     * @param start the starting time of the period
+     * @param end the ending time of the period
+     * @param target the targeted time; the time between the two points
+     * @return percent that {@code target} has moved from {@code start} to {@code end}
+     */
+    private double percentElapsed(ZonedDateTime start, ZonedDateTime end, ZonedDateTime target)
+    {
+        Duration total = Duration.between(start, end);
+        Duration elapsed = Duration.between(start, target);
+        return elapsed.toNanos() / (double) total.toNanos();
+    }
+
+    /**
      * Normalize a radian to within a circle; that is, ensure within range [0, 2π).
      *
      * @param initialValue input radians
@@ -677,6 +682,13 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         return ((initialValue % Constant.TWO_PI) + Constant.TWO_PI) % Constant.TWO_PI;
     }
 
+    /**
+     * Find the smallest angular span between two points on a circle.
+     *
+     * @param a first point
+     * @param b second point
+     * @return {@code double} of smallest angular span
+     */
     private double smallestAngularSpan(double a, double b)
     {
         double diff = Math.abs(a - b) % (2 * Math.PI);
@@ -781,7 +793,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
      * @param thickness Thickness of the line; if width is {@code 0}, the line portion should not be displayed.
      * @param color Color of the line.
      *
-     * @return The <code>StaticLine</code> that was added to the <code>ArrayList</code>.
+     * @return The {@link StaticLine} that was added to the {@link ArrayList}.
      */
     public StaticLine addStaticLine(ZonedDateTime time, String label, int thickness, Color color)
     {
