@@ -17,9 +17,9 @@ public class Settings
     // Analog clock settings
     // ------------------------------------------------------------------
     // View mode is the clock type - sundial, full day, etc
-    public static ViewMode viewMode = ViewMode.SUNDIAL;
+    public static ViewMode viewMode = ViewMode.DIAL;
     /** If {@link ViewMode#DIAL} is selected, the time that should be on the top of the clock. */
-    public static LocalTime dialModeTop = LocalTime.of(9, 0, 0);
+    public static LocalTime dialModeTop = LocalTime.of(0, 0, 0);
     /** How {@link ViewMode#DIAL} is represented.  If {@code true}, then {@link Settings#dialModeTop} represents the
      * standard-clock time that will be on the top.  If {@code false}, it represents a halachic-clock time (in 24-hour
      * format), where 0:00 - 12:00 (not included) are the daylight hours, 12:00 - 18:00 represents the 6 halachic hours

@@ -10,20 +10,15 @@ import util.enums.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewOption, QuarterDayObserver
 {
@@ -495,16 +490,28 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
 
             case ViewMode.PROPORTIONAL:
                 // Center daylight-percentage portion on the top of the circle.
-                craftDialClockOffsets(convertHalachicToStandardTimeOverDay(LocalTime.of(6, 0, 0)));
+                // craftDialClockOffsets(convertHalachicToStandardTimeOverDay(LocalTime.of(6, 0, 0)));
+                // TODO change to craftDial... when fix dial rendering
+                long dayPeriodTime = Duration.between(solarTimes.getSunrise(), solarTimes.getSunset()).toMillis();
+                double percentOfCircle = ((double) dayPeriodTime / Constant.MILLIS_PER_DAY) * 100;
+                double halfDaySegment = percentOfCircle / 2;
+                double radianOnePercent = (2 * Math.PI) / 100;
+                offsetSunrise = Circle.TOP.radians + (halfDaySegment * radianOnePercent);
+                offsetSunset = ((Circle.TOP.radians - (halfDaySegment * radianOnePercent)) +
+                        Circle.RIGHT.radians) % (2 * Math.PI); // force it to be a positive number
+                offsetMidday = Circle.TOP.radians;
+                offsetMidnight = Circle.BOTTOM.radians;
                 break;
 
             case ViewMode.DIAL:
+                // TAG dial-1
                 ZonedDateTime adjustedTime;
                 if (Settings.dialModeStandard)
                     adjustedTime = determineStandardRequestedTime(Settings.dialModeTop);
                 else // halachic; hours start from sunrise = 0
                     adjustedTime = convertHalachicToStandardTimeOverDay(Settings.dialModeTop);
                 craftDialClockOffsets(adjustedTime);
+                break;
 
             // TODO update to include other ViewModes
 
@@ -513,10 +520,10 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         }
 
         // calculate the distance clockwise for each of the four sections
-        angularSpanDawnNight = smallestAngularSpan(offsetMidnight, offsetSunrise);
-        angularSpanMorning = smallestAngularSpan(offsetSunrise, offsetMidday);
-        angularSpanAfternoon = smallestAngularSpan(offsetMidday, offsetSunset);
-        angularSpanDuskNight = smallestAngularSpan(offsetSunset, offsetMidnight);
+        angularSpanDawnNight = clockwiseSpan(offsetMidnight, offsetSunrise);
+        angularSpanMorning = clockwiseSpan(offsetSunrise, offsetMidday);
+        angularSpanAfternoon = clockwiseSpan(offsetMidday, offsetSunset);
+        angularSpanDuskNight = clockwiseSpan(offsetSunset, offsetMidnight);
 
         if (USE_BUFFERED_IMAGE)
             createStaticImage();
@@ -531,6 +538,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
      */
     private void craftDialClockOffsets(ZonedDateTime target)
     {
+        // TAG dial-2
         // get quarter-day times to avoid repeated calling
         ZonedDateTime midnight = solarTimes.getMidnight(),
                 sunrise = solarTimes.getSunrise(),
@@ -597,6 +605,8 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
             offsetSunrise = normalizeOverCircle(offsetSunset + dayPortionAngle);
         offsetMidday = normalizeOverCircle(offsetSunrise - morningQuarterAngle);
         offsetMidnight = normalizeOverCircle(offsetSunrise + nightQuarterAngle);
+
+        System.out.println(calculateAngle(target));
     }
 
     /**
@@ -683,16 +693,17 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
     }
 
     /**
-     * Find the smallest angular span between two points on a circle.
+     * Find the clockwise angular span between two points on a circle.
      *
-     * @param a first point
-     * @param b second point
-     * @return {@code double} of smallest angular span
+     * @param start starting point
+     * @param end ending point
+     * @return {@code double} of clockwise angular span
      */
-    private double smallestAngularSpan(double a, double b)
+    private double clockwiseSpan(double start, double end)
     {
-        double diff = Math.abs(a - b) % (2 * Math.PI);
-        return Math.min(diff, (2 * Math.PI) - diff);
+//        double diff = Math.abs(a - b) % (2 * Math.PI);
+//        return Math.min(diff, (2 * Math.PI) - diff);
+        return normalizeOverCircle(start - end);
     }
 
     /**
