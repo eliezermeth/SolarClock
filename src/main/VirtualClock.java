@@ -24,8 +24,8 @@ public class VirtualClock
         if (DebugTimeModifications.DEBUG)
         {
             // change offset first, so speed is only applied after that change
-            if (DebugTimeModifications.OFFSET.enabled)
-                offset(DebugTimeModifications.OFFSET.duration);
+            if (DebugTimeModifications.TIME_OFFSET.enabled)
+                offset(DebugTimeModifications.TIME_OFFSET.duration);
             if (DebugTimeModifications.SPEED.enabled)
                 setSpeed(DebugTimeModifications.SPEED.speed);
         }
