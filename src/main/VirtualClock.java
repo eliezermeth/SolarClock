@@ -1,6 +1,6 @@
 package main;
 
-import util.DebugTimeModifications;
+import util.debug.DebugTimeModifications;
 
 import java.time.*;
 
@@ -24,10 +24,10 @@ public class VirtualClock
         if (DebugTimeModifications.DEBUG)
         {
             // change offset first, so speed is only applied after that change
-            if (DebugTimeModifications.TIME_OFFSET.enabled)
-                offset(DebugTimeModifications.TIME_OFFSET.duration);
-            if (DebugTimeModifications.SPEED.enabled)
-                setSpeed(DebugTimeModifications.SPEED.speed);
+            if (DebugTimeModifications.TimeOffset.isEnabled())
+                offset(DebugTimeModifications.TimeOffset.get());
+            if (DebugTimeModifications.Speed.isEnabled())
+                setSpeed(DebugTimeModifications.Speed.get());
         }
     }
 
