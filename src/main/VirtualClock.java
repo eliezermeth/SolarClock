@@ -3,6 +3,7 @@ package main;
 import util.debug.DebugTimeModifications;
 
 import java.time.*;
+import java.time.temporal.TemporalAmount;
 
 public class VirtualClock
 {
@@ -14,29 +15,51 @@ public class VirtualClock
     private double speed = 1.0; // 1.0 = real time, 0 = pause, negative = reversed
     private double savedSpeed = 1.0;
 
+    private TemporalAmount increment = null;
+
     public VirtualClock(ZoneId zoneId)
     {
         this.zoneId = zoneId;
-        this.baseVirtualTime = ZonedDateTime.now(zoneId);
-        this.baseRealTime = Instant.now();
+
+        ZonedDateTime initialTime = ZonedDateTime.now(zoneId);
 
         // for debugging
         if (DebugTimeModifications.DEBUG)
         {
-            // change offset first, so speed is only applied after that change
-            if (DebugTimeModifications.TimeOffset.isEnabled())
-                offset(DebugTimeModifications.TimeOffset.get());
-            if (DebugTimeModifications.Speed.isEnabled())
+            /*
+             * ZdtOffset has precedence over TimeOffset.
+             *
+             * ZdtOffset establishes the complete initial ZonedDateTime, including its zone/offset.
+             * TODO check if this can create conflicts if other places have the ZonedDateTime set in another zone
+             */
+            if (DebugTimeModifications.ZdtOffset.isEnabled())
+                initialTime = DebugTimeModifications.ZdtOffset.get();
+            else if (DebugTimeModifications.TimeOffset.isEnabled())
+                initialTime = initialTime.plus(DebugTimeModifications.TimeOffset.get());
+            setTime(initialTime);
+
+            /*
+             * Increment has precedence over Speed.
+             */
+            if (DebugTimeModifications.Increment.isEnabled())
+                setIncrement(DebugTimeModifications.Increment.get());
+            else if (DebugTimeModifications.Speed.isEnabled())
                 setSpeed(DebugTimeModifications.Speed.get());
         }
     }
 
     /**
-     * Core calculation: virtual = base + (elapsed * speed)
+     * Core calculation for normal speed-based operation:
+     * virtual = base + (elapsed * speed)
+     * When increment mode is enabled, the virtual time is advanced only by explicit calls to {@link update()}.
+     *
      * @return current {@code ZonedDateTime} of {@code VirtualClock}
      */
     public ZonedDateTime now()
     {
+        if (increment != null)
+            return baseVirtualTime;
+
        Instant nowReal = Instant.now();
        long elapsedMillis = Duration.between(baseRealTime, nowReal).toMillis();
 
@@ -44,6 +67,43 @@ public class VirtualClock
 
        return baseVirtualTime.plus(Duration.ofMillis(adjustedMillis));
     }
+
+    /**
+     * Update the virtual clock.
+     * In increment mode, advances the clock by exactly one increment.
+     * In normal speed mode, there is nothing to do because the current virtual time is calculated from real elapsed
+     * by {@link #now()}.
+     */
+    public void update()
+    {
+        if (increment == null) return;
+
+        baseVirtualTime = baseVirtualTime.plus(increment);
+        baseRealTime = Instant.now();
+    }
+
+    /**
+     * Change the time by a set amount.
+     *
+     * @param amount {@link TemporalAmount} to change clock
+     */
+    public void step(TemporalAmount amount)
+    {
+        setBaseTime(now().plus(amount));
+    }
+
+    /**
+     * Set the internal components of the clock to a new base time.
+     *
+     * @param time {@link ZonedDateTime} for virtual time
+     */
+    private void setBaseTime(ZonedDateTime time)
+    {
+        baseVirtualTime = time;
+        baseRealTime = Instant.now();
+    }
+
+    // -----------------------------------------------------------------------------
 
     public LocalTime getLocalTime()
     {
@@ -59,6 +119,8 @@ public class VirtualClock
 
     /**
      * Change speed the clock runs while preserving current virtual time.
+     * Speed mode is disabled when an increment is configured.
+     *
      * @param newSpeed 1.0 = real time, 0 = pause, negative = reversed
      */
     public void setSpeed(double newSpeed)
@@ -91,6 +153,30 @@ public class VirtualClock
     }
 
     /**
+     * Enable or disable increment mode.
+     * A non-null increment enables increment mode and therefore takes precedence over SPEED.
+     *
+     * @param newIncrement increment to apply on every update; {@code null} disables increment mode
+     */
+    public void setIncrement(TemporalAmount newIncrement)
+    {
+        this.baseVirtualTime = now();
+        this.baseRealTime = Instant.now();
+
+        this.increment = newIncrement;
+    }
+
+    /**
+     * Get the configured increment of the clock (how far the clock advances each step).
+     *
+     * @return the increment, or {@code null} when increment mode is disabled
+     */
+    public TemporalAmount getIncrement()
+    {
+        return increment;
+    }
+
+    /**
      * If the clock is currently paused.
      * @return paused status of clock.
      */
@@ -118,22 +204,11 @@ public class VirtualClock
     // -----------------------------------------------------------------------------
 
     /**
-     * Jump forward/backward in virtual time.
-     * @param duration amount to offset the current time of the clock.
-     */
-    public void offset(Duration duration)
-    {
-        baseVirtualTime = now().plus(duration);
-        baseRealTime = Instant.now();
-    }
-
-    /**
-     * Set the clock to a specific <code>ZonedDateTime</code>
-     * @param dateTime targeted date and time.
+     * Set the clock to a specific {@link ZonedDateTime}.
+     * @param dateTime targeted date and time
      */
     public void setTime(ZonedDateTime dateTime)
     {
-        this.baseVirtualTime = dateTime;
-        this.baseRealTime = Instant.now();
+        setBaseTime(dateTime);
     }
 }
