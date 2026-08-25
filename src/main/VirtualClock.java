@@ -205,6 +205,8 @@ public class VirtualClock
 
     /**
      * Set the clock to a specific {@link ZonedDateTime}.
+     * Care should be taken when using this method.
+     *
      * @param dateTime targeted date and time
      */
     public void setTime(ZonedDateTime dateTime)
