@@ -27,7 +27,7 @@ class DebugOptionTest
     @BeforeEach
     void setUp()
     {
-        doDouble = new DebugOption<Double>(true, startDouble)
+        doDouble = new DebugOption<>(true, startDouble)
         { 
             @Override
             public void set(Double value)
@@ -36,8 +36,8 @@ class DebugOptionTest
                 super.set(value);
             }
         };
-        doDuration = new DebugOption<Duration>(false, startDuration) { };
-        doZdt = new DebugOption<ZonedDateTime>(true, startZdt) { };
+        doDuration = new DebugOption<>(false, startDuration) { };
+        doZdt = new DebugOption<>(true, startZdt) { };
     }
 
     @Test
