@@ -12,7 +12,7 @@ public class DebugTimeModifications
     /**
      * Controls this entire class; if {@code false}, unlikely for other elements to work
      */
-    public static final boolean DEBUG = true;
+    public static boolean DEBUG = true;
 
     /**
      * Allows the {@link main.VirtualClock} to be initialized to a specific {@link ZonedDateTime}.
