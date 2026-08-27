@@ -36,7 +36,6 @@ public class VirtualClock
                 initialTime = DebugTimeModifications.ZdtOffset.get();
             else if (DebugTimeModifications.TimeOffset.isEnabled())
                 initialTime = initialTime.plus(DebugTimeModifications.TimeOffset.get());
-            setTime(initialTime);
 
             /*
              * Increment has precedence over Speed.
@@ -46,6 +45,8 @@ public class VirtualClock
             else if (DebugTimeModifications.Speed.isEnabled())
                 setSpeed(DebugTimeModifications.Speed.get());
         }
+
+        setTime(initialTime);
     }
 
     /**
