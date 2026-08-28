@@ -59,6 +59,26 @@ class VirtualClockTest
         VirtualClock vc = new VirtualClock(zoneId);
         // allow 1/10th second difference due to computer run time
         assertZdtEquals(ZonedDateTime.now(zoneId), vc.now(), DECISECOND);
+
+        // ZdtOffset enabled, TimeOffset disabled
+        setUp(); // reset
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        DebugTimeModifications.TimeOffset.setEnabled(false);
+        vc = new VirtualClock(zoneId);
+        assertZdtEquals((ZonedDateTime) baseZdt[1], vc.now(), DECISECOND);
+
+        // TimeOffset enabled, ZdtOffset disabled
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(false);
+        DebugTimeModifications.TimeOffset.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertZdtEquals(ZonedDateTime.now(zoneId).plus((Duration) baseTimeOffset[1]), vc.now(), DECISECOND);
+
+        // ZdtOffset and TimeOffset enabled; only ZdtOffset should be applied
+
+        // check time speed
     }
 
     @Test
