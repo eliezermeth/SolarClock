@@ -53,7 +53,7 @@ class VirtualClockTest
     }
 
     @Test
-    void now()
+    void now() throws InterruptedException
     {
         // test with clock in base state, no debug
         VirtualClock vc = new VirtualClock(zoneId);
@@ -64,19 +64,31 @@ class VirtualClockTest
         setUp(); // reset
         DebugTimeModifications.DEBUG = true;
         DebugTimeModifications.ZdtOffset.setEnabled(true);
-        DebugTimeModifications.TimeOffset.setEnabled(false);
         vc = new VirtualClock(zoneId);
         assertZdtEquals((ZonedDateTime) baseZdt[1], vc.now(), DECISECOND);
 
         // TimeOffset enabled, ZdtOffset disabled
         setUp();
         DebugTimeModifications.DEBUG = true;
-        DebugTimeModifications.ZdtOffset.setEnabled(false);
         DebugTimeModifications.TimeOffset.setEnabled(true);
         vc = new VirtualClock(zoneId);
         assertZdtEquals(ZonedDateTime.now(zoneId).plus((Duration) baseTimeOffset[1]), vc.now(), DECISECOND);
 
         // ZdtOffset and TimeOffset enabled; only ZdtOffset should be applied
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        DebugTimeModifications.TimeOffset.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertZdtEquals((ZonedDateTime) baseZdt[1], vc.now(), DECISECOND);
+
+        // check with sleep and all debugs disabled
+        setUp();
+        Duration sleepTime = Duration.ofSeconds(2);
+        vc = new VirtualClock(zoneId);
+        ZonedDateTime start = vc.now();
+        Thread.sleep(sleepTime);
+        assertZdtEquals(start.plus(sleepTime), vc.now(), DECISECOND);
 
         // check time speed
     }
