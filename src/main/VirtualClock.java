@@ -17,7 +17,21 @@ public class VirtualClock
 
     private TemporalAmount increment = null;
 
+    /**
+     * Create a virtual clock within a specific {@link ZoneId}.  This clock is running upon creation.
+     * @param zoneId {@link ZoneId} for clock
+     */
     public VirtualClock(ZoneId zoneId)
+    {
+        this(zoneId, true);
+    }
+
+    /**
+     * Create a virtual clock within a specific {@link ZoneId}.  This clock can be paused upon creation.
+     * @param zoneId {@link ZoneId} for clock
+     * @param run if clock is running; {@code false} to pause the clock upon creation
+     */
+    public VirtualClock(ZoneId zoneId, boolean run)
     {
         this.zoneId = zoneId;
 
@@ -47,6 +61,8 @@ public class VirtualClock
         }
 
         setTime(initialTime);
+
+        if (!run) pause();
     }
 
     /**
