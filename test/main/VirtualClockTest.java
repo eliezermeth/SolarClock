@@ -53,6 +53,31 @@ class VirtualClockTest
     }
 
     @Test
+    void constructor() throws InterruptedException
+    {
+        // test different constructors
+
+        // basic / run = true
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        VirtualClock vc = new VirtualClock(zoneId, true);
+        ZonedDateTime t1 = vc.now();
+        Thread.sleep(10); // any delay
+        ZonedDateTime t2 = vc.now();
+        assertNotEquals(t1, t2);
+
+        // run = false
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        vc = new VirtualClock(zoneId, false);
+        t1 = vc.now();
+        Thread.sleep(10); // any delay
+        t2 = vc.now();
+        assertEquals(t1, t2);
+    }
+
+    @Test
     void now() throws InterruptedException
     {
         // test with clock in base state, no debug
