@@ -62,7 +62,7 @@ public class VirtualClock
 
         setTime(initialTime);
 
-        if (!run) pause();
+        if (!run) speed = 0; // manually set to avoid time lag when calling pause()
     }
 
     /**
