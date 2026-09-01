@@ -9,8 +9,7 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class VirtualClockTest
 {
@@ -116,6 +115,15 @@ class VirtualClockTest
         assertZdtEquals(start.plus(sleepTime), vc.now(), DECISECOND);
 
         // check time speed
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.Speed.setEnabled(true);
+        int speed = ((Double) baseSpeed[1]).intValue();
+        vc = new VirtualClock(zoneId);
+        start = vc.now();
+        Thread.sleep(sleepTime);
+        sleepTime.multipliedBy(speed);
+        assertZdtEquals(start.plus(sleepTime.multipliedBy(speed)), vc.now(), DECISECOND);
     }
 
     @Test
