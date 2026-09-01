@@ -188,6 +188,33 @@ class VirtualClockTest
     @Test
     void getSavedSpeed()
     {
+        VirtualClock vc = new VirtualClock(zoneId);
+        assertEquals(1, vc.getSavedSpeed());
+        vc.setSpeed(2);
+        assertEquals(2, vc.getSavedSpeed());
+        vc.pause();
+        assertEquals(2, vc.getSavedSpeed());
+        vc.resume();
+        assertEquals(2, vc.getSavedSpeed());
+
+        vc = new VirtualClock(zoneId, false);
+        assertEquals(1, vc.getSavedSpeed());
+        vc.resume();
+        assertEquals(1, vc.getSavedSpeed());
+
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.Speed.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertEquals((Double) baseSpeed[1], vc.getSavedSpeed());
+
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.Speed.setEnabled(true);
+        vc = new VirtualClock(zoneId, false);
+        assertEquals(2, vc.getSavedSpeed());
+        vc.resume();
+        assertEquals(2, vc.getSavedSpeed());
     }
 
     @Test
