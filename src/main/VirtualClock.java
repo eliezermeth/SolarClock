@@ -50,7 +50,13 @@ public class VirtualClock
                 initialTime = DebugTimeModifications.ZdtOffset.get();
             else if (DebugTimeModifications.TimeOffset.isEnabled())
                 initialTime = initialTime.plus(DebugTimeModifications.TimeOffset.get());
+        }
 
+        setTime(initialTime);
+
+        // split from previous section to set time before modifying speed
+        if (DebugTimeModifications.DEBUG)
+        {
             /*
              * Increment has precedence over Speed.
              */
@@ -59,8 +65,6 @@ public class VirtualClock
             else if (DebugTimeModifications.Speed.isEnabled())
                 setSpeed(DebugTimeModifications.Speed.get());
         }
-
-        setTime(initialTime);
 
         if (!run) speed = 0; // manually set to avoid time lag when calling pause()
     }
