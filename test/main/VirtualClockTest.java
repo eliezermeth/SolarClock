@@ -147,13 +147,42 @@ class VirtualClockTest
     }
 
     @Test
-    void setSpeed()
+    void testSpeed()
     {
-    }
+        // not debug, and changing speed
+        VirtualClock vc = new VirtualClock(zoneId);
+        assertEquals(1.0, vc.getSpeed());
+        vc.setSpeed(2);
+        assertEquals(2, vc.getSpeed());
+        vc.pause();
+        assertEquals(0, vc.getSpeed());
+        vc.resume();
+        assertEquals(2, vc.getSpeed());
+        vc.setSpeed(-1);
+        assertEquals(-1, vc.getSpeed());
 
-    @Test
-    void getSpeed()
-    {
+        // check when clock is paused at start
+        setUp();
+        vc = new VirtualClock(zoneId, false);
+        assertEquals(0, vc.getSpeed());
+        vc.resume();
+        assertEquals(1, vc.getSpeed());
+
+        // check debug speed is set
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.Speed.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertEquals((Double) baseSpeed[1], vc.getSpeed());
+
+        // check debug speed is set when clock is paused at start
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.Speed.setEnabled(true);
+        vc = new VirtualClock(zoneId, false);
+        assertEquals(0, vc.getSpeed());
+        vc.resume();
+        assertEquals((Double) baseSpeed[1], vc.getSpeed());
     }
 
     @Test
