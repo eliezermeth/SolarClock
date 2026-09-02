@@ -147,7 +147,7 @@ class VirtualClockTest
     }
 
     @Test
-    void testSpeed()
+    void testGetAndSetSpeed()
     {
         // not debug, and changing speed
         VirtualClock vc = new VirtualClock(zoneId);
@@ -218,13 +218,20 @@ class VirtualClockTest
     }
 
     @Test
-    void setIncrement()
+    void testGetAndSetIncrement()
     {
-    }
+        // base
+        VirtualClock vc = new VirtualClock(zoneId);
+        assertNull(vc.getIncrement());
+        Duration inc = Duration.ofHours(1);
+        vc.setIncrement(inc);
+        assertEquals(inc, vc.getIncrement());
 
-    @Test
-    void getIncrement()
-    {
+        // debug = false but increment = true
+        setUp();
+        DebugTimeModifications.Increment.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertNull(vc.getIncrement());
     }
 
     @Test
