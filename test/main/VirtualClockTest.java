@@ -31,12 +31,12 @@ class VirtualClockTest
             zoneId)};
     Object[] baseTimeOffset = new Object[] { false, Duration.ofHours(1).plusSeconds(1) };
     Object[] baseSpeed = new Object[] { false, 2.0 };
-    Object[] baseInterval = new Object[] { false, Duration.ofHours(1) };
+    Object[] baseIncrement = new Object[] { false, Duration.ofHours(1) };
 
     DebugOption[] debugPointers = new DebugOption[] {
             DebugTimeModifications.ZdtOffset, DebugTimeModifications.TimeOffset,
             DebugTimeModifications.Speed, DebugTimeModifications.Increment };
-    Object[] baseValues = new Object[] { baseZdt, baseTimeOffset, baseSpeed, baseInterval };
+    Object[] baseValues = new Object[] { baseZdt, baseTimeOffset, baseSpeed, baseIncrement};
 
     // before each test, reset DebugTimeModifications to known values
     @BeforeEach
@@ -232,21 +232,36 @@ class VirtualClockTest
         DebugTimeModifications.Increment.setEnabled(true);
         vc = new VirtualClock(zoneId);
         assertNull(vc.getIncrement());
+        vc.setIncrement(inc);
+        assertEquals(inc, vc.getIncrement());
+
+        // debug = true; increment = true
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.Increment.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertEquals(baseIncrement[1], vc.getIncrement());
     }
 
     @Test
-    void isPaused()
+    void testPauseAndResume() // pause(), isPaused(), resume()
     {
-    }
+        VirtualClock vc = new VirtualClock(zoneId);
+        assertFalse(vc.isPaused());
+        vc.pause();
+        assertTrue(vc.isPaused());
+        vc.pause();
+        assertTrue(vc.isPaused());
+        vc.resume();
+        assertFalse(vc.isPaused());
 
-    @Test
-    void pause()
-    {
-    }
+        vc = new VirtualClock(zoneId, true);
+        assertFalse(vc.isPaused());
 
-    @Test
-    void resume()
-    {
+        vc = new VirtualClock(zoneId, false);
+        assertTrue(vc.isPaused());
+        vc.resume();
+        assertFalse(vc.isPaused());
     }
 
     @Test
