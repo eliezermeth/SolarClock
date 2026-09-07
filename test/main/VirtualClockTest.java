@@ -127,6 +127,34 @@ class VirtualClockTest
     @Test
     void update()
     {
+        ZonedDateTime currentTime = (ZonedDateTime) baseZdt[1];
+        Duration increment = (Duration) baseIncrement[1];
+
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        DebugTimeModifications.Increment.setEnabled(true);
+
+        VirtualClock vc = new VirtualClock(zoneId, false);
+        assertZdtEquals(currentTime, vc.now(), DECISECOND);
+
+        vc.update(); // increment once
+        currentTime = currentTime.plus(increment);
+        assertZdtEquals(currentTime, vc.now(), DECISECOND);
+        vc.update();
+        vc.update();
+        currentTime = currentTime.plus(increment).plus(increment);
+        assertZdtEquals(currentTime, vc.now(), DECISECOND);
+
+        // test when it should do nothing
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        currentTime = (ZonedDateTime) baseZdt[1];
+        // increment = false (null)
+        vc = new VirtualClock(zoneId, false);
+        assertZdtEquals(currentTime, vc.now(), DECISECOND);
+        vc.update();
+        assertZdtEquals(currentTime, vc.now(), DECISECOND);
     }
 
     @Test
