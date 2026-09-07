@@ -132,6 +132,25 @@ class VirtualClockTest
     @Test
     void step()
     {
+        // increase the time of a clock by a prescribed amount
+        Duration t1 = Duration.ofMinutes(3),
+                t2 = Duration.ofHours(1),
+                t3 = Duration.ofSeconds(5);
+        ZonedDateTime startTime = (ZonedDateTime) baseZdt[1];
+
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        VirtualClock vc = new VirtualClock(zoneId, false);
+        // paused so easier to test, and run with a specific ZdtOffset to begin with known value
+
+        // test starting (current) time
+        assertZdtEquals(startTime, vc.now(), DECISECOND);
+        vc.step(t1);
+        assertZdtEquals(startTime.plus(t1), vc.now(), DECISECOND);
+        vc.step(t2);
+        assertZdtEquals(startTime.plus(t1).plus(t2), vc.now(), DECISECOND);
+        vc.step(t3);
+        assertZdtEquals(startTime.plus(t1).plus(t2).plus(t3), vc.now(), DECISECOND);
     }
 
     @Test
