@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Test;
 import util.debug.DebugOption;
 import util.debug.DebugTimeModifications;
 
-import java.time.Duration;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -139,11 +137,48 @@ class VirtualClockTest
     @Test
     void getLocalTime()
     {
+        VirtualClock vc = new VirtualClock(zoneId);
+        assertTrue(Duration.between(LocalTime.now(zoneId),
+                vc.getLocalTime()).abs().toNanos()
+                <= DECISECOND.toNanos());
+
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertTrue(Duration.between(((ZonedDateTime) baseZdt[1]).toLocalTime(),
+                vc.getLocalTime()).abs().toNanos()
+                <= DECISECOND.toNanos());
+
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.TimeOffset.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertTrue(Duration.between(LocalTime.now().plus((Duration) baseTimeOffset[1]),
+                vc.getLocalTime()).abs().toNanos()
+                <= DECISECOND.toNanos());
     }
 
     @Test
     void getLocalDate()
     {
+        VirtualClock vc = new VirtualClock(zoneId);
+        vc.getLocalDate();
+        assertEquals(LocalDate.now(zoneId), vc.getLocalDate());
+
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.ZdtOffset.setEnabled(true);
+        vc = new VirtualClock(zoneId);
+        assertEquals(((ZonedDateTime) baseZdt[1]).toLocalDate(), vc.getLocalDate());
+
+        setUp();
+        DebugTimeModifications.DEBUG = true;
+        DebugTimeModifications.TimeOffset.setEnabled(true);
+        Duration customOffset = Duration.ofDays(3).plusMinutes(15);
+        DebugTimeModifications.TimeOffset.set(customOffset);
+        vc = new VirtualClock(zoneId);
+        assertEquals(LocalDateTime.now(zoneId).plus(customOffset).toLocalDate(), vc.getLocalDate());
     }
 
     @Test
