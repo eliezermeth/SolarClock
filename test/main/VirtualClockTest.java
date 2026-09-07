@@ -1,5 +1,6 @@
 package main;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.debug.DebugOption;
@@ -347,8 +348,31 @@ class VirtualClockTest
     }
 
     @Test
-    void setTime()
+    void setTime() throws InterruptedException
     {
+        VirtualClock vc = new VirtualClock(zoneId, false);
+        assertZdtEquals(ZonedDateTime.now(zoneId), vc.now(), DECISECOND);
+
+        ZonedDateTime newTime = (ZonedDateTime) baseZdt[1];
+        vc.setTime(newTime);
+        assertZdtEquals(newTime, vc.now(), DECISECOND);
+        Duration sleep = Duration.ofSeconds(2);
+        vc.resume();
+        Thread.sleep(sleep);
+        vc.pause();
+        assertZdtEquals(newTime.plus(sleep), vc.now(), DECISECOND);
+
+        // test with new time zone
+        // WARNING - MAY BE DEPRECIATED IF METHOD REQUIRES THE SAME TIME ZONE
+        newTime = ZonedDateTime.of(1970, 1, 1,
+                0, 0, 0, 0,
+                ZoneId.of("Asia/Tokyo"));
+        vc.setTime(newTime);
+        assertZdtEquals(newTime, vc.now(), DECISECOND);
+        vc.resume();
+        Thread.sleep(sleep);
+        vc.pause();
+        assertZdtEquals(newTime.plus(sleep), vc.now(), DECISECOND);
     }
 
     /**
@@ -360,7 +384,7 @@ class VirtualClockTest
      * @param actual actual measured {@link ZonedDateTime}
      * @param delta permissible difference between the two {@link ZonedDateTime}s
      */
-    void assertZdtEquals(ZonedDateTime expected, ZonedDateTime actual, Duration delta)
+    void assertZdtEquals(ZonedDateTime expected, ZonedDateTime actual, @NonNull Duration delta)
     {
         assertTrue(Duration.between(expected, actual).abs().toNanos() <= delta.toNanos());
     }
