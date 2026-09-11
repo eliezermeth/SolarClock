@@ -17,7 +17,7 @@ public class Settings
     // Analog clock settings
     // ------------------------------------------------------------------
     // View mode is the clock type - sundial, full day, etc
-    public static ViewMode viewMode = ViewMode.DIAL;
+    public static ViewMode viewMode = ViewMode.SUNDIAL;
     /** If {@link ViewMode#DIAL} is selected, the time that should be on the top of the clock. */
     public static LocalTime dialModeTop = LocalTime.of(0, 0, 0);
     /** How {@link ViewMode#DIAL} is represented.  If {@code true}, then {@link Settings#dialModeTop} represents the
@@ -58,7 +58,9 @@ public class Settings
     /** If it should use the user's current elevation, or sea level. */
     public static Elevation ANALOG_ELEVATION = Elevation.ACTUAL;
     /** If the twilights should be distinct color sections, or have a continuous gradient to appear as one period. */
-    public static boolean DISTINCT_TWILIGHT = true;
+    public static boolean DISTINCT_TWILIGHT = false;
+    /** If the current time hand should be drawn. */
+    public static boolean CURRENT_TIME_HAND_ENABLED = false;
 
     // ------------------------------------------------------------------
     // Other (should later be segmented)

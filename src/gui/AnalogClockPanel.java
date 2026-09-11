@@ -122,7 +122,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         drawStaticLines(g2d, false, true);
 
         // Draw dynamic current time hand
-        if (clock.getCurrentTime() != null)
+        if (Settings.CURRENT_TIME_HAND_ENABLED && clock.getCurrentTime() != null)
         {
             g2d.setColor(Settings.TIME_HAND_COLOR);
             g2d.setStroke(new BasicStroke(1));
@@ -168,7 +168,7 @@ public class AnalogClockPanel extends JPanel implements TimeObserver, EqualViewO
         drawStaticLines(g2d, true, true);
 
         // Draw the dynamic current time hand
-        if (clock.getCurrentTime() != null)
+        if (Settings.CURRENT_TIME_HAND_ENABLED && clock.getCurrentTime() != null)
         {
             g2d.setColor(Settings.TIME_HAND_COLOR);
             g2d.setStroke(new BasicStroke(1));
