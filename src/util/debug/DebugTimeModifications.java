@@ -12,7 +12,7 @@ public class DebugTimeModifications
     /**
      * Controls this entire class; if {@code false}, unlikely for other elements to work
      */
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
     /**
      * Allows the {@link main.VirtualClock} to be initialized to a specific {@link ZonedDateTime}.
@@ -20,7 +20,7 @@ public class DebugTimeModifications
     public static DebugOption<ZonedDateTime> ZdtOffset =
             new DebugOption<>(false,
                     ZonedDateTime.of(
-                            2026, 8, 20,
+                            2026, 9, 11,
                             12, 0, 0, 0,
                             ZoneId.of("America/New_York")
                     ))

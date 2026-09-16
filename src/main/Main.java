@@ -63,7 +63,7 @@ public class Main
         DigitalClockPanel dcp = new DigitalClockPanel();
         dcp.setOpaque(false);
         dcp.construct();
-        layeredPane.add(dcp, Integer.valueOf(1));
+        layeredPane.add(dcp, Integer.valueOf(1)); // temp removed for clean visual
         dcp.setStandardClockEnabled(true);
         dcp.setHalachicClockEnabled(true);
         dcp.setConversionTableEnabled(true);

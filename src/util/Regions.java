@@ -11,6 +11,9 @@ public class Regions
     static
     {
         GeoData[] places = new GeoData[] {
+                new GeoData("Home", 39.37402849068494, -76.6885885985364, "America/New_York"),
+                new GeoData("Ohel Moshe", 39.37615665966765, -76.69253597401541, "America/New_York"),
+                new GeoData("Cox house", 39.361786245835575, -76.69708211143792, "America/New_York"),
                 new GeoData("Pikesville, MD", 39.37390899658203, -76.6888198852539, "America/New_York"),
                 new GeoData("New York City, NY", 40.7128, -74.0060, "America/New_York"),
                 new GeoData("Jerusalem, Israel", 31.7683, 35.2137, "Asia/Jerusalem"),

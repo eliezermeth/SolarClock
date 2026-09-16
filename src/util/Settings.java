@@ -11,7 +11,7 @@ import java.time.LocalTime;
 
 public class Settings
 {
-    public static String location = "Pikesville";
+    public static String location = "Cox house";
 
     // ------------------------------------------------------------------
     // Analog clock settings

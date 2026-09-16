@@ -64,6 +64,7 @@ Need to follow the offset and creation.
 Settings.DISTINCT_TWILIGHT in AnalogClockPanel
   - Fudging to cover gaps causes visible difference between distinct twilights and sha'ah hour marks
 
+Enable SolarTimes to grab and calculate with elevation.
 
 gui.ZmanClockGUI:
 - Class Javadoc:
