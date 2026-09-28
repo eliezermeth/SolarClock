@@ -1,0 +1,49 @@
+locations:
+  - name: Home
+    latitude: 39.37402849068494
+    longitude: -76.6885885985364
+    elevation: null
+    elevationLocked: false
+    timezone: America/New_York
+
+  - name: Pikesville, Md
+    latitude: 39.37390899658203
+    longitude: -76.6888198852539
+    elevation: null
+    elevationLocked: false
+    timezone: America/New_York
+
+  - name: New York City, NY
+    latitude: 40.7128
+    longitude: -74.0060
+    elevation: null
+    elevationLocked: false
+    timezone: America/New_York
+
+  - name: Jerusalem, Israel
+    latitude: 31.7683
+    longitude: 35.2137
+    elevation: null
+    elevationLocked: false
+    timezone: Asia/Jerusalem
+
+  - name: Sydney, Australia
+    latitude: -33.8688
+    longitude: 151.2093
+    elevation: null
+    elevationLocked: false
+    timezone: Australia/Sydney
+
+  - name: Southfield, MI
+    latitude: 42.4734
+    longitude: -83.2219
+    elevation: null
+    elevationLocked: false
+    timezone: America/Detroit
+
+  - name: Chicago, Il
+    latitude: 41.8781
+    longitude: -87.6298
+    elevation: null
+    elevationLocked: false
+    timezone: America/Chicago

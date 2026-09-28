@@ -10,6 +10,8 @@ import interfaces.ZmanEventObserver;
 import util.*;
 import util.enums.QuarterDayMark;
 import util.enums.Zman;
+import util.geo.GeoData;
+import util.geo.Regions;
 
 import javax.swing.Timer;
 import java.lang.reflect.InvocationTargetException;

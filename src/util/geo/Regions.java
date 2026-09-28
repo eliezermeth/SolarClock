@@ -1,4 +1,4 @@
-package util;
+package util.geo;
 
 import java.util.HashMap;
 import java.util.Map;

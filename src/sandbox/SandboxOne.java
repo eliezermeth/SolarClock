@@ -3,15 +3,13 @@ package sandbox;
 import com.kosherjava.zmanim.ComplexZmanimCalendar;
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter;
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar;
-import gui.Moon;
 import main.ClockBrain;
 import org.shredzone.commons.suncalc.MoonPosition;
 import org.shredzone.commons.suncalc.MoonTimes;
-import util.GeoData;
-import util.Regions;
+import util.geo.GeoData;
+import util.geo.Regions;
 
 import java.time.*;
-import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;

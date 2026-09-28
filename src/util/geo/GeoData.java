@@ -1,4 +1,4 @@
-package util;
+package util.geo;
 
 /**
  * Holds the data required to construct a GeoLocation.
