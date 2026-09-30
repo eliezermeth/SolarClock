@@ -19,17 +19,17 @@ public class NewGeoData
      * @param longitude Longitude of location (W negative, E positive).
      * @param elevation Elevation of location.
      * @param elevationLocked If the elevation is locked and should not be recalculated.
-     * @param timeZone String of timezone of location.
+     * @param timezone String of timezone of location.
      */
     public NewGeoData(String name, double latitude, double longitude,
-                      Double elevation, boolean elevationLocked, String timeZone)
+                      Double elevation, boolean elevationLocked, String timezone)
     {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
         this.elevation = elevation;
         this.elevationLocked = elevationLocked;
-        this.timezone = timeZone;
+        this.timezone = timezone;
     }
 
     public String getName()
