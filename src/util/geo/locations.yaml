@@ -2,7 +2,7 @@ locations:
   - name: Home
     latitude: 39.37402849068494
     longitude: -76.6885885985364
-    elevation: null
+    elevation: 133.4
     elevationLocked: false
     timezone: America/New_York
 
