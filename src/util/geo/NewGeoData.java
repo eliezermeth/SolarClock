@@ -17,7 +17,7 @@ public class NewGeoData
      * @param name Name of the location.
      * @param latitude Latitude of location (N positive, S negative).
      * @param longitude Longitude of location (W negative, E positive).
-     * @param elevation Elevation of location.
+     * @param elevation Elevation of location (in meters).
      * @param elevationLocked If the elevation is locked and should not be recalculated.
      * @param timezone String of timezone of location.
      */

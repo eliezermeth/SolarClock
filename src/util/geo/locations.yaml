@@ -1,8 +1,8 @@
 locations:
-  - name: Home
-    latitude: 39.37402849068494
-    longitude: -76.6885885985364
-    elevation: 133.4
+  - name: Ohel Moshe
+    latitude: 39.376157746321375
+    longitude: -76.69254484132172
+    elevation: 141.3
     elevationLocked: false
     timezone: America/New_York
 
