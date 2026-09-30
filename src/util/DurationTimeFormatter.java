@@ -466,28 +466,4 @@ public class DurationTimeFormatter
         // else
         return requireDecimal ? "." : "";
     }
-
-    // ----------------------------------------------------------------------------------------------
-
-    public static void main(String[] args)
-    {
-        String[] tests = new String[] {"HH:mm:ss.1", "m:ss", "::s", ":::", "mmmm:.", ":H::ss.3+",
-                "test", "HHHH", "sss.3", ".11", "H:dd", "H:s", "::::", "mm:ss.1-", ":ss.1+-"};
-        // last gives wrong error message (gives invalid time order), but acceptable
-        Duration d = Duration.ofHours(3).plusMinutes(15).plusSeconds(2).plusNanos(123456789);
-
-        for (String t : tests)
-        {
-            System.out.println("Test pattern: " + t);
-
-            try
-            {
-                System.out.println("\tResult: " + format(d, t));
-
-            } catch (IllegalArgumentException e)
-            {
-                System.out.println("\t" + e);
-            }
-        }
-    }
 }
