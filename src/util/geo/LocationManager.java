@@ -13,11 +13,11 @@ import java.util.*;
 /**
  * Manages the collection of known geographic locations.
  *
- * <p>Locations are stored in a YAML file and represented in memory by {@link NewGeoData} objects.</p>
+ * <p>Locations are stored in a YAML file and represented in memory by {@link GeoData} objects.</p>
  */
 public class LocationManager
 {
-    private static Map<String, NewGeoData> locations = new LinkedHashMap<>();
+    private static Map<String, GeoData> locations = new LinkedHashMap<>();
 
     private final Path file;
 
@@ -75,7 +75,7 @@ public class LocationManager
 
                 String timezone = (String) data.get("timezone");
 
-                NewGeoData location = new NewGeoData(name, latitude, longitude, elevation, elevationLocked, timezone);
+                GeoData location = new GeoData(name, latitude, longitude, elevation, elevationLocked, timezone);
                 locations.put(name, location);
             }
         }
@@ -95,7 +95,7 @@ public class LocationManager
         Map<String, Object> root = new HashMap<>();
         List<Map<String, Object>> locationList = new ArrayList<>();
 
-        for (NewGeoData location : locations.values())
+        for (GeoData location : locations.values())
         {
             Map<String, Object> data = new HashMap<>();
             data.put("name", location.getName());
@@ -134,9 +134,9 @@ public class LocationManager
      * </ol>
      *
      * @param name location name
-     * @return closest matching {@link NewGeoData}, or {@code null} if no locations exist
+     * @return closest matching {@link GeoData}, or {@code null} if no locations exist
      */
-    public NewGeoData getLocation(String name)
+    public GeoData getLocation(String name)
     {
         if (name == null || locations.isEmpty()) return null;
 
@@ -145,26 +145,26 @@ public class LocationManager
         if (search.isEmpty()) return null;
 
         // 1. Exact match
-        NewGeoData location = locations.get(search);
+        GeoData location = locations.get(search);
         if (location != null) return location;
 
         // 2. Case-insensitive exact match
         String lowerSearch = search.toLowerCase(Locale.ROOT);
-        for (NewGeoData candidate : locations.values())
+        for (GeoData candidate : locations.values())
         {
             if (candidate.getName().toLowerCase(Locale.ROOT).equals(lowerSearch))
                 return candidate;
         }
 
         // 3. Name starts with search text
-        for (NewGeoData candidate : locations.values())
+        for (GeoData candidate : locations.values())
         {
             if (candidate.getName().toLowerCase(Locale.ROOT).startsWith(lowerSearch))
                 return candidate;
         }
 
         // 4. Name contains search text
-        for (NewGeoData candidate : locations.values())
+        for (GeoData candidate : locations.values())
         {
             if (candidate.getName().toLowerCase(Locale.ROOT).contains(lowerSearch))
                 return candidate;
@@ -182,7 +182,7 @@ public class LocationManager
      *
      * @param location location to add
      */
-    public void addLocation(NewGeoData location)
+    public void addLocation(GeoData location)
     {
         if (location == null)
             throw new IllegalArgumentException("Location cannot be null.");
@@ -218,7 +218,7 @@ public class LocationManager
      *
      * @return a copy of the location list
      */
-    public List<NewGeoData> getLocations()
+    public List<GeoData> getLocations()
     {
         return new ArrayList<>(locations.values());
     }

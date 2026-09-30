@@ -11,7 +11,7 @@ import java.time.LocalTime;
 
 public class Settings
 {
-    public static String location = "Cox house";
+    public static String location = "Ohel Moshe";
 
     // ------------------------------------------------------------------
     // Analog clock settings
@@ -84,5 +84,8 @@ public class Settings
 
     /** {@link Path} to config file containing zmanim settings; used by {@link ZmanOptionsConfigManager}. */
     public static Path zmanConfigFile = Path.of("src/util/ZmanimOptions");
+
+    /** {@link Path} to config file containing saved locations; used by {@link util.geo.LocationManager}. */
+    public static Path locationsConfigFile = Path.of("src/util/geo/locations.yaml");
 
 }

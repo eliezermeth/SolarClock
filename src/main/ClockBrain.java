@@ -10,10 +10,11 @@ import interfaces.ZmanEventObserver;
 import util.*;
 import util.enums.QuarterDayMark;
 import util.enums.Zman;
+import util.geo.LocationManager;
 import util.geo.GeoData;
-import util.geo.Regions;
 
 import javax.swing.Timer;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalTime;
@@ -50,10 +51,19 @@ public final class ClockBrain implements ZmanEventObserver
     private ClockBrain()
     {
         // set up clock
-        GeoData location = Regions.getLocation(Settings.location);
+        LocationManager lm = null;
+        try {
+            lm = new LocationManager(Settings.locationsConfigFile);
+        } catch (IOException e) {
+            System.out.println("Unable to read file " + Settings.locationsConfigFile);
+            e.printStackTrace();
+            System.exit(1);
+        }
+        GeoData location = lm.getLocation(Settings.location);
+
         this.czc = new ComplexZmanimCalendar(new GeoLocation(
                 location.getName(), location.getLatitude(), location.getLongitude(),
-                TimeZone.getTimeZone(location.getRegion())
+                TimeZone.getTimeZone(location.getTimezone())
         ));
 
         // get and initialize time

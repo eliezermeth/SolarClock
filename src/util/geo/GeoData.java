@@ -5,24 +5,31 @@ package util.geo;
  */
 public class GeoData
 {
-    final String name;
-    final double latitude;
-    final double longitude;
-    final String region;
+    private String name;
+    private double latitude;
+    private double longitude;
+    private Double elevation;
+    private boolean elevationLocked;
+    private String timezone;
 
     /**
      * Constructor.
      * @param name Name of the location.
      * @param latitude Latitude of location (N positive, S negative).
      * @param longitude Longitude of location (W negative, E positive).
-     * @param region TimeZone region of location.
+     * @param elevation Elevation of location (in meters).
+     * @param elevationLocked If the elevation is locked and should not be recalculated.
+     * @param timezone String of timezone of location.
      */
-    public GeoData(String name, double latitude, double longitude, String region)
+    public GeoData(String name, double latitude, double longitude,
+                   Double elevation, boolean elevationLocked, String timezone)
     {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.region = region;
+        this.elevation = elevation;
+        this.elevationLocked = elevationLocked;
+        this.timezone = timezone;
     }
 
     public String getName()
@@ -40,8 +47,28 @@ public class GeoData
         return longitude;
     }
 
-    public String getRegion()
+    public Double getElevation()
     {
-        return region;
+        return elevation;
+    }
+
+    public boolean isElevationLocked()
+    {
+        return elevationLocked;
+    }
+
+    public String getTimezone()
+    {
+        return timezone;
+    }
+
+    public void setElevation(Double elevation)
+    {
+        this.elevation = elevation;
+    }
+
+    public void setElevationLocked(boolean elevationLocked)
+    {
+        this.elevationLocked = elevationLocked;
     }
 }

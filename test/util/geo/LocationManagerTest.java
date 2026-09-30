@@ -16,7 +16,7 @@ class LocationManagerTest
     private Path testFile;
     private LocationManager manager;
 
-    private static final NewGeoData HOME = new NewGeoData(
+    private static final GeoData HOME = new GeoData(
             "Home",
             39.37402849068494,
             -76.6885885985364,
@@ -25,7 +25,7 @@ class LocationManagerTest
             "America/New_York"
     );
 
-    private static final NewGeoData JERUSALEM = new NewGeoData(
+    private static final GeoData JERUSALEM = new GeoData(
             "Jerusalem, Israel",
             31.7683,
             35.2137,
@@ -68,7 +68,7 @@ class LocationManagerTest
         assertEquals(1, manager.size());
         assertTrue(manager.containsLocation("Home"));
 
-        NewGeoData result = manager.getLocation("Home");
+        GeoData result = manager.getLocation("Home");
 
         assertNotNull(result);
         assertEquals("Home", result.getName());
@@ -87,7 +87,7 @@ class LocationManagerTest
     {
         manager.addLocation(HOME);
 
-        NewGeoData replacement = new NewGeoData(
+        GeoData replacement = new GeoData(
                 "Home",
                 40.0,
                 -75.0,
@@ -100,7 +100,7 @@ class LocationManagerTest
 
         assertEquals(1, manager.size());
 
-        NewGeoData result = manager.getLocation("Home");
+        GeoData result = manager.getLocation("Home");
 
         assertNotNull(result);
         assertEquals(40.0, result.getLatitude());
@@ -121,7 +121,7 @@ class LocationManagerTest
     @Test
     void addLocationWithBlankName()
     {
-        NewGeoData location = new NewGeoData(
+        GeoData location = new GeoData(
                 "",
                 1.0,
                 2.0,
@@ -171,7 +171,7 @@ class LocationManagerTest
         manager.addLocation(HOME);
         manager.addLocation(JERUSALEM);
 
-        List<NewGeoData> locations = manager.getLocations();
+        List<GeoData> locations = manager.getLocations();
 
         assertEquals(2, locations.size());
         assertTrue(locations.contains(HOME));
@@ -183,7 +183,7 @@ class LocationManagerTest
     {
         manager.addLocation(HOME);
 
-        List<NewGeoData> locations = manager.getLocations();
+        List<GeoData> locations = manager.getLocations();
 
         locations.clear();
 
@@ -197,7 +197,7 @@ class LocationManagerTest
         manager.addLocation(HOME);
         manager.addLocation(JERUSALEM);
 
-        NewGeoData result = manager.getLocation("Home");
+        GeoData result = manager.getLocation("Home");
 
         assertSame(HOME, result);
     }
@@ -208,7 +208,7 @@ class LocationManagerTest
         manager.addLocation(HOME);
         manager.addLocation(JERUSALEM);
 
-        NewGeoData result = manager.getLocation("Jerusalem");
+        GeoData result = manager.getLocation("Jerusalem");
 
         assertSame(JERUSALEM, result);
     }
@@ -218,7 +218,7 @@ class LocationManagerTest
     {
         manager.addLocation(HOME);
 
-        NewGeoData result = manager.getLocation("home");
+        GeoData result = manager.getLocation("home");
 
         assertSame(HOME, result);
     }
@@ -229,7 +229,7 @@ class LocationManagerTest
         manager.addLocation(HOME);
         manager.addLocation(JERUSALEM);
 
-        NewGeoData result = manager.getLocation("Israel");
+        GeoData result = manager.getLocation("Israel");
 
         assertSame(JERUSALEM, result);
     }
@@ -240,7 +240,7 @@ class LocationManagerTest
         manager.addLocation(HOME);
         manager.addLocation(JERUSALEM);
 
-        NewGeoData result = manager.getLocation("Jerusalem, Isreal");
+        GeoData result = manager.getLocation("Jerusalem, Isreal");
 
         assertSame(JERUSALEM, result);
     }
@@ -281,8 +281,8 @@ class LocationManagerTest
 
         assertEquals(2, loadedManager.size());
 
-        NewGeoData home = loadedManager.getLocation("Home");
-        NewGeoData jerusalem =
+        GeoData home = loadedManager.getLocation("Home");
+        GeoData jerusalem =
                 loadedManager.getLocation("Jerusalem, Israel");
 
         assertNotNull(home);
@@ -321,7 +321,7 @@ class LocationManagerTest
     @Test
     void nullElevationIsPreserved() throws IOException
     {
-        NewGeoData location = new NewGeoData(
+        GeoData location = new GeoData(
                 "Unknown Elevation",
                 39.0,
                 -76.0,
@@ -336,7 +336,7 @@ class LocationManagerTest
         LocationManager loadedManager =
                 new LocationManager(testFile);
 
-        NewGeoData loaded =
+        GeoData loaded =
                 loadedManager.getLocation("Unknown Elevation");
 
         assertNotNull(loaded);
@@ -353,7 +353,7 @@ class LocationManagerTest
         LocationManager loadedManager =
                 new LocationManager(testFile);
 
-        NewGeoData loaded =
+        GeoData loaded =
                 loadedManager.getLocation("Jerusalem, Israel");
 
         assertNotNull(loaded);
@@ -441,8 +441,8 @@ class LocationManagerTest
      * Compares all fields of two NewGeoData objects.
      */
     private void assertGeoDataEquals(
-            NewGeoData expected,
-            NewGeoData actual)
+            GeoData expected,
+            GeoData actual)
     {
         assertEquals(
                 expected.getName(),

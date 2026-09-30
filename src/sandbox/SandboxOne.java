@@ -6,9 +6,11 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar;
 import main.ClockBrain;
 import org.shredzone.commons.suncalc.MoonPosition;
 import org.shredzone.commons.suncalc.MoonTimes;
+import util.Settings;
+import util.geo.LocationManager;
 import util.geo.GeoData;
-import util.geo.Regions;
 
+import java.io.IOException;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -74,7 +76,16 @@ public class SandboxOne
         ZonedDateTime now = clock.getCurrentDateTime();
         Date d = Date.from(now.toInstant());
 
-        GeoData location = Regions.getLocation("Pikesville");
+        LocationManager lm = null;
+        try {
+            lm = new LocationManager(Settings.locationsConfigFile);
+        } catch (IOException e) {
+            System.out.println("Unable to open file " + Settings.locationsConfigFile);
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        GeoData location = lm.getLocation("Ohel Moshe");
         double latitude = location.getLatitude();
         double longitude = location.getLongitude();
 
