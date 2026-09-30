@@ -146,7 +146,7 @@ public class LocationManager
 
         // 1. Exact match
         NewGeoData location = locations.get(search);
-        if (location != null) return null;
+        if (location != null) return location;
 
         // 2. Case-insensitive exact match
         String lowerSearch = search.toLowerCase(Locale.ROOT);
