@@ -63,6 +63,14 @@ public class Settings
     public static boolean CURRENT_TIME_HAND_ENABLED = false;
 
     // ------------------------------------------------------------------
+    // Digital clock settings
+    // ------------------------------------------------------------------
+    /** If the standard (Gregorian calendar) date should be displayed. */
+    public static boolean SHOW_STANDARD_DATE = true;
+    /** If the halachic (Hebrew calendar) date should be displayed. */
+    public static boolean SHOW_HALACHIC_DATE = true;
+
+    // ------------------------------------------------------------------
     // Other (should later be segmented)
     // ------------------------------------------------------------------
     /**

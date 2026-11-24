@@ -2,6 +2,7 @@ package gui;
 
 import interfaces.TimeObserver;
 import main.ClockBrain;
+import util.Settings;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,6 +32,8 @@ public class StandardClockPanel implements TimeObserver
         this.panel = child;
 
         createStandardClock();
+        // toggle date portion
+        setDateVisible(Settings.SHOW_STANDARD_DATE);
 
         // register with ClockBrain as an observer
         clock.registerTimeObserver(this);
@@ -88,6 +91,23 @@ public class StandardClockPanel implements TimeObserver
             lastDate = time.toLocalDate();
             dayDate.setText(time.format(formatter));
         }
+    }
+
+    /**
+     * Set if the day and date portion is to be visible.
+     */
+    public void setDateVisible(boolean visible)
+    {
+        dayDate.setVisible(visible);
+    }
+
+    /**
+     * Returns if the day and date portion is visible
+     * @return {@code true} if visible
+     */
+    public boolean getDateVisible()
+    {
+        return dayDate.isVisible();
     }
 
     @Override
