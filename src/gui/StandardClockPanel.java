@@ -105,7 +105,7 @@ public class StandardClockPanel implements TimeObserver
      * Returns if the day and date portion is visible
      * @return {@code true} if visible
      */
-    public boolean getDateVisible()
+    public boolean isDateVisible()
     {
         return dayDate.isVisible();
     }

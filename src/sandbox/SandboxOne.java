@@ -160,9 +160,9 @@ public class SandboxOne
     public static void main(String[] args)
     {
         SandboxOne s1 = new SandboxOne();
-        //s1.hebrewDate();
+        s1.hebrewDate();
         //s1.multipleTwilights();
-        s1.getMoonInfo();
+        //s1.getMoonInfo();
     }
 }
 

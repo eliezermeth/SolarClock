@@ -1,9 +1,11 @@
 package gui;
 
+import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter;
 import interfaces.QuarterDayObserver;
 import interfaces.TimeObserver;
 import main.ClockBrain;
 import util.Constant;
+import util.Settings;
 import util.SolarTimes;
 import util.TimeConverter;
 import util.enums.QuarterDayMark;
@@ -21,8 +23,10 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
     // Moving parts
     private final JLabel[] fracClockComponents = new JLabel[2]; // HH Chalakim
     private final JLabel[] regularClockComponents = new JLabel[3]; // HH MM SS
+    private final JLabel dayDate = new JLabel(); // holds Hebrew date
 
     private TimeConverter timeConverter = null;
+    private HebrewDateFormatter hdf = new HebrewDateFormatter();
 
     public HalachicClockPanel(JPanel child)
     {
@@ -30,6 +34,8 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         this.panel = child;
 
         createHalachicClock();
+        // toggle date portion
+        setDateVisible(Settings.SHOW_HALACHIC_DATE);
 
         // register with ClockBrain as an observer
         clock.registerTimeObserver(this);
@@ -89,6 +95,12 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
         panel.add(standPanel, gbc);
+
+        // Day-date label
+        dayDate.setText("Temporary text");
+        // add to clock
+        gbc.gridx = 0; gbc.gridy = 3;
+        panel.add(dayDate, gbc);
     }
 
     /**
@@ -101,6 +113,28 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         JLabel temp = new JLabel(text);
         temp.setOpaque(false);
         return temp;
+    }
+
+    /**
+     * Set if the day and date portion is to be visible.
+     */
+    public void setDateVisible(boolean visible)
+    {
+        dayDate.setVisible(visible);
+    }
+
+    /**
+     * Returns if the day and date portion is visible
+     * @return {@code true} if visible
+     */
+    public boolean isDateVisible()
+    {
+        return dayDate.isVisible();
+    }
+
+    public void updateDateDisplay()
+    {
+
     }
 
     /**
@@ -147,6 +181,9 @@ public class HalachicClockPanel implements TimeObserver, QuarterDayObserver
         SolarTimes solarTimes = clock.getSolarTimes();
         // as of now, all tekufos are the 12-hour variety; will need to allow change
         timeConverter = new TimeConverter(solarTimes.getTekufahStart(now), solarTimes.getTekufahEnd(now), 12);
+
+        // change day-date text
+        updateDateDisplay();
     }
 
     public static void main(String[] args)
